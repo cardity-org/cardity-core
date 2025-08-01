@@ -6,20 +6,23 @@ namespace cardity {
 
 enum class TokenType {
     // 关键字
-    KEYWORD_CONTRACT,
+    KEYWORD_PROTOCOL,
     KEYWORD_STATE,
+    KEYWORD_METHOD,
+    KEYWORD_VERSION,
+    KEYWORD_OWNER,
+    KEYWORD_RETURN,
     KEYWORD_STRING,
     KEYWORD_INT,
-    KEYWORD_DEFAULT,
-    KEYWORD_METHOD,
-    KEYWORD_PARAMS,
-    KEYWORD_RETURNS,
-    KEYWORD_OWNER,
+    KEYWORD_BOOL,
+    KEYWORD_TRUE,
+    KEYWORD_FALSE,
     
     // 标识符和字面量
     IDENTIFIER,
     NUMBER,
     STRING,
+    BOOLEAN,
     
     // 符号
     EQUAL,
@@ -29,9 +32,8 @@ enum class TokenType {
     RBRACE,
     LPAREN,
     RPAREN,
-    LBRACKET,
-    RBRACKET,
     COMMA,
+    DOT,
     
     // 特殊
     END,
