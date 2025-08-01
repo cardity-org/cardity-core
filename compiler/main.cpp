@@ -43,15 +43,15 @@ int main(int argc, char* argv[]) {
         std::vector<Token> tokens = lexer.tokenize();
         
         // 语法分析
-        Parser parser(source);
-        std::shared_ptr<ContractNode> contract = parser.parse();
+        Parser parser(tokens);
+        auto contract = parser.parse();
         
         // 获取合约名称
-        std::string contractName = contract->name;
+        std::string contractName = contract->protocol_name;
         
-        // 生成 CAR
-        CARGenerator generator(contract);
-        std::string car_json = generator.generate_string();
+        // 生成 CAR（需要适配新的数据结构）
+        // TODO: 更新 CARGenerator 以支持新的 ContractDef 结构
+        std::string car_json = "{\"p\":\"cardinals\",\"op\":\"deploy\",\"protocol\":\"" + contractName + "\"}";
         
         // 写入输出文件
         std::string outputPath = "output/" + contractName + ".car";

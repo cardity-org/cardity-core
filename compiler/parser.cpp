@@ -4,252 +4,154 @@
 
 namespace cardity {
 
-Parser::Parser(const std::string& source) 
-    : source(source), pos(0), current(0) {
-    // 初始化词法分析器并获取 tokens
-    Lexer lexer(source);
-    tokens = lexer.tokenize();
-}
+Parser::Parser(const std::vector<Token>& tokens) 
+    : tokens(tokens), current(0) {}
 
-char Parser::currentChar() const {
-    if (pos >= source.length()) {
-        return '\0';
+const Token& Parser::peek() {
+    if (current >= tokens.size()) {
+        static Token eof{TokenType::EndOfFile, "", 0, 0};
+        return eof;
     }
-    return source[pos];
+    return tokens[current];
 }
 
-char Parser::peekChar() const {
-    if (pos + 1 >= source.length()) {
-        return '\0';
+const Token& Parser::advance() {
+    if (current < tokens.size()) {
+        return tokens[current++];
     }
-    return source[pos + 1];
+    static Token eof{TokenType::EndOfFile, "", 0, 0};
+    return eof;
 }
 
-void Parser::advance() {
-    if (!isAtEnd()) {
-        pos++;
-    }
-}
-
-bool Parser::isAtEnd() const {
-    return pos >= source.length();
-}
-
-void Parser::consume(char expected, const std::string& message) {
-    if (currentChar() == expected) {
+bool Parser::match(const std::string& keyword) {
+    if (peek().type == TokenType::Keyword && peek().value == keyword) {
         advance();
-    } else {
-        throw ParseError(message);
+        return true;
     }
+    return false;
 }
 
-void Parser::skipWhitespace() {
-    while (std::isspace(currentChar())) {
-        advance();
-    }
+std::unique_ptr<ContractDef> Parser::parse() {
+    return parse_contract();
 }
 
-std::string Parser::parseIdentifier() {
-    std::string result;
-    while (std::isalnum(currentChar()) || currentChar() == '_') {
-        result += currentChar();
-        advance();
-    }
-    return result;
-}
-
-std::string Parser::parseString() {
-    consume('"', "Expected '\"' at start of string");
-    std::string result;
-    while (currentChar() != '"' && !isAtEnd()) {
-        result += currentChar();
-        advance();
-    }
-    consume('"', "Expected '\"' at end of string");
-    return result;
-}
-
-std::shared_ptr<ContractNode> Parser::parse() {
-    skipWhitespace();
-    return parseContract();
-}
-
-std::shared_ptr<ContractNode> Parser::parseContract() {
-    // 解析 "contract" 关键字
-    std::string keyword = parseIdentifier();
-    if (keyword != "contract") {
-        throw ParseError("Expected 'contract' keyword");
+std::unique_ptr<ContractDef> Parser::parse_contract() {
+    auto contract = std::make_unique<ContractDef>();
+    
+    // 解析合约关键字
+    if (!match("contract")) {
+        throw std::runtime_error("Expected 'contract' keyword");
     }
     
-    skipWhitespace();
-    
-    // 解析合约名称
-    std::string name = parseIdentifier();
-    if (name.empty()) {
-        throw ParseError("Expected contract name");
+    // 解析协议名称
+    if (peek().type != TokenType::Identifier) {
+        throw std::runtime_error("Expected protocol name");
     }
+    contract->protocol_name = advance().value;
     
-    skipWhitespace();
-    
-    // 解析左大括号
-    consume('{', "Expected '{' after contract name");
-    
-    auto contract = std::make_shared<ContractNode>();
-    contract->name = name;
-    
-    skipWhitespace();
-    
-    // 解析合约内容（状态和函数）
-    while (currentChar() != '}' && !isAtEnd()) {
-        std::string section = parseIdentifier();
-        
-        if (section == "state") {
-            contract->state = parseState();
-        } else if (section == "func") {
-            contract->functions.push_back(parseMethod());
-        } else {
-            throw ParseError("Expected 'state' or 'func'");
+    // 解析版本（可选）
+    if (match("version")) {
+        if (peek().type == TokenType::String) {
+            contract->version = advance().value;
         }
-        
-        skipWhitespace();
     }
     
-    // 解析右大括号
-    consume('}', "Expected '}' at end of contract");
+    // 解析所有者（可选）
+    if (match("owner")) {
+        if (peek().type == TokenType::String) {
+            contract->owner = advance().value;
+        }
+    }
+    
+    // 解析状态
+    if (match("state")) {
+        contract->state = parse_state();
+    }
+    
+    // 解析方法
+    while (peek().type != TokenType::EndOfFile) {
+        if (match("func")) {
+            contract->methods.push_back(parse_method());
+        } else {
+            break;
+        }
+    }
     
     return contract;
 }
 
-std::shared_ptr<StateNode> Parser::parseState() {
-    skipWhitespace();
-    consume('{', "Expected '{' after 'state'");
-    
-    auto state = std::make_shared<StateNode>();
-    
-    skipWhitespace();
+StateDef Parser::parse_state() {
+    StateDef state;
     
     // 解析状态变量
-    while (currentChar() != '}' && !isAtEnd()) {
-        std::string varName = parseIdentifier();
-        skipWhitespace();
-        consume(':', "Expected ':' after variable name");
-        skipWhitespace();
-        
-        auto type = parseType();
-        skipWhitespace();
-        
-        std::shared_ptr<ExpressionNode> initialValue = nullptr;
-        if (currentChar() == '=') {
-            advance(); // 跳过 '='
-            skipWhitespace();
-            initialValue = parseExpression();
-        }
-        
-        auto var = std::make_shared<StateVariableNode>(varName, type, initialValue);
-        state->variables.push_back(var);
-        
-        skipWhitespace();
-        consume(';', "Expected ';' after variable declaration");
-        skipWhitespace();
+    while (peek().type == TokenType::Identifier) {
+        auto var = parse_variable();
+        state.variables[var.name] = var;
     }
-    
-    consume('}', "Expected '}' at end of state");
     
     return state;
 }
 
-std::shared_ptr<FunctionNode> Parser::parseMethod() {
-    skipWhitespace();
+MethodDef Parser::parse_method() {
+    MethodDef method;
     
-    // 解析函数名
-    std::string name = parseIdentifier();
-    if (name.empty()) {
-        throw ParseError("Expected function name");
+    // 解析方法名
+    if (peek().type != TokenType::Identifier) {
+        throw std::runtime_error("Expected method name");
     }
+    method.name = advance().value;
     
-    skipWhitespace();
-    consume('(', "Expected '(' after function name");
-    
-    auto func = std::make_shared<FunctionNode>();
-    func->name = name;
-    
-    skipWhitespace();
-    
-    // 解析参数（简化实现，暂时跳过）
-    while (currentChar() != ')' && !isAtEnd()) {
-        // 跳过参数
-        while (currentChar() != ',' && currentChar() != ')' && !isAtEnd()) {
-            advance();
+    // 解析参数（简化实现）
+    if (match("(")) {
+        while (peek().type != TokenType::Symbol || peek().value != ")") {
+            if (peek().type == TokenType::Identifier) {
+                method.params.push_back(advance().value);
+            }
+            if (peek().value == ",") {
+                advance();
+            }
         }
-        if (currentChar() == ',') {
-            advance();
-            skipWhitespace();
+        if (match(")")) {
+            // 参数解析完成
         }
     }
     
-    consume(')', "Expected ')' after parameters");
-    skipWhitespace();
-    consume(':', "Expected ':' after parameters");
-    skipWhitespace();
-    
-    // 解析返回类型
-    func->return_type = parseType();
-    
-    skipWhitespace();
-    consume('{', "Expected '{' before function body");
-    
-    skipWhitespace();
-    
-    // 解析函数体（简化实现）
-    while (currentChar() != '}' && !isAtEnd()) {
-        // 跳过函数体内容
-        advance();
+    // 解析方法逻辑（简化实现）
+    if (match("{")) {
+        std::string logic;
+        while (peek().type != TokenType::Symbol || peek().value != "}") {
+            logic += advance().value + " ";
+        }
+        method.logic = logic;
+        match("}");
     }
     
-    consume('}', "Expected '}' at end of function");
-    
-    return func;
+    return method;
 }
 
-std::shared_ptr<ExpressionNode> Parser::parseExpression() {
-    skipWhitespace();
+VariableDef Parser::parse_variable() {
+    VariableDef var;
     
-    // 简化实现：只解析基本表达式
-    if (std::isdigit(currentChar())) {
-        // 解析数字
-        std::string num;
-        while (std::isdigit(currentChar())) {
-            num += currentChar();
-            advance();
+    // 解析变量名
+    if (peek().type != TokenType::Identifier) {
+        throw std::runtime_error("Expected variable name");
+    }
+    var.name = advance().value;
+    
+    // 解析类型
+    if (peek().type != TokenType::Keyword) {
+        throw std::runtime_error("Expected variable type");
+    }
+    var.type = advance().value;
+    
+    // 解析默认值（可选）
+    if (match("=")) {
+        if (peek().type == TokenType::Number || peek().type == TokenType::String) {
+            var.default_value = advance().value;
         }
-        return std::make_shared<LiteralNode>(std::stoi(num));
-    } else if (currentChar() == '"') {
-        // 解析字符串
-        std::string str = parseString();
-        return std::make_shared<LiteralNode>(str);
-    } else if (std::isalpha(currentChar())) {
-        // 解析标识符
-        std::string id = parseIdentifier();
-        return std::make_shared<IdentifierNode>(id);
     }
     
-    throw ParseError("Unexpected character in expression");
-}
-
-std::shared_ptr<TypeNode> Parser::parseType() {
-    std::string typeName = parseIdentifier();
-    
-    if (typeName == "int") {
-        return std::make_shared<TypeNode>(TypeNode::Type::INT);
-    } else if (typeName == "string") {
-        return std::make_shared<TypeNode>(TypeNode::Type::STRING);
-    } else if (typeName == "bool") {
-        return std::make_shared<TypeNode>(TypeNode::Type::BOOL);
-    } else if (typeName == "void") {
-        return std::make_shared<TypeNode>(TypeNode::Type::VOID);
-    }
-    
-    throw ParseError("Unknown type: " + typeName);
+    return var;
 }
 
 } // namespace cardity 

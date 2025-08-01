@@ -1,6 +1,6 @@
 #include "lexer.h"
 #include <cctype>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace cardity {
 
@@ -52,9 +52,9 @@ Token Lexer::read_identifier() {
     }
     
     std::string value = source.substr(start, position - start);
-    TokenType type = get_keyword_type(value);
+    TokenType type = is_keyword(value) ? TokenType::Keyword : TokenType::Identifier;
     
-    return Token(type, value, line, column - value.length());
+    return Token{type, value, static_cast<int>(line), static_cast<int>(column - value.length())};
 }
 
 Token Lexer::read_number() {
@@ -64,7 +64,7 @@ Token Lexer::read_number() {
     }
     
     std::string value = source.substr(start, position - start);
-    return Token(TokenType::INT_LITERAL, value, line, column - value.length());
+    return Token{TokenType::Number, value, static_cast<int>(line), static_cast<int>(column - value.length())};
 }
 
 Token Lexer::read_string() {
@@ -79,31 +79,27 @@ Token Lexer::read_string() {
     }
     
     if (current_char() == '\0') {
-        return Token(TokenType::ERROR, "Unterminated string", line, column);
+        return Token{TokenType::EndOfFile, "Unterminated string", static_cast<int>(line), static_cast<int>(column)};
     }
     
     std::string value = source.substr(start, position - start);
     advance(); // 跳过结束的引号
     
-    return Token(TokenType::STRING_LITERAL, value, line, column - value.length() - 2);
+    return Token{TokenType::String, value, static_cast<int>(line), static_cast<int>(column - value.length() - 2)};
 }
 
-TokenType Lexer::get_keyword_type(const std::string& word) const {
-    static const std::unordered_map<std::string, TokenType> keywords = {
-        {"contract", TokenType::CONTRACT},
-        {"state", TokenType::STATE},
-        {"func", TokenType::FUNC},
-        {"return", TokenType::RETURN},
-        {"void", TokenType::VOID},
-        {"int", TokenType::INT},
-        {"string", TokenType::STRING},
-        {"bool", TokenType::BOOL},
-        {"true", TokenType::BOOL_LITERAL},
-        {"false", TokenType::BOOL_LITERAL}
+Token Lexer::read_symbol() {
+    char c = current_char();
+    advance();
+    return Token{TokenType::Symbol, std::string(1, c), static_cast<int>(line), static_cast<int>(column - 1)};
+}
+
+bool Lexer::is_keyword(const std::string& word) const {
+    static const std::unordered_set<std::string> keywords = {
+        "contract", "state", "func", "return", "void", "int", "string", "bool", "true", "false"
     };
     
-    auto it = keywords.find(word);
-    return (it != keywords.end()) ? it->second : TokenType::IDENTIFIER;
+    return keywords.find(word) != keywords.end();
 }
 
 Token Lexer::next_token() {
@@ -111,11 +107,10 @@ Token Lexer::next_token() {
     skip_comment();
     
     if (current_char() == '\0') {
-        return Token(TokenType::END_OF_FILE, "", line, column);
+        return Token{TokenType::EndOfFile, "", static_cast<int>(line), static_cast<int>(column)};
     }
     
     char c = current_char();
-    int current_column = column;
     
     // 标识符和关键字
     if (std::isalpha(c) || c == '_') {
@@ -132,51 +127,8 @@ Token Lexer::next_token() {
         return read_string();
     }
     
-    // 运算符和分隔符
-    switch (c) {
-        case '=':
-            advance();
-            return Token(TokenType::ASSIGN, "=", line, current_column);
-        case '+':
-            advance();
-            return Token(TokenType::PLUS, "+", line, current_column);
-        case '-':
-            advance();
-            return Token(TokenType::MINUS, "-", line, current_column);
-        case '*':
-            advance();
-            return Token(TokenType::MULTIPLY, "*", line, current_column);
-        case '/':
-            advance();
-            return Token(TokenType::DIVIDE, "/", line, current_column);
-        case ';':
-            advance();
-            return Token(TokenType::SEMICOLON, ";", line, current_column);
-        case ',':
-            advance();
-            return Token(TokenType::COMMA, ",", line, current_column);
-        case '.':
-            advance();
-            return Token(TokenType::DOT, ".", line, current_column);
-        case ':':
-            advance();
-            return Token(TokenType::COLON, ":", line, current_column);
-        case '{':
-            advance();
-            return Token(TokenType::LEFT_BRACE, "{", line, current_column);
-        case '}':
-            advance();
-            return Token(TokenType::RIGHT_BRACE, "}", line, current_column);
-        case '(':
-            advance();
-            return Token(TokenType::LEFT_PAREN, "(", line, current_column);
-        case ')':
-            advance();
-            return Token(TokenType::RIGHT_PAREN, ")", line, current_column);
-        default:
-            advance();
-            return Token(TokenType::ERROR, std::string(1, c), line, current_column);
-    }
+    // 符号
+    return read_symbol();
 }
 
 std::vector<Token> Lexer::tokenize() {
@@ -187,7 +139,7 @@ std::vector<Token> Lexer::tokenize() {
         Token token = next_token();
         tokens.push_back(token);
         
-        if (token.type == TokenType::END_OF_FILE || token.type == TokenType::ERROR) {
+        if (token.type == TokenType::EndOfFile) {
             break;
         }
     }
