@@ -1,0 +1,35 @@
+contract counter {
+  state {
+    count: int = 0;
+    name: string = "Counter";
+    active: bool = true;
+  }
+
+  func increment(): void {
+    state.count = state.count + 1;
+  }
+
+  func decrement(): void {
+    state.count = state.count - 1;
+  }
+
+  func get_count(): int {
+    return state.count;
+  }
+
+  func get_name(): string {
+    return state.name;
+  }
+
+  func set_name(new_name: string): void {
+    state.name = new_name;
+  }
+
+  func is_active(): bool {
+    return state.active;
+  }
+
+  func toggle(): void {
+    state.active = !state.active;
+  }
+} 
