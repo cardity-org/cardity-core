@@ -1,131 +1,155 @@
-# Cardity - Cardinals Protocol Language
+# Cardity 编译器
 
-Cardity 是一种专用于 Cardinals 协议的智能协议语言，支持将 `.cardity` 文件编译为 `.car` JSON 协议，并部署至 Dogecoin 的 UTXO 模型中。
+Cardity 是一个专为 Cardinals 协议设计的编译器，将 Cardity 语言编译为 Cardinals .car JSON 格式。
 
-## 🎯 项目目标
+## 🚀 功能特性
 
-将 Cardity 开发为一种专用于 Cardinals 协议的智能协议语言，支持将 .cardity 文件编译为 .car JSON 协议，并部署至 Dogecoin 的 UTXO 模型中，通过去中心化索引客户端实现协议执行与状态变迁。
+- **词法分析**: 支持 Cardity 语言的所有关键字和语法
+- **语法分析**: 构建抽象语法树 (AST)
+- **JSON 生成**: 输出标准的 Cardinals .car JSON 格式
+- **类型支持**: 支持 string、int、bool 类型
+- **方法支持**: 支持带参数的方法定义
 
-## 🏗️ 架构总览
+## 📦 安装依赖
 
-```
-Cardity Source Code (.cardity)
-           ↓
-      [Lexer & Parser]
-           ↓
-     [AST (抽象语法树)]
-           ↓
-  [Semantic Analyzer + Optimizer]
-           ↓
-    [CAR IR Generator (中间结构)]
-           ↓
-      JSON Encoder (Output .car)
+```bash
+# 安装 nlohmann/json (macOS)
+brew install nlohmann-json
+
+# 或者使用 vcpkg
+vcpkg install nlohmann-json
 ```
 
-## 📁 项目结构
+## 🔨 编译
 
-```
-cardity/
-├── compiler/          # 编译器核心模块
-│   ├── lexer.cpp      # 词法分析器
-│   ├── parser.cpp     # 语法分析器
-│   ├── ast.cpp        # 抽象语法树
-│   ├── semantic.cpp   # 语义分析器
-│   ├── car_generator.cpp # CAR 生成器
-│   └── main.cpp       # 主程序入口
-├── examples/          # 示例文件
-│   └── hello.cardity  # 示例合约
-├── output/            # 编译输出
-│   └── hello.car      # 生成的 CAR 文件
-├── tests/             # 测试文件
-├── docs/              # 文档
-└── CMakeLists.txt     # 构建配置
+```bash
+mkdir build
+cmake -B build
+cmake --build build
 ```
 
-## 🔠 语言特性
+## 📝 使用方法
 
-### 支持的元素
-- `contract` 合约定义
-- `state` 状态变量
-- `func` 函数（支持参数与返回类型）
-- 基础类型：`string`, `int`, `bool`
-- 逻辑赋值语句：`state.key = value;`
-- 返回语句：`return ...;`
+```bash
+./build/cardity <input.cardity>
+```
 
-### 示例语法
+输出文件将保存在 `output/` 目录中。
+
+## 🎯 语言语法
+
+### 协议定义
 
 ```cardity
-contract counter {
+protocol <name> {
+  version: "<version>";
+  owner: "<owner_address>";
+
   state {
-    count: int = 0;
+    <variable_name>: <type> = <default_value>;
   }
 
-  func increment(): void {
-    state.count = state.count + 1;
-  }
-
-  func get_count(): int {
-    return state.count;
+  method <method_name>(<params>) {
+    <logic>;
   }
 }
 ```
 
-## 🧠 编译产物
+### 示例
 
-编译输出为 JSON 格式的 `.car` 文件：
+```cardity
+protocol hello_cardinals {
+  version: "1.0";
+  owner: "doge1abc...";
+
+  state {
+    msg: string = "Hello, Cardinals!";
+  }
+
+  method set_msg(new_msg) {
+    state.msg = new_msg;
+  }
+
+  method get_msg() {
+    return state.msg;
+  }
+}
+```
+
+## 📄 输出格式
+
+编译器生成标准的 Cardinals .car JSON 格式：
 
 ```json
 {
   "p": "cardinals",
   "op": "deploy",
-  "protocol": "counter",
+  "protocol": "hello_cardinals",
   "version": "1.0",
   "cpl": {
+    "owner": "doge1abc...",
     "state": {
-      "count": {
-        "type": "int",
-        "default": 0
+      "msg": {
+        "type": "string",
+        "default": "Hello, Cardinals!"
       }
     },
     "methods": {
-      "increment": {
-        "params": [],
-        "logic": "state.count = state.count + 1",
-        "returns": ""
+      "set_msg": {
+        "params": ["new_msg"],
+        "logic": "state.msg = new_msg"
       },
-      "get_count": {
+      "get_msg": {
         "params": [],
-        "logic": "return state.count",
-        "returns": "state.count"
+        "logic": "return state.msg"
       }
     }
   }
 }
 ```
 
-## 🚀 快速开始
+## 🧪 测试示例
 
-### 构建项目
+项目包含多个测试示例：
+
+- `examples/hello_cardinals.cardity` - 简单的问候协议
+- `examples/counter.cardity` - 计数器协议
+
+运行测试：
+
 ```bash
-mkdir build && cd build
-cmake ..
-make
+./build/cardity examples/hello_cardinals.cardity
+./build/cardity examples/counter.cardity
 ```
 
-### 编译合约
-```bash
-./cardity examples/counter.cardity
+## 🏗️ 项目结构
+
+```
+cardity/
+├── compiler/          # 编译器源码
+│   ├── main.cpp      # 主程序
+│   ├── tokenizer.h   # 词法分析器
+│   ├── parser.h      # 语法分析器
+│   ├── ast.h         # AST 定义
+│   └── car_generator.h # JSON 生成器
+├── examples/         # 示例文件
+├── output/          # 输出目录
+└── CMakeLists.txt   # 构建配置
 ```
 
-## 🛣️ 开发路线图
+## 🔧 开发
 
-- [ ] 🛡️ 权限控制：owner, only_owner
-- [ ] 🔁 状态机支持：transition, state_enum
-- [ ] 🪙 资产绑定：关联 Meme20, NFT 等资产协议
-- [ ] 🧪 集成测试工具：本地运行模拟 .car 行为
-- [ ] 📝 事件系统：event 声明
-- [ ] 🔀 控制流：if/else, match, loop
-- [ ] 🏗️ 自定义结构体与数组
+### 添加新的关键字
+
+1. 在 `tokenizer.h` 中添加新的 `TokenType`
+2. 在 `tokenizer.cpp` 中添加关键字识别逻辑
+3. 在 `parser.cpp` 中添加解析逻辑
+
+### 扩展 AST 结构
+
+1. 在 `ast.h` 中定义新的节点类型
+2. 在 `parser.cpp` 中实现解析逻辑
+3. 在 `car_generator.cpp` 中实现 JSON 生成逻辑
 
 ## �� 许可证
 

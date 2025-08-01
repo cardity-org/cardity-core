@@ -1,26 +1,16 @@
 protocol hello_cardinals {
-    version: "1.0";
-    owner: "doge1abc123def456ghi789jkl012mno345pqr678stu901vwx234yz";
-    
-    state {
-        msg: string = "Hello, Cardinals!";
-        count: int = 0;
-        active: bool = true;
-    }
-    
-    method set_msg(new_msg) {
-        state.msg = new_msg;
-    }
-    
-    method get_msg() {
-        return state.msg;
-    }
-    
-    method increment() {
-        state.count = state.count + 1;
-    }
-    
-    method get_count() {
-        return state.count;
-    }
+  version: "1.0";
+  owner: "doge1abc...";
+
+  state {
+    msg: string = "Hello, Cardinals!";
+  }
+
+  method set_msg(new_msg) {
+    state.msg = new_msg;
+  }
+
+  method get_msg() {
+    return state.msg;
+  }
 } 

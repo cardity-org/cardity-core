@@ -1,310 +1,239 @@
-# Cardity 开发指南
+# Cardity 编译器开发指南
 
-## 项目概述
+## 🏗️ 架构概述
 
-Cardity 是一个专用于 Cardinals 协议的智能合约语言编译器。本文档为开发者提供参与项目开发的详细指南。
-
-## 开发环境设置
-
-### 系统要求
-
-- C++17 兼容的编译器 (GCC 7+, Clang 5+, MSVC 2017+)
-- CMake 3.16+
-- nlohmann/json 库
-- Git
-
-### 安装依赖
-
-#### Ubuntu/Debian
-```bash
-sudo apt update
-sudo apt install build-essential cmake git
-sudo apt install nlohmann-json3-dev
-```
-
-#### macOS
-```bash
-brew install cmake nlohmann-json
-```
-
-#### Windows
-```bash
-# 使用 vcpkg
-vcpkg install nlohmann-json
-```
-
-### 构建项目
-
-```bash
-# 克隆项目
-git clone https://github.com/chinasong/cardity.git
-cd cardity
-
-# 创建构建目录
-mkdir build && cd build
-
-# 配置项目
-cmake ..
-
-# 编译
-make -j$(nproc)
-```
-
-## 项目架构
-
-### 目录结构
+Cardity 编译器采用经典的编译原理架构：
 
 ```
-cardity/
-├── compiler/          # 编译器核心
-│   ├── lexer.h/cpp    # 词法分析器
-│   ├── parser.h/cpp   # 语法分析器
-│   ├── ast.h/cpp      # 抽象语法树
-│   ├── semantic.h/cpp # 语义分析器
-│   ├── car_generator.h/cpp # CAR 生成器
-│   └── main.cpp       # 主程序
-├── examples/          # 示例合约
-├── tests/             # 测试文件
-├── docs/              # 文档
-└── output/            # 编译输出
+Cardity Source (.cardity)
+         ↓
+    [Tokenizer] → Tokens
+         ↓
+    [Parser] → AST
+         ↓
+[CarGenerator] → JSON (.car)
 ```
 
-### 编译流程
+## 📁 核心模块
 
-1. **词法分析 (Lexer)**: 将源代码转换为 Token 流
-2. **语法分析 (Parser)**: 构建抽象语法树 (AST)
-3. **语义分析 (Semantic Analyzer)**: 类型检查和语义验证
-4. **代码生成 (CAR Generator)**: 生成 CAR JSON 格式
+### 1. 词法分析器 (Tokenizer)
 
-## 开发规范
+**文件**: `compiler/tokenizer.h`, `compiler/tokenizer.cpp`
 
-### 代码风格
+负责将源代码字符串分解为 Token 序列。
 
-- 使用 C++17 标准
-- 遵循 Google C++ 风格指南
-- 使用 4 空格缩进
-- 类名使用 PascalCase
-- 函数和变量使用 snake_case
-- 常量使用 UPPER_SNAKE_CASE
+**主要类**:
+- `Tokenizer`: 词法分析器主类
+- `Token`: Token 结构体
+- `TokenType`: Token 类型枚举
 
-### 命名约定
+**扩展方法**:
+1. 在 `TokenType` 枚举中添加新类型
+2. 在 `next_token()` 方法中添加识别逻辑
 
-```cpp
-// 类名
-class Lexer { ... };
-class Parser { ... };
+### 2. 语法分析器 (Parser)
 
-// 函数名
-void parse_expression();
-std::string generate_code();
+**文件**: `compiler/parser.h`, `compiler/parser.cpp`
 
-// 变量名
-std::vector<Token> tokens;
-int current_position;
+负责将 Token 序列解析为抽象语法树 (AST)。
 
-// 常量
-const int MAX_TOKEN_LENGTH = 1024;
-```
+**主要类**:
+- `Parser`: 语法分析器主类
 
-### 错误处理
+**扩展方法**:
+1. 添加新的解析方法
+2. 更新 `parse()` 主方法调用新解析逻辑
 
-使用异常处理机制：
+### 3. 抽象语法树 (AST)
 
-```cpp
-class ParseError : public std::runtime_error {
-public:
-    explicit ParseError(const std::string& message) 
-        : std::runtime_error(message) {}
-};
+**文件**: `compiler/ast.h`
 
-// 使用示例
-if (unexpected_token) {
-    throw ParseError("Unexpected token: " + token.value);
-}
-```
+定义所有 AST 节点类型。
 
-## 测试
+**主要结构**:
+- `ASTNode`: 基类
+- `Protocol`: 协议根节点
+- `Metadata`: 元数据
+- `StateBlock`: 状态块
+- `StateVariable`: 状态变量
+- `Method`: 方法定义
 
-### 单元测试
+**扩展方法**:
+1. 继承 `ASTNode` 创建新节点类型
+2. 在解析器中添加对应的解析逻辑
 
-使用 Google Test 框架：
+### 4. JSON 生成器 (CarGenerator)
 
-```cpp
-#include <gtest/gtest.h>
+**文件**: `compiler/car_generator.h`, `compiler/car_generator.cpp`
 
-TEST(LexerTest, TokenizeBasicTokens) {
-    std::string source = "contract counter {";
-    Lexer lexer(source);
-    auto tokens = lexer.tokenize();
-    
-    EXPECT_EQ(tokens[0].type, TokenType::CONTRACT);
-    EXPECT_EQ(tokens[1].type, TokenType::IDENTIFIER);
-    EXPECT_EQ(tokens[2].type, TokenType::LEFT_BRACE);
-}
-```
+负责将 AST 转换为 Cardinals .car JSON 格式。
 
-### 集成测试
+**主要类**:
+- `CarGenerator`: JSON 生成器主类
 
-测试完整的编译流程：
+**扩展方法**:
+1. 添加新的编译方法
+2. 更新 `compile_to_car()` 主方法
 
-```cpp
-TEST(CompilerTest, CompileCounterContract) {
-    std::string source = R"(
-        contract counter {
-            state {
-                count: int = 0;
-            }
-            func increment(): void {
-                state.count = state.count + 1;
-            }
-        }
-    )";
-    
-    // 执行编译流程
-    Lexer lexer(source);
-    auto tokens = lexer.tokenize();
-    
-    Parser parser(tokens);
-    auto ast = parser.parse();
-    
-    SemanticAnalyzer analyzer(ast);
-    EXPECT_TRUE(analyzer.analyze());
-    
-    CARGenerator generator(ast);
-    auto car = generator.generate();
-    
-    // 验证输出
-    EXPECT_EQ(car["p"], "cardinals");
-    EXPECT_EQ(car["protocol"], "counter");
-}
-```
+## 🔧 开发工作流
 
-### 运行测试
+### 添加新语法特性
 
-```bash
-cd build
-make test
-```
+1. **更新词法分析器**
+   ```cpp
+   // 在 tokenizer.h 中添加新 TokenType
+   enum class TokenType {
+       // ... 现有类型
+       NEW_KEYWORD,
+   };
+   
+   // 在 tokenizer.cpp 中添加识别逻辑
+   if (word == "new_keyword") return {TokenType::NEW_KEYWORD, word, 0, 0};
+   ```
 
-## 贡献指南
+2. **更新 AST 结构**
+   ```cpp
+   // 在 ast.h 中添加新节点
+   struct NewNode : public ASTNode {
+       std::string value;
+   };
+   ```
 
-### 提交代码
+3. **更新语法分析器**
+   ```cpp
+   // 在 parser.h 中添加解析方法声明
+   NewNode parseNewNode();
+   
+   // 在 parser.cpp 中实现解析逻辑
+   NewNode Parser::parseNewNode() {
+       // 解析逻辑
+   }
+   ```
 
-1. Fork 项目仓库
-2. 创建功能分支：`git checkout -b feature/new-feature`
-3. 提交更改：`git commit -m "Add new feature"`
-4. 推送分支：`git push origin feature/new-feature`
-5. 创建 Pull Request
+4. **更新 JSON 生成器**
+   ```cpp
+   // 在 car_generator.cpp 中添加编译逻辑
+   json compileNewNode(const NewNode& node) {
+       // 编译逻辑
+   }
+   ```
 
-### 提交信息格式
+### 添加新类型支持
 
-```
-<type>(<scope>): <subject>
+1. **更新 TokenType**
+   ```cpp
+   enum class TokenType {
+       // ... 现有类型
+       KEYWORD_FLOAT,
+   };
+   ```
 
-<body>
+2. **更新词法分析器**
+   ```cpp
+   if (word == "float") return {TokenType::KEYWORD_FLOAT, word, 0, 0};
+   ```
 
-<footer>
-```
+3. **更新解析器**
+   ```cpp
+   // 在 parseStateVariable() 中添加类型支持
+   if (peek().type == TokenType::KEYWORD_FLOAT) {
+       var.type = advance().value;
+   }
+   ```
 
-类型：
-- `feat`: 新功能
-- `fix`: 修复 bug
-- `docs`: 文档更新
-- `style`: 代码格式调整
-- `refactor`: 重构
-- `test`: 测试相关
-- `chore`: 构建过程或辅助工具的变动
+4. **更新 JSON 生成器**
+   ```cpp
+   // JSON 生成器会自动处理新类型
+   ```
 
-### 代码审查
+## 🧪 测试
 
-- 所有代码必须通过代码审查
-- 确保测试覆盖率
-- 遵循项目编码规范
-- 添加必要的文档
+### 创建测试用例
 
-## 调试
+1. **创建测试文件**
+   ```bash
+   echo 'protocol test {
+     version: "1.0";
+     owner: "test";
+     state {
+       value: int = 42;
+     }
+   }' > examples/test.cardity
+   ```
 
-### 调试模式编译
+2. **运行测试**
+   ```bash
+   ./build/cardity examples/test.cardity
+   ```
 
-```bash
-mkdir build-debug && cd build-debug
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-make
-```
+3. **验证输出**
+   ```bash
+   cat output/test.car
+   ```
 
-### 使用 GDB 调试
+### 调试技巧
 
-```bash
-gdb ./cardity
-(gdb) run examples/counter.cardity
-```
+1. **启用详细输出**
+   ```cpp
+   // 在 main.cpp 中添加调试信息
+   std::cout << "Token: " << token.value << " (Type: " << static_cast<int>(token.type) << ")" << std::endl;
+   ```
 
-### 日志输出
+2. **检查 AST 结构**
+   ```cpp
+   // 在解析后打印 AST 信息
+   std::cout << "Protocol: " << protocol->name << std::endl;
+   std::cout << "Methods: " << protocol->methods.size() << std::endl;
+   ```
 
-使用 `-v` 参数启用详细输出：
+## 📋 常见问题
 
-```bash
-./cardity examples/counter.cardity -v
-```
+### 编译错误
 
-## 性能优化
+1. **找不到 nlohmann/json**
+   ```bash
+   # 安装依赖
+   brew install nlohmann-json
+   ```
 
-### 编译优化
+2. **CMake 错误**
+   ```bash
+   # 清理并重新构建
+   rm -rf build
+   cmake -B build
+   cmake --build build
+   ```
 
-- 使用 `-O2` 或 `-O3` 优化级别
-- 启用链接时优化 (LTO)
-- 使用 Profile Guided Optimization (PGO)
+### 运行时错误
 
-### 内存管理
+1. **词法分析错误**
+   - 检查是否支持所有需要的字符
+   - 确认关键字拼写正确
 
-- 使用智能指针管理内存
-- 避免不必要的拷贝
-- 使用移动语义
+2. **语法分析错误**
+   - 检查语法是否符合 Cardity 规范
+   - 确认所有必需的分号和括号
 
-## 发布
+3. **JSON 生成错误**
+   - 检查 AST 结构是否完整
+   - 确认所有必需字段都已设置
 
-### 版本管理
+## 🚀 性能优化
 
-使用语义化版本控制：
+1. **减少字符串拷贝**
+   - 使用引用传递
+   - 避免不必要的字符串连接
 
-- MAJOR.MINOR.PATCH
-- MAJOR: 不兼容的 API 修改
-- MINOR: 向下兼容的功能性新增
-- PATCH: 向下兼容的问题修正
+2. **优化内存分配**
+   - 预分配容器大小
+   - 使用移动语义
 
-### 发布流程
+3. **提高解析效率**
+   - 缓存常用 Token
+   - 优化关键字查找
 
-1. 更新版本号
-2. 更新 CHANGELOG.md
-3. 创建发布标签
-4. 构建发布版本
-5. 上传到 GitHub Releases
+## 📚 参考资料
 
-## 常见问题
-
-### Q: 如何处理循环依赖？
-
-A: 使用前向声明和 PIMPL 模式。
-
-### Q: 如何添加新的语言特性？
-
-A: 
-1. 更新词法分析器添加新的 Token
-2. 更新语法分析器添加新的语法规则
-3. 更新 AST 添加新的节点类型
-4. 更新语义分析器添加类型检查
-5. 更新代码生成器添加输出逻辑
-
-### Q: 如何优化编译性能？
-
-A:
-1. 使用并行编译
-2. 减少头文件依赖
-3. 使用预编译头文件
-4. 优化算法复杂度
-
-## 联系方式
-
-- 项目主页: https://github.com/chinasong/cardity
-- 问题反馈: https://github.com/chinasong/cardity/issues
-- 讨论区: https://github.com/chinasong/cardity/discussions 
+- [C++ 编译原理](https://en.wikipedia.org/wiki/Compiler)
+- [nlohmann/json 文档](https://github.com/nlohmann/json)
+- [CMake 教程](https://cmake.org/cmake/help/latest/guide/tutorial/) 

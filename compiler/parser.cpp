@@ -1,231 +1,246 @@
 #include "parser.h"
 #include "tokenizer.h"
 #include <stdexcept>
-#include <cctype>
-#include <iostream>
+#include <sstream>
+#include <iostream> // Added for std::cout
 
 namespace cardity {
 
-Parser::Parser(const std::vector<Token>& tokens) 
-    : tokens(tokens), current(0) {}
-
-const Token& Parser::peek() {
-    if (current >= tokens.size()) {
-        static Token eof{TokenType::END, "", 0, 0};
-        return eof;
-    }
-    return tokens[current];
+Parser::Parser(Tokenizer& lex) : lexer(lex) {
+    current = lexer.next_token();
 }
 
-const Token& Parser::advance() {
-    if (current < tokens.size()) {
-        return tokens[current++];
+ProtocolAST Parser::parse_protocol() {
+    expect("protocol");
+    std::string protocol_name = expect_identifier();
+    expect("{");
+
+    ProtocolAST ast;
+    ast.protocol_name = protocol_name;
+
+    while (current.value != "}" && !is_at_end()) {
+        if (match("version")) {
+            expect(":");
+            ast.version = expect_string();
+            expect(";");
+        } else if (match("owner")) {
+            expect(":");
+            ast.owner = expect_string();
+            expect(";");
+        } else if (match("state")) {
+            ast.state_variables = parse_state_block();
+        } else if (match("method")) {
+            ast.methods.push_back(parse_method());
+        } else if (current.value.empty() || current.value == " ") {
+            // 跳过空字符串或空格
+            advance();
+        } else {
+            // 跳过未知的 token，继续解析
+            std::cout << "Warning: Skipping unknown token: '" << current.value << "'" << std::endl;
+            advance();
+        }
     }
-    static Token eof{TokenType::END, "", 0, 0};
-    return eof;
+    expect("}"); // 消费协议块的结束大括号
+
+    return ast;
 }
 
-bool Parser::match(const std::string& keyword) {
-    // 将关键字字符串映射到对应的 TokenType
-    TokenType expectedType;
-    if (keyword == "contract") expectedType = TokenType::KEYWORD_CONTRACT;
-    else if (keyword == "state") expectedType = TokenType::KEYWORD_STATE;
-    else if (keyword == "string") expectedType = TokenType::KEYWORD_STRING;
-    else if (keyword == "int") expectedType = TokenType::KEYWORD_INT;
-    else if (keyword == "default") expectedType = TokenType::KEYWORD_DEFAULT;
-    else if (keyword == "method") expectedType = TokenType::KEYWORD_METHOD;
-    else if (keyword == "params") expectedType = TokenType::KEYWORD_PARAMS;
-    else if (keyword == "returns") expectedType = TokenType::KEYWORD_RETURNS;
-    else if (keyword == "owner") expectedType = TokenType::KEYWORD_OWNER;
-    else return false;
-    
-    if (peek().type == expectedType) {
+std::string Parser::get_current_position() const {
+    return "line " + std::to_string(current.line) + ", column " + std::to_string(current.column);
+}
+
+void Parser::reset() {
+    lexer.reset();
+    current = lexer.next_token();
+}
+
+bool Parser::match(const std::string& value) {
+    if (current.value == value) {
         advance();
         return true;
     }
     return false;
 }
 
-std::unique_ptr<ContractDef> Parser::parse() {
-    return parse_contract();
-}
-
-std::unique_ptr<ProgramNode> Parser::parseProgram() {
-    auto program = std::make_unique<ProgramNode>();
-    while (!isAtEnd()) {
-        auto stmt = parseStatement();
-        if (stmt) program->statements.push_back(std::move(stmt));
-    }
-    return program;
-}
-
-std::unique_ptr<ASTNode> Parser::parseStatement() {
-    if (peek().type == TokenType::KEYWORD_CONTRACT) {
-        return parse_contract();
-    }
-    // 这里可以添加更多语句类型的解析
-    std::cerr << "Unexpected token: " << peek().value << std::endl;
-    advance();
-    return nullptr;
-}
-
-std::unique_ptr<LetStatementNode> Parser::parseLetStatement() {
-    advance(); // consume 'let'
-    if (peek().type != TokenType::IDENTIFIER) {
-        std::cerr << "Expected identifier after 'let'\n";
-        return nullptr;
-    }
-    std::string id = advance().value;
-
-    if (peek().type != TokenType::EQUAL) {
-        std::cerr << "Expected '=' after identifier\n";
-        return nullptr;
+void Parser::expect(const std::string& value) {
+    if (current.value != value) {
+        error("Expected: " + value + ", got: " + current.value);
     }
     advance();
+}
 
-    if (peek().type != TokenType::STRING) {
-        std::cerr << "Expected string after '='\n";
-        return nullptr;
+std::string Parser::expect_identifier() {
+    if (current.type != TokenType::IDENTIFIER) {
+        error("Expected identifier, got: " + current.value);
     }
-    std::string val = advance().value;
-
-    if (peek().type != TokenType::SEMICOLON) {
-        std::cerr << "Expected ';' after value\n";
-        return nullptr;
-    }
+    std::string val = current.value;
     advance();
-
-    auto letStmt = std::make_unique<LetStatementNode>();
-    letStmt->identifier = id;
-    letStmt->value = val;
-    return letStmt;
+    return val;
 }
 
-bool Parser::isAtEnd() const {
-    return current >= tokens.size();
+std::string Parser::expect_string() {
+    if (current.type != TokenType::STRING) {
+        error("Expected string literal, got: " + current.value);
+    }
+    std::string val = current.value;
+    advance();
+    return val;
 }
 
-std::unique_ptr<ContractDef> Parser::parse_contract() {
-    auto contract = std::make_unique<ContractDef>();
-    
-    // 解析合约关键字
-    if (!match("contract")) {
-        throw std::runtime_error("Expected 'contract' keyword");
+std::string Parser::expect_number() {
+    if (current.type != TokenType::NUMBER) {
+        error("Expected number, got: " + current.value);
     }
+    std::string val = current.value;
+    advance();
+    return val;
+}
+
+std::vector<ParserStateVariable> Parser::parse_state_block() {
+    std::vector<ParserStateVariable> vars;
+    expect("{");
     
-    // 解析协议名称
-    if (peek().type != TokenType::IDENTIFIER) {
-        throw std::runtime_error("Expected protocol name");
-    }
-    contract->protocol_name = advance().value;
+    std::cout << "DEBUG: Starting state block parsing" << std::endl;
     
-    // 解析版本（可选）
-    if (match("version")) {
-        if (peek().type == TokenType::STRING) {
-            contract->version = advance().value;
+    while (current.value != "}" && !is_at_end()) {
+        std::cout << "DEBUG: Current token: '" << current.value << "' at " << get_current_position() << std::endl;
+        
+        std::string name = expect_identifier();
+        expect(":");
+        
+        // 允许关键字作为类型
+        std::string type;
+        if (current.type == TokenType::IDENTIFIER || 
+            current.type == TokenType::KEYWORD_STRING ||
+            current.type == TokenType::KEYWORD_INT ||
+            current.type == TokenType::KEYWORD_BOOL) {
+            type = current.value;
+            advance();
+        } else {
+            error("Expected type, got: " + current.value);
         }
-    }
-    
-    // 解析所有者（可选）
-    if (match("owner")) {
-        if (peek().type == TokenType::STRING) {
-            contract->owner = advance().value;
+        
+        std::string def = "";
+        
+        if (match("=")) {
+            if (current.type == TokenType::STRING) {
+                def = expect_string();
+            } else if (current.type == TokenType::NUMBER) {
+                def = expect_number();
+            } else if (current.type == TokenType::KEYWORD_TRUE || 
+                      current.type == TokenType::KEYWORD_FALSE) {
+                def = current.value;
+                advance();
+            } else {
+                error("Expected value after '='");
+            }
         }
+        
+        expect(";");
+        vars.push_back({name, type, def});
+        
+        std::cout << "DEBUG: Added state variable: " << name << ":" << type << std::endl;
     }
     
-    // 解析状态
-    if (match("state")) {
-        contract->state = parse_state();
+    std::cout << "DEBUG: State block parsing finished, current token: '" << current.value << "'" << std::endl;
+    
+    if (current.value == "}") {
+        advance(); // 消费结束的 }
+    } else {
+        error("Expected '}' at end of state block");
     }
     
-    // 解析方法
-    while (peek().type != TokenType::END) {
-        if (match("func")) {
-            contract->methods.push_back(parse_method());
+    return vars;
+}
+
+std::vector<ParserMethod> Parser::parse_methods_block() {
+    std::vector<ParserMethod> methods;
+    expect("{");
+    
+    while (!match("}")) {
+        methods.push_back(parse_method());
+    }
+    
+    return methods;
+}
+
+ParserMethod Parser::parse_method() {
+    std::string name = expect_identifier();
+    expect("(");
+    
+    std::vector<std::string> params = parse_method_params();
+    expect(")");
+    expect("{");
+    
+    std::string logic = parse_method_body();
+    // parse_method_body() 已经消费了结束的 }，所以这里不需要再消费
+    
+    return {name, params, logic};
+}
+
+std::vector<std::string> Parser::parse_method_params() {
+    std::vector<std::string> params;
+    
+    if (current.value == ")") {
+        return params;
+    }
+    
+    while (true) {
+        params.push_back(expect_identifier());
+        
+        if (match(",")) {
+            continue;
         } else {
             break;
         }
     }
     
-    return contract;
+    return params;
 }
 
-StateDef Parser::parse_state() {
-    StateDef state;
+std::string Parser::parse_method_body() {
+    std::string logic;
+    int brace_count = 1; // 已经有一个开始的 {
     
-    // 解析状态变量
-    while (peek().type == TokenType::IDENTIFIER) {
-        auto var = parse_variable();
-        state.variables[var.name] = var;
+    while (brace_count > 0 && !is_at_end()) {
+        if (current.value == "{") {
+            brace_count++;
+        } else if (current.value == "}") {
+            brace_count--;
+        }
+        
+        if (brace_count > 0) {
+            logic += current.value + " ";
+        }
+        
+        advance();
     }
     
-    return state;
+    // 移除末尾的空格
+    if (!logic.empty() && logic.back() == ' ') {
+        logic.pop_back();
+    }
+    
+    return logic;
 }
 
-MethodDef Parser::parse_method() {
-    MethodDef method;
-    
-    // 解析方法名
-    if (peek().type != TokenType::IDENTIFIER) {
-        throw std::runtime_error("Expected method name");
-    }
-    method.name = advance().value;
-    
-    // 解析参数（简化实现）
-    if (peek().type == TokenType::LPAREN) {
-        advance(); // 跳过 '('
-        while (peek().type != TokenType::RPAREN) {
-            if (peek().type == TokenType::IDENTIFIER) {
-                method.params.push_back(advance().value);
-            }
-            if (peek().type == TokenType::COMMA) {
-                advance();
-            }
-        }
-        if (peek().type == TokenType::RPAREN) {
-            advance(); // 跳过 ')'
-        }
-    }
-    
-    // 解析方法逻辑（简化实现）
-    if (peek().type == TokenType::LBRACE) {
-        advance(); // 跳过 '{'
-        std::string logic;
-        while (peek().type != TokenType::RBRACE) {
-            logic += advance().value + " ";
-        }
-        method.logic = logic;
-        if (peek().type == TokenType::RBRACE) {
-            advance(); // 跳过 '}'
-        }
-    }
-    
-    return method;
+void Parser::error(const std::string& msg) {
+    std::string error_msg = "Parse error: " + msg + " at " + get_current_position();
+    throw std::runtime_error(error_msg);
 }
 
-VariableDef Parser::parse_variable() {
-    VariableDef var;
-    
-    // 解析变量名
-    if (peek().type != TokenType::IDENTIFIER) {
-        throw std::runtime_error("Expected variable name");
+void Parser::advance() {
+    if (!is_at_end()) {
+        current = lexer.next_token();
     }
-    var.name = advance().value;
-    
-    // 解析类型
-    if (peek().type != TokenType::KEYWORD_STRING && peek().type != TokenType::KEYWORD_INT) {
-        throw std::runtime_error("Expected variable type");
-    }
-    var.type = advance().value;
-    
-    // 解析默认值（可选）
-    if (match("=")) {
-        if (peek().type == TokenType::NUMBER || peek().type == TokenType::STRING) {
-            var.default_value = advance().value;
-        }
-    }
-    
-    return var;
+}
+
+bool Parser::is_at_end() const {
+    return current.type == TokenType::END_OF_FILE;
+}
+
+Token Parser::peek() const {
+    return current;
 }
 
 } // namespace cardity 

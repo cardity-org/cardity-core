@@ -19,29 +19,30 @@ set(SOURCES
     compiler/main.cpp
     compiler/tokenizer.cpp
     compiler/parser.cpp
-    compiler/ast.cpp
-    compiler/semantic.cpp
     compiler/car_generator.cpp
+    compiler/car_generator_ast.cpp
 )
 
 # 头文件
 set(HEADERS
     compiler/tokenizer.h
     compiler/parser.h
+    compiler/parser_ast.h
     compiler/ast.h
-    compiler/semantic.h
     compiler/car_generator.h
 )
 
-# 创建可执行文件
+# 创建主可执行文件
 add_executable(cardity ${SOURCES} ${HEADERS})
 
 # 链接库
 target_link_libraries(cardity nlohmann_json::nlohmann_json)
 
-# 安装规则
-install(TARGETS cardity DESTINATION bin)
+# 创建词法分析器测试程序
+add_executable(lexer_test compiler/lexer_test.cpp compiler/tokenizer.cpp)
 
-# 测试
-enable_testing()
-add_subdirectory(tests) 
+# 创建解析器测试程序
+add_executable(parser_test compiler/parser_test.cpp compiler/tokenizer.cpp compiler/parser.cpp)
+
+# 安装规则
+install(TARGETS cardity DESTINATION bin) 

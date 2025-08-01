@@ -1,0 +1,10 @@
+protocol test {
+  version: "1.0";
+  owner: "test";
+  state {
+    msg: string = "test";
+  }
+  method get() {
+    return state.msg;
+  }
+} 
