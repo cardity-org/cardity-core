@@ -1,0 +1,27 @@
+{
+  "cpl": {
+    "state": {
+      "msg": {
+        "default": "Hello World"
+      },
+      "count": {
+        "default": "0"
+      }
+    },
+    "methods": {
+      "set_msg": {
+        "params": ["new_msg"],
+        "logic": "state.msg = new_msg"
+      },
+      "get_msg": {
+        "returns": "state.msg"
+      },
+      "increment": {
+        "logic": "state.count = count_plus_one"
+      },
+      "get_count": {
+        "returns": "state.count"
+      }
+    }
+  }
+} 

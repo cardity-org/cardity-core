@@ -1,0 +1,68 @@
+{
+  "cpl": {
+    "state": {
+      "count": {
+        "type": "int",
+        "default": "0"
+      },
+      "active": {
+        "type": "bool",
+        "default": "true"
+      },
+      "max_count": {
+        "type": "int",
+        "default": "100"
+      },
+      "name": {
+        "type": "string",
+        "default": "Counter"
+      }
+    },
+    "methods": {
+      "increment": {
+        "logic": "if (state.active && state.count < state.max_count) { state.count = count_plus_one }"
+      },
+      "decrement": {
+        "logic": "if (state.active && state.count > 0) { state.count = count_minus_one }"
+      },
+      "set_count": {
+        "params": ["value"],
+        "logic": "if (params.value >= 0 && params.value <= state.max_count) { state.count = params.value }"
+      },
+      "toggle": {
+        "logic": "state.active = !state.active"
+      },
+      "reset": {
+        "logic": "state.count = 0"
+      },
+      "set_max": {
+        "params": ["max"],
+        "logic": "if (params.max > 0) { state.max_count = params.max }"
+      },
+      "get_count": {
+        "returns": {
+          "type": "int",
+          "expr": "state.count"
+        }
+      },
+      "get_active": {
+        "returns": {
+          "type": "bool",
+          "expr": "state.active"
+        }
+      },
+      "get_name": {
+        "returns": {
+          "type": "string",
+          "expr": "state.name"
+        }
+      },
+      "is_full": {
+        "returns": {
+          "type": "bool",
+          "expr": "state.count >= state.max_count"
+        }
+      }
+    }
+  }
+} 

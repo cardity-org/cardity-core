@@ -1,0 +1,57 @@
+{
+  "cpl": {
+    "state": {
+      "value": {
+        "default": "0"
+      },
+      "max_value": {
+        "default": "100"
+      },
+      "min_value": {
+        "default": "0"
+      },
+      "step": {
+        "default": "1"
+      }
+    },
+    "methods": {
+      "increment": {
+        "logic": "state.value = new_value"
+      },
+      "decrement": {
+        "logic": "state.value = new_value"
+      },
+      "set_value": {
+        "params": ["value"],
+        "logic": "state.value = value"
+      },
+      "set_max": {
+        "params": ["max"],
+        "logic": "state.max_value = max"
+      },
+      "set_min": {
+        "params": ["min"],
+        "logic": "state.min_value = min"
+      },
+      "set_step": {
+        "params": ["step"],
+        "logic": "state.step = step"
+      },
+      "get_value": {
+        "returns": "state.value"
+      },
+      "get_max": {
+        "returns": "state.max_value"
+      },
+      "get_min": {
+        "returns": "state.min_value"
+      },
+      "get_step": {
+        "returns": "state.step"
+      },
+      "reset": {
+        "logic": "state.value = min_value"
+      }
+    }
+  }
+} 
