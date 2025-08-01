@@ -17,7 +17,7 @@ include_directories(compiler)
 # 源文件
 set(SOURCES
     compiler/main.cpp
-    compiler/lexer.cpp
+    compiler/tokenizer.cpp
     compiler/parser.cpp
     compiler/ast.cpp
     compiler/semantic.cpp
@@ -26,7 +26,7 @@ set(SOURCES
 
 # 头文件
 set(HEADERS
-    compiler/lexer.h
+    compiler/tokenizer.h
     compiler/parser.h
     compiler/ast.h
     compiler/semantic.h

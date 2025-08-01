@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "lexer.h"
+#include <vector>
+#include "tokenizer.h"
 #include "parser.h"
 #include "car_generator.h"
 
@@ -39,8 +40,11 @@ int main(int argc, char* argv[]) {
         std::string source = read_file(sourcePath);
         
         // 词法分析
-        Lexer lexer(source);
-        std::vector<Token> tokens = lexer.tokenize();
+        Tokenizer tokenizer(source);
+        std::vector<Token> tokens;
+        while (tokenizer.hasMoreTokens()) {
+            tokens.push_back(tokenizer.nextToken());
+        }
         
         // 语法分析
         Parser parser(tokens);

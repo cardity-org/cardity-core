@@ -14,8 +14,19 @@ enum class TokenType {
     Keyword,
     Number,
     String,
-    Symbol,
-    EndOfFile
+    LBrace,
+    RBrace,
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    Colon,
+    Comma,
+    Equal,
+    Arrow,
+    Newline,
+    EndOfFile,
+    Unknown
 };
 
 // Token 数据结构
