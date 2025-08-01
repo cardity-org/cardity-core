@@ -10,7 +10,7 @@ namespace cardity {
 // CAR 生成器
 class CARGenerator {
 private:
-    std::shared_ptr<ProgramNode> ast;
+    std::shared_ptr<ContractNode> contract;
     nlohmann::json output;
     
     // 生成方法
@@ -37,7 +37,7 @@ private:
     std::string literal_to_string(const std::variant<int, std::string, bool>& value);
     
 public:
-    explicit CARGenerator(std::shared_ptr<ProgramNode> ast);
+    explicit CARGenerator(std::shared_ptr<ContractNode> contract);
     
     nlohmann::json generate();
     std::string generate_string();

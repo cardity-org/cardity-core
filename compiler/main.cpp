@@ -43,17 +43,14 @@ int main(int argc, char* argv[]) {
         std::vector<Token> tokens = lexer.tokenize();
         
         // 语法分析
-        Parser parser(tokens);
-        std::shared_ptr<ProgramNode> ast = parser.parse();
+        Parser parser(source);
+        std::shared_ptr<ContractNode> contract = parser.parse();
         
-        // 获取合约名称（假设只有一个合约）
-        std::string contractName = "contract";
-        if (!ast->contracts.empty()) {
-            contractName = ast->contracts[0]->name;
-        }
+        // 获取合约名称
+        std::string contractName = contract->name;
         
         // 生成 CAR
-        CARGenerator generator(ast);
+        CARGenerator generator(contract);
         std::string car_json = generator.generate_string();
         
         // 写入输出文件

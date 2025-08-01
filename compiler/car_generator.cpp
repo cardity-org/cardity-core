@@ -3,16 +3,9 @@
 
 namespace cardity {
 
-CARGenerator::CARGenerator(std::shared_ptr<ProgramNode> ast) : ast(ast) {}
+CARGenerator::CARGenerator(std::shared_ptr<ContractNode> contract) : contract(contract) {}
 
 nlohmann::json CARGenerator::generate() {
-    if (ast->contracts.empty()) {
-        throw GenerationError("No contracts found in program");
-    }
-    
-    // 假设只有一个合约
-    auto contract = ast->contracts[0];
-    
     output = {
         {"p", "cardinals"},
         {"op", "deploy"},
