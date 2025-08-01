@@ -48,14 +48,16 @@ int main(int argc, char* argv[]) {
         
         // 语法分析
         Parser parser(tokens);
-        auto contract = parser.parse();
+        auto program = parser.parseProgram();
         
-        // 获取合约名称
-        std::string contractName = contract->protocol_name;
+        // 获取程序信息
+        std::string programName = "program";
+        if (!program->statements.empty()) {
+            // 这里可以根据需要提取程序名称
+        }
         
-        // 生成 CAR（需要适配新的数据结构）
-        // TODO: 更新 CARGenerator 以支持新的 ContractDef 结构
-        std::string car_json = "{\"p\":\"cardinals\",\"op\":\"deploy\",\"protocol\":\"" + contractName + "\"}";
+        // 生成 CAR（简化实现）
+        std::string car_json = "{\"p\":\"cardinals\",\"op\":\"deploy\",\"protocol\":\"" + programName + "\"}";
         
         // 写入输出文件
         std::string outputPath = "output/" + contractName + ".car";

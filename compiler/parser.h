@@ -15,6 +15,17 @@ public:
     virtual ~ASTNode() = default;
 };
 
+// 程序节点
+struct ProgramNode : public ASTNode {
+    std::vector<std::unique_ptr<ASTNode>> statements;
+};
+
+// Let 语句节点
+struct LetStatementNode : public ASTNode {
+    std::string identifier;
+    std::string value;
+};
+
 // 变量定义
 struct VariableDef : public ASTNode {
     std::string name;
@@ -48,6 +59,7 @@ class Parser {
 public:
     Parser(const std::vector<Token>& tokens);
     std::unique_ptr<ContractDef> parse();
+    std::unique_ptr<ProgramNode> parseProgram();
 
 private:
     const std::vector<Token>& tokens;
@@ -56,7 +68,10 @@ private:
     const Token& peek();
     const Token& advance();
     bool match(const std::string& keyword);
+    bool isAtEnd() const;
 
+    std::unique_ptr<ASTNode> parseStatement();
+    std::unique_ptr<LetStatementNode> parseLetStatement();
     std::unique_ptr<ContractDef> parse_contract();
     StateDef parse_state();
     MethodDef parse_method();
