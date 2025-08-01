@@ -68,6 +68,7 @@ private:
     size_t column;
     
     char current_char() const;
+    char peek() const;
     void advance();
     void skip_whitespace();
     void skip_comment();

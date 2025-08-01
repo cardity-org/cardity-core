@@ -114,7 +114,7 @@ make
 
 ### 编译合约
 ```bash
-./cardity examples/hello.cardity -o output/hello.car
+./cardity examples/counter.cardity
 ```
 
 ## 🛣️ 开发路线图
