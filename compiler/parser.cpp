@@ -25,7 +25,20 @@ const Token& Parser::advance() {
 }
 
 bool Parser::match(const std::string& keyword) {
-    if (peek().type == TokenType::Keyword && peek().value == keyword) {
+    // 将关键字字符串映射到对应的 TokenType
+    TokenType expectedType;
+    if (keyword == "contract") expectedType = TokenType::KEYWORD_CONTRACT;
+    else if (keyword == "state") expectedType = TokenType::KEYWORD_STATE;
+    else if (keyword == "string") expectedType = TokenType::KEYWORD_STRING;
+    else if (keyword == "int") expectedType = TokenType::KEYWORD_INT;
+    else if (keyword == "default") expectedType = TokenType::KEYWORD_DEFAULT;
+    else if (keyword == "method") expectedType = TokenType::KEYWORD_METHOD;
+    else if (keyword == "params") expectedType = TokenType::KEYWORD_PARAMS;
+    else if (keyword == "returns") expectedType = TokenType::KEYWORD_RETURNS;
+    else if (keyword == "owner") expectedType = TokenType::KEYWORD_OWNER;
+    else return false;
+    
+    if (peek().type == expectedType) {
         advance();
         return true;
     }
@@ -103,28 +116,32 @@ MethodDef Parser::parse_method() {
     method.name = advance().value;
     
     // 解析参数（简化实现）
-    if (match("(")) {
-        while (peek().type != TokenType::Symbol || peek().value != ")") {
-            if (peek().type == TokenType::Identifier) {
+    if (peek().type == TokenType::LPAREN) {
+        advance(); // 跳过 '('
+        while (peek().type != TokenType::RPAREN) {
+            if (peek().type == TokenType::IDENTIFIER) {
                 method.params.push_back(advance().value);
             }
-            if (peek().value == ",") {
+            if (peek().type == TokenType::COMMA) {
                 advance();
             }
         }
-        if (match(")")) {
-            // 参数解析完成
+        if (peek().type == TokenType::RPAREN) {
+            advance(); // 跳过 ')'
         }
     }
     
     // 解析方法逻辑（简化实现）
-    if (match("{")) {
+    if (peek().type == TokenType::LBRACE) {
+        advance(); // 跳过 '{'
         std::string logic;
-        while (peek().type != TokenType::Symbol || peek().value != "}") {
+        while (peek().type != TokenType::RBRACE) {
             logic += advance().value + " ";
         }
         method.logic = logic;
-        match("}");
+        if (peek().type == TokenType::RBRACE) {
+            advance(); // 跳过 '}'
+        }
     }
     
     return method;

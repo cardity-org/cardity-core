@@ -5,23 +5,37 @@
 namespace cardity {
 
 enum class TokenType {
-    Identifier,
-    Keyword,
-    Number,
-    String,
-    LBrace,
-    RBrace,
-    LParen,
-    RParen,
-    LBracket,
-    RBracket,
-    Colon,
-    Comma,
-    Equal,
-    Arrow,
-    Newline,
-    EndOfFile,
-    Unknown
+    // 关键字
+    KEYWORD_CONTRACT,
+    KEYWORD_STATE,
+    KEYWORD_STRING,
+    KEYWORD_INT,
+    KEYWORD_DEFAULT,
+    KEYWORD_METHOD,
+    KEYWORD_PARAMS,
+    KEYWORD_RETURNS,
+    KEYWORD_OWNER,
+    
+    // 标识符和字面量
+    IDENTIFIER,
+    NUMBER,
+    STRING,
+    
+    // 符号
+    EQUAL,
+    COLON,
+    SEMICOLON,
+    LBRACE,
+    RBRACE,
+    LPAREN,
+    RPAREN,
+    LBRACKET,
+    RBRACKET,
+    COMMA,
+    
+    // 特殊
+    END,
+    UNKNOWN
 };
 
 struct Token {
@@ -35,27 +49,12 @@ class Tokenizer {
 public:
     explicit Tokenizer(const std::string& input);
 
-    Token nextToken();
-    Token peekToken() const;
-    bool hasMoreTokens() const;
+    Token next_token();
+    bool has_more_tokens() const;
 
 private:
-    void skipWhitespace();
-    void skipComment();
-    Token parseIdentifier();
-    Token parseNumber();
-    Token parseString();
-    char currentChar() const;
-    char peekChar() const;
-    void advance();
-    bool isAlpha(char c) const;
-    bool isDigit(char c) const;
-    bool isAlnum(char c) const;
-
-    std::string _input;
-    size_t _position;
-    int _line;
-    int _column;
+    std::string source;
+    size_t pos;
 };
 
 } // namespace cardity 

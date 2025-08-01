@@ -5,37 +5,9 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include "tokenizer.h"
 
 namespace cardity {
-
-// Token 类型定义
-enum class TokenType {
-    Identifier,
-    Keyword,
-    Number,
-    String,
-    LBrace,
-    RBrace,
-    LParen,
-    RParen,
-    LBracket,
-    RBracket,
-    Colon,
-    Comma,
-    Equal,
-    Arrow,
-    Newline,
-    EndOfFile,
-    Unknown
-};
-
-// Token 数据结构
-struct Token {
-    TokenType type;
-    std::string value;
-    int line;
-    int column;
-};
 
 // AST 节点基础类
 class ASTNode {

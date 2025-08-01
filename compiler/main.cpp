@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
         // 词法分析
         Tokenizer tokenizer(source);
         std::vector<Token> tokens;
-        while (tokenizer.hasMoreTokens()) {
-            tokens.push_back(tokenizer.nextToken());
+        while (tokenizer.has_more_tokens()) {
+            tokens.push_back(tokenizer.next_token());
         }
         
         // 语法分析
