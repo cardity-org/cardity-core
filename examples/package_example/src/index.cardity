@@ -1,0 +1,213 @@
+// @cardity/standard - Standard library for Cardity protocol development
+// This package provides common utilities and patterns for Cardinals protocol development
+
+// Import core utilities
+import "@cardity/core" as core;
+import "@cardity/utils" as utils;
+
+// Re-export common types and utilities
+export core.Types;
+export core.Events;
+export core.Methods;
+export utils.Math;
+export utils.String;
+export utils.Time;
+
+// Standard protocol template
+protocol StandardProtocol {
+  version: "1.0.0";
+  owner: "doge1...";
+  
+  // Standard state structure
+  state {
+    // Metadata
+    name: string = "";
+    description: string = "";
+    version: string = "1.0.0";
+    created_at: int = 0;
+    updated_at: int = 0;
+    
+    // Status
+    active: bool = true;
+    paused: bool = false;
+    
+    // Access control
+    owner: string = "";
+    admins: string[] = [];
+    
+    // Standard counters
+    total_transactions: int = 0;
+    total_users: int = 0;
+  }
+  
+  // Standard events
+  events {
+    // Lifecycle events
+    ProtocolInitialized(owner: string, timestamp: int);
+    ProtocolPaused(reason: string, timestamp: int);
+    ProtocolResumed(timestamp: int);
+    ProtocolUpgraded(old_version: string, new_version: string, timestamp: int);
+    
+    // Access control events
+    AdminAdded(admin: string, added_by: string, timestamp: int);
+    AdminRemoved(admin: string, removed_by: string, timestamp: int);
+    OwnershipTransferred(old_owner: string, new_owner: string, timestamp: int);
+    
+    // Transaction events
+    TransactionExecuted(method: string, params: string, result: string, timestamp: int);
+    UserRegistered(user: string, timestamp: int);
+  }
+  
+  // Standard methods
+  method initialize(owner: string, name: string, description: string) {
+    if (state.owner != "") {
+      throw "Protocol already initialized";
+    }
+    
+    state.owner = params.owner;
+    state.name = params.name;
+    state.description = params.description;
+    state.created_at = utils.Time.now();
+    state.updated_at = state.created_at;
+    
+    emit ProtocolInitialized(params.owner, state.created_at);
+  }
+  
+  method pause(reason: string) {
+    if (!is_admin_or_owner()) {
+      throw "Access denied";
+    }
+    
+    state.paused = true;
+    state.updated_at = utils.Time.now();
+    
+    emit ProtocolPaused(params.reason, state.updated_at);
+  }
+  
+  method resume() {
+    if (!is_admin_or_owner()) {
+      throw "Access denied";
+    }
+    
+    state.paused = false;
+    state.updated_at = utils.Time.now();
+    
+    emit ProtocolResumed(state.updated_at);
+  }
+  
+  method add_admin(admin: string) {
+    if (!is_owner()) {
+      throw "Only owner can add admins";
+    }
+    
+    if (utils.Array.contains(state.admins, params.admin)) {
+      throw "Admin already exists";
+    }
+    
+    state.admins.push(params.admin);
+    state.updated_at = utils.Time.now();
+    
+    emit AdminAdded(params.admin, state.owner, state.updated_at);
+  }
+  
+  method remove_admin(admin: string) {
+    if (!is_owner()) {
+      throw "Only owner can remove admins";
+    }
+    
+    if (!utils.Array.contains(state.admins, params.admin)) {
+      throw "Admin does not exist";
+    }
+    
+    state.admins = utils.Array.remove(state.admins, params.admin);
+    state.updated_at = utils.Time.now();
+    
+    emit AdminRemoved(params.admin, state.owner, state.updated_at);
+  }
+  
+  method transfer_ownership(new_owner: string) {
+    if (!is_owner()) {
+      throw "Only owner can transfer ownership";
+    }
+    
+    if (params.new_owner == state.owner) {
+      throw "Cannot transfer to current owner";
+    }
+    
+    string old_owner = state.owner;
+    state.owner = params.new_owner;
+    state.updated_at = utils.Time.now();
+    
+    emit OwnershipTransferred(old_owner, params.new_owner, state.updated_at);
+  }
+  
+  method upgrade(new_version: string) {
+    if (!is_admin_or_owner()) {
+      throw "Access denied";
+    }
+    
+    string old_version = state.version;
+    state.version = params.new_version;
+    state.updated_at = utils.Time.now();
+    
+    emit ProtocolUpgraded(old_version, params.new_version, state.updated_at);
+  }
+  
+  method register_user(user: string) {
+    if (state.paused) {
+      throw "Protocol is paused";
+    }
+    
+    if (utils.Array.contains(get_registered_users(), params.user)) {
+      throw "User already registered";
+    }
+    
+    state.total_users = state.total_users + 1;
+    state.updated_at = utils.Time.now();
+    
+    emit UserRegistered(params.user, state.updated_at);
+  }
+  
+  // Helper methods
+  method is_owner() {
+    return msg.sender == state.owner;
+  }
+  
+  method is_admin() {
+    return utils.Array.contains(state.admins, msg.sender);
+  }
+  
+  method is_admin_or_owner() {
+    return is_owner() || is_admin();
+  }
+  
+  method get_metadata() {
+    return {
+      "name": state.name,
+      "description": state.description,
+      "version": state.version,
+      "owner": state.owner,
+      "admins": state.admins,
+      "active": state.active,
+      "paused": state.paused,
+      "created_at": state.created_at,
+      "updated_at": state.updated_at,
+      "total_transactions": state.total_transactions,
+      "total_users": state.total_users
+    };
+  }
+  
+  method get_registered_users() {
+    // This would typically be implemented with a mapping
+    // For now, return empty array as placeholder
+    return [];
+  }
+  
+  // Internal method to record transactions
+  method _record_transaction(method: string, params: string, result: string) {
+    state.total_transactions = state.total_transactions + 1;
+    state.updated_at = utils.Time.now();
+    
+    emit TransactionExecuted(params.method, params.params, params.result, state.updated_at);
+  }
+} 

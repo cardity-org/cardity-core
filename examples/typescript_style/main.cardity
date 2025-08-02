@@ -1,0 +1,446 @@
+// Cardity 语言示例 - 类似 TypeScript 的语法
+// 这是一个完整的 DeFi 借贷协议示例
+
+import { StandardProtocol, Events } from "@cardity/standard";
+import { Hash, Math } from "@cardity/utils";
+import { Validation, Security } from "@cardity/security";
+
+// 类型定义
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    balance: number;
+    isActive: boolean;
+    createdAt: Date;
+}
+
+interface Loan {
+    id: string;
+    userId: string;
+    amount: number;
+    interestRate: number;
+    startDate: Date;
+    endDate: Date;
+    status: "pending" | "active" | "repaid" | "defaulted";
+    collateral: string;
+}
+
+interface Collateral {
+    id: string;
+    type: "token" | "nft" | "real_estate";
+    value: number;
+    owner: string;
+    isLocked: boolean;
+}
+
+// 事件类型
+type LoanEvents = {
+    LoanCreated: (loan: Loan) => void;
+    LoanRepaid: (loanId: string, amount: number) => void;
+    LoanDefaulted: (loanId: string, reason: string) => void;
+    CollateralLocked: (collateralId: string, loanId: string) => void;
+    CollateralUnlocked: (collateralId: string) => void;
+};
+
+// 协议配置
+interface LendingProtocolConfig {
+    maxLoanAmount: number;
+    minCollateralRatio: number;
+    defaultInterestRate: number;
+    liquidationThreshold: number;
+}
+
+// 主协议类
+@protocol({
+    version: "1.0.0",
+    owner: "doge1lending...",
+    description: "DeFi Lending Protocol for Cardinals"
+})
+class LendingProtocol extends StandardProtocol {
+    // 状态变量
+    @state
+    private users: Map<string, User> = new Map();
+    
+    @state
+    private loans: Map<string, Loan> = new Map();
+    
+    @state
+    private collaterals: Map<string, Collateral> = new Map();
+    
+    @state
+    private totalLent: number = 0;
+    
+    @state
+    private totalBorrowed: number = 0;
+    
+    @state
+    private protocolConfig: LendingProtocolConfig = {
+        maxLoanAmount: 1000000,
+        minCollateralRatio: 1.5,
+        defaultInterestRate: 0.05,
+        liquidationThreshold: 1.2
+    };
+    
+    // 事件定义
+    @event
+    UserRegistered(userId: string, user: User): void {}
+    
+    @event
+    LoanCreated(loan: Loan): void {}
+    
+    @event
+    LoanRepaid(loanId: string, amount: number): void {}
+    
+    @event
+    LoanDefaulted(loanId: string, reason: string): void {}
+    
+    @event
+    CollateralLocked(collateralId: string, loanId: string): void {}
+    
+    @event
+    CollateralUnlocked(collateralId: string): void {}
+    
+    // 构造函数
+    constructor() {
+        super();
+        this.initializeProtocol();
+    }
+    
+    // 初始化协议
+    private initializeProtocol(): void {
+        console.log("Initializing Lending Protocol...");
+        this.validateProtocolConfig();
+    }
+    
+    // 用户管理方法
+    @method
+    @validate
+    registerUser(userId: string, name: string, email: string): User {
+        // 验证输入
+        if (!userId || !name || !email) {
+            throw new ValidationError("All fields are required");
+        }
+        
+        if (!this.isValidEmail(email)) {
+            throw new ValidationError("Invalid email format");
+        }
+        
+        if (this.users.has(userId)) {
+            throw new ValidationError("User already exists");
+        }
+        
+        // 创建用户
+        const user: User = {
+            id: userId,
+            name,
+            email,
+            balance: 0,
+            isActive: true,
+            createdAt: new Date()
+        };
+        
+        this.users.set(userId, user);
+        this.emit("UserRegistered", userId, user);
+        
+        return user;
+    }
+    
+    @method
+    getUser(userId: string): User | undefined {
+        return this.users.get(userId);
+    }
+    
+    @method
+    updateUserBalance(userId: string, amount: number): void {
+        const user = this.users.get(userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        
+        user.balance += amount;
+        if (user.balance < 0) {
+            throw new Error("Insufficient balance");
+        }
+    }
+    
+    // 贷款管理方法
+    @method
+    @validate
+    createLoan(
+        userId: string, 
+        amount: number, 
+        collateralId: string, 
+        duration: number
+    ): Loan {
+        // 验证用户
+        const user = this.users.get(userId);
+        if (!user || !user.isActive) {
+            throw new ValidationError("Invalid or inactive user");
+        }
+        
+        // 验证贷款金额
+        if (amount <= 0 || amount > this.protocolConfig.maxLoanAmount) {
+            throw new ValidationError("Invalid loan amount");
+        }
+        
+        // 验证抵押品
+        const collateral = this.collaterals.get(collateralId);
+        if (!collateral || collateral.owner !== userId) {
+            throw new ValidationError("Invalid collateral");
+        }
+        
+        if (collateral.isLocked) {
+            throw new ValidationError("Collateral is already locked");
+        }
+        
+        // 验证抵押率
+        const collateralRatio = collateral.value / amount;
+        if (collateralRatio < this.protocolConfig.minCollateralRatio) {
+            throw new ValidationError("Insufficient collateral ratio");
+        }
+        
+        // 创建贷款
+        const loanId = this.generateLoanId();
+        const startDate = new Date();
+        const endDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+        
+        const loan: Loan = {
+            id: loanId,
+            userId,
+            amount,
+            interestRate: this.protocolConfig.defaultInterestRate,
+            startDate,
+            endDate,
+            status: "pending",
+            collateral: collateralId
+        };
+        
+        // 锁定抵押品
+        collateral.isLocked = true;
+        
+        // 更新状态
+        this.loans.set(loanId, loan);
+        this.totalBorrowed += amount;
+        
+        // 触发事件
+        this.emit("LoanCreated", loan);
+        this.emit("CollateralLocked", collateralId, loanId);
+        
+        return loan;
+    }
+    
+    @method
+    @validate
+    repayLoan(loanId: string, amount: number): void {
+        const loan = this.loans.get(loanId);
+        if (!loan) {
+            throw new ValidationError("Loan not found");
+        }
+        
+        if (loan.status !== "active") {
+            throw new ValidationError("Loan is not active");
+        }
+        
+        const user = this.users.get(loan.userId);
+        if (!user) {
+            throw new ValidationError("User not found");
+        }
+        
+        // 计算应还金额（包括利息）
+        const interest = this.calculateInterest(loan);
+        const totalAmount = loan.amount + interest;
+        
+        if (amount < totalAmount) {
+            throw new ValidationError("Insufficient repayment amount");
+        }
+        
+        // 更新用户余额
+        this.updateUserBalance(loan.userId, -amount);
+        
+        // 更新贷款状态
+        loan.status = "repaid";
+        
+        // 解锁抵押品
+        const collateral = this.collaterals.get(loan.collateral);
+        if (collateral) {
+            collateral.isLocked = false;
+            this.emit("CollateralUnlocked", loan.collateral);
+        }
+        
+        // 更新协议状态
+        this.totalBorrowed -= loan.amount;
+        
+        // 触发事件
+        this.emit("LoanRepaid", loanId, amount);
+    }
+    
+    @method
+    getLoan(loanId: string): Loan | undefined {
+        return this.loans.get(loanId);
+    }
+    
+    @method
+    getUserLoans(userId: string): Loan[] {
+        return Array.from(this.loans.values())
+            .filter(loan => loan.userId === userId);
+    }
+    
+    // 抵押品管理方法
+    @method
+    @validate
+    addCollateral(
+        userId: string,
+        type: "token" | "nft" | "real_estate",
+        value: number
+    ): Collateral {
+        const user = this.users.get(userId);
+        if (!user) {
+            throw new ValidationError("User not found");
+        }
+        
+        if (value <= 0) {
+            throw new ValidationError("Invalid collateral value");
+        }
+        
+        const collateralId = this.generateCollateralId();
+        const collateral: Collateral = {
+            id: collateralId,
+            type,
+            value,
+            owner: userId,
+            isLocked: false
+        };
+        
+        this.collaterals.set(collateralId, collateral);
+        return collateral;
+    }
+    
+    @method
+    getCollateral(collateralId: string): Collateral | undefined {
+        return this.collaterals.get(collateralId);
+    }
+    
+    @method
+    getUserCollaterals(userId: string): Collateral[] {
+        return Array.from(this.collaterals.values())
+            .filter(collateral => collateral.owner === userId);
+    }
+    
+    // 计算和查询方法
+    @method
+    @cache
+    calculateInterest(loan: Loan): number {
+        const now = new Date();
+        const days = Math.floor((now.getTime() - loan.startDate.getTime()) / (1000 * 60 * 60 * 24));
+        return loan.amount * loan.interestRate * (days / 365);
+    }
+    
+    @method
+    getTotalLent(): number {
+        return this.totalLent;
+    }
+    
+    @method
+    getTotalBorrowed(): number {
+        return this.totalBorrowed;
+    }
+    
+    @method
+    getProtocolStats(): {
+        totalUsers: number;
+        totalLoans: number;
+        totalCollaterals: number;
+        totalLent: number;
+        totalBorrowed: number;
+        utilizationRate: number;
+    } {
+        const totalUsers = this.users.size;
+        const totalLoans = this.loans.size;
+        const totalCollaterals = this.collaterals.size;
+        const utilizationRate = this.totalLent > 0 ? this.totalBorrowed / this.totalLent : 0;
+        
+        return {
+            totalUsers,
+            totalLoans,
+            totalCollaterals,
+            totalLent: this.totalLent,
+            totalBorrowed: this.totalBorrowed,
+            utilizationRate
+        };
+    }
+    
+    // 风险管理方法
+    @method
+    checkLiquidationRisk(loanId: string): boolean {
+        const loan = this.loans.get(loanId);
+        if (!loan || loan.status !== "active") {
+            return false;
+        }
+        
+        const collateral = this.collaterals.get(loan.collateral);
+        if (!collateral) {
+            return false;
+        }
+        
+        const currentRatio = collateral.value / loan.amount;
+        return currentRatio < this.protocolConfig.liquidationThreshold;
+    }
+    
+    @method
+    liquidateLoan(loanId: string): void {
+        const loan = this.loans.get(loanId);
+        if (!loan) {
+            throw new ValidationError("Loan not found");
+        }
+        
+        if (!this.checkLiquidationRisk(loanId)) {
+            throw new ValidationError("Loan does not meet liquidation criteria");
+        }
+        
+        // 执行清算逻辑
+        loan.status = "defaulted";
+        this.totalBorrowed -= loan.amount;
+        
+        // 解锁抵押品（用于清算）
+        const collateral = this.collaterals.get(loan.collateral);
+        if (collateral) {
+            collateral.isLocked = false;
+            this.emit("CollateralUnlocked", loan.collateral);
+        }
+        
+        this.emit("LoanDefaulted", loanId, "Liquidation triggered");
+    }
+    
+    // 私有辅助方法
+    private generateLoanId(): string {
+        return `loan_${Hash.sha256(Date.now().toString()).substring(0, 8)}`;
+    }
+    
+    private generateCollateralId(): string {
+        return `collateral_${Hash.sha256(Date.now().toString()).substring(0, 8)}`;
+    }
+    
+    private isValidEmail(email: string): boolean {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    private validateProtocolConfig(): void {
+        if (this.protocolConfig.maxLoanAmount <= 0) {
+            throw new Error("Invalid max loan amount");
+        }
+        
+        if (this.protocolConfig.minCollateralRatio <= 1) {
+            throw new Error("Invalid minimum collateral ratio");
+        }
+        
+        if (this.protocolConfig.defaultInterestRate <= 0) {
+            throw new Error("Invalid default interest rate");
+        }
+    }
+}
+
+// 导出协议
+export default LendingProtocol;
+export { User, Loan, Collateral, LendingProtocolConfig }; 
