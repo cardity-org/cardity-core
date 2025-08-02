@@ -1,0 +1,99 @@
+{
+  "cpl": {
+    "state": {
+      "owner": {
+        "type": "string",
+        "default": "doge1abc123def456"
+      },
+      "balance": {
+        "type": "int",
+        "default": "1000"
+      },
+      "is_active": {
+        "type": "bool",
+        "default": "true"
+      },
+      "transactions": {
+        "type": "array",
+        "default": "[]"
+      }
+    },
+    "events": {
+      "BalanceUpdated": {
+        "params": [
+          {
+            "name": "old_balance",
+            "type": "int"
+          },
+          {
+            "name": "new_balance",
+            "type": "int"
+          }
+        ]
+      },
+      "TransactionCreated": {
+        "params": [
+          {
+            "name": "amount",
+            "type": "int"
+          },
+          {
+            "name": "timestamp",
+            "type": "string"
+          }
+        ]
+      },
+      "StatusChanged": {
+        "params": [
+          {
+            "name": "new_status",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    "methods": {
+      "get_balance": {
+        "returns": {
+          "type": "int",
+          "expr": "state.balance"
+        }
+      },
+      "get_owner": {
+        "returns": {
+          "type": "string",
+          "expr": "state.owner"
+        }
+      },
+      "get_status": {
+        "returns": {
+          "type": "bool",
+          "expr": "state.is_active"
+        }
+      },
+      "deposit": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0) { state.balance = balance_plus_amount }"
+      },
+      "withdraw": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0 && params.amount <= state.balance) { state.balance = balance_minus_amount }"
+      },
+      "toggle_status": {
+        "logic": "state.is_active = status_toggle"
+      },
+      "get_transaction_count": {
+        "returns": {
+          "type": "int",
+          "expr": "0"
+        }
+      },
+      "get_total_deposits": {
+        "returns": {
+          "type": "int",
+          "expr": "0"
+        }
+      }
+    }
+  }
+} 

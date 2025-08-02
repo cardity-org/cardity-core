@@ -19,6 +19,7 @@ struct PackageInfo {
     std::string author;
     std::string license;
     std::string repository;
+    std::string source;  // "registry", "github", "local"
     std::vector<std::string> dependencies;
     std::vector<std::string> files;
     std::string hash;
@@ -107,6 +108,8 @@ private:
     json fetch_package_metadata(const std::string& package_name);
     bool verify_package_signature(const std::string& package_path, const std::string& signature);
     std::string generate_package_signature(const std::string& package_path, const std::string& private_key);
+    void load_installed_packages();
+    void save_installed_packages();
 };
 
 // 包配置文件管理器
@@ -142,6 +145,10 @@ public:
     // 获取配置
     std::string get_name() const;
     std::string get_version() const;
+    std::string get_description() const;
+    std::string get_author() const;
+    std::string get_license() const;
+    std::string get_repository() const;
     std::vector<Dependency> get_dependencies() const;
     std::unordered_map<std::string, std::string> get_scripts() const;
     
@@ -165,6 +172,7 @@ public:
     // 构建包
     bool build();
     bool build_for_distribution();
+    bool build_for_development();
     
     // 清理构建
     void clean();

@@ -1,0 +1,49 @@
+{
+  "cpl": {
+    "state": {
+      "balance": {
+        "type": "int",
+        "default": "1000"
+      },
+      "owner": {
+        "type": "string",
+        "default": "doge1abc123def456"
+      },
+      "active": {
+        "type": "bool",
+        "default": "true"
+      }
+    },
+    "methods": {
+      "get_balance": {
+        "returns": {
+          "type": "int",
+          "expr": "state.balance"
+        }
+      },
+      "get_owner": {
+        "returns": {
+          "type": "string",
+          "expr": "state.owner"
+        }
+      },
+      "get_active": {
+        "returns": {
+          "type": "bool",
+          "expr": "state.active"
+        }
+      },
+      "add_balance": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0) { state.balance = balance_plus_amount }"
+      },
+      "subtract_balance": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0 && params.amount <= state.balance) { state.balance = balance_minus_amount }"
+      },
+      "toggle_active": {
+        "logic": "state.active = status_toggle"
+      }
+    }
+  }
+} 

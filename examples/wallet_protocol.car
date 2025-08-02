@@ -1,0 +1,110 @@
+protocol wallet_protocol {
+  version: "1.0";
+  owner: "doge1abc123def456";
+
+  state {
+    balance: int = 1000;
+    owner: string = "doge1abc123def456";
+    active: bool = true;
+    transactions: array = [];
+  }
+
+  event BalanceUpdated {
+    old_balance: int;
+    new_balance: int;
+  }
+
+  event TransactionCreated {
+    amount: int;
+    timestamp: string;
+  }
+
+  event StatusChanged {
+    new_status: bool;
+  }
+
+  method get_balance() {
+    return state.balance;
+  }
+
+  method get_owner() {
+    return state.owner;
+  }
+
+  method get_active() {
+    return state.active;
+  }
+
+  method deposit(amount: int) {
+    if (amount > 0) {
+      let old_balance = state.balance;
+      state.balance = state.balance + amount;
+      state.transactions.push(amount);
+      
+      emit BalanceUpdated(old_balance, state.balance);
+      emit TransactionCreated(amount, now());
+    }
+  }
+
+  method withdraw(amount: int) {
+    if (amount > 0 && amount <= state.balance) {
+      let old_balance = state.balance;
+      state.balance = state.balance - amount;
+      state.transactions.push(-amount);
+      
+      emit BalanceUpdated(old_balance, state.balance);
+      emit TransactionCreated(-amount, now());
+    }
+  }
+
+  method toggle_active() {
+    state.active = !state.active;
+    emit StatusChanged(state.active);
+  }
+
+  method get_transaction_count() {
+    return state.transactions.length;
+  }
+
+  method get_total_deposits() {
+    let total = 0;
+    for (let i = 0; i < state.transactions.length; i++) {
+      if (state.transactions[i] > 0) {
+        total = total + state.transactions[i];
+      }
+    }
+    return total;
+  }
+
+  method get_total_withdrawals() {
+    let total = 0;
+    for (let i = 0; i < state.transactions.length; i++) {
+      if (state.transactions[i] < 0) {
+        total = total + abs(state.transactions[i]);
+      }
+    }
+    return total;
+  }
+
+  method transfer(to: string, amount: int) {
+    if (amount > 0 && amount <= state.balance) {
+      let old_balance = state.balance;
+      state.balance = state.balance - amount;
+      state.transactions.push(-amount);
+      
+      emit BalanceUpdated(old_balance, state.balance);
+      emit TransactionCreated(-amount, now());
+      
+      return true;
+    }
+    return false;
+  }
+
+  method set_owner(new_owner: string) {
+    if (msg.sender == state.owner) {
+      state.owner = new_owner;
+      return true;
+    }
+    return false;
+  }
+} 

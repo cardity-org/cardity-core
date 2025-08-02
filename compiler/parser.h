@@ -39,6 +39,9 @@ private:
     std::vector<std::string> parse_method_params();
     std::string parse_method_body();
     
+    // 跳过 event 块
+    void skip_event_block();
+    
     // 错误处理
     void error(const std::string& msg);
     void advance();

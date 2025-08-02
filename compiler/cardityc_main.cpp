@@ -2,7 +2,12 @@
 #include <string>
 #include <cstring>
 #include <fstream>
+#include <sstream>
+#include <regex>
 #include "car_deployer.h"
+#include "parser.h"
+#include "tokenizer.h"
+#include "car_generator.h"
 
 using namespace cardity;
 
@@ -12,7 +17,7 @@ void print_usage(const std::string& program_name) {
     std::cout << "Usage: " << program_name << " <input_file> [options]" << std::endl;
     std::cout << std::endl;
     std::cout << "Arguments:" << std::endl;
-    std::cout << "  input_file    - Input .car protocol file" << std::endl;
+    std::cout << "  input_file    - Input .car protocol file (programming language format)" << std::endl;
     std::cout << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -o <output>   - Output file (default: input.car)" << std::endl;
@@ -21,12 +26,60 @@ void print_usage(const std::string& program_name) {
     std::cout << "  --inscription - Generate inscription format for deployment" << std::endl;
     std::cout << "  --wasm        - Generate WASM module" << std::endl;
     std::cout << "  --validate    - Validate protocol format only" << std::endl;
+    std::cout << "  --format <fmt> - Output format: json, car, or wasm" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << program_name << " protocol.car" << std::endl;
     std::cout << "  " << program_name << " protocol.car -o deployed.car --owner doge1abc..." << std::endl;
     std::cout << "  " << program_name << " protocol.car --inscription" << std::endl;
     std::cout << "  " << program_name << " protocol.car --validate" << std::endl;
+    std::cout << "  " << program_name << " protocol.car --format json" << std::endl;
+}
+
+// 解析编程语言格式的协议
+json parse_programming_language_format(const std::string& content) {
+    std::cout << "🔍 Parsing programming language format..." << std::endl;
+    
+    // 创建词法分析器和解析器
+    Tokenizer tokenizer(content);
+    Parser parser(tokenizer);
+    
+    // 解析协议
+    ProtocolAST ast = parser.parse_protocol();
+    
+    std::cout << "✅ Successfully parsed programming language format" << std::endl;
+    std::cout << "📋 Protocol: " << ast.protocol_name << std::endl;
+    std::cout << "📋 Version: " << ast.version << std::endl;
+    std::cout << "📋 Owner: " << ast.owner << std::endl;
+    
+    // 将 AST 转换为 Protocol 对象
+    Protocol protocol;
+    protocol.name = ast.protocol_name;
+    protocol.metadata.version = ast.version;
+    protocol.metadata.owner = ast.owner;
+    
+    // 转换状态变量
+    for (const auto& state_var : ast.state_variables) {
+        StateVariable var;
+        var.name = state_var.name;
+        var.type = state_var.type;
+        var.default_value = state_var.default_value;
+        protocol.state.variables.push_back(var);
+    }
+    
+    // 转换方法
+    for (const auto& method_ast : ast.methods) {
+        Method method;
+        method.name = method_ast.name;
+        method.params = method_ast.params;
+        method.logic_lines.push_back(method_ast.logic);
+        protocol.methods.push_back(method);
+    }
+    
+    // 使用 CarGenerator 将 Protocol 转换为 JSON
+    json car_data = CarGenerator::compile_to_car(protocol);
+    
+    return car_data;
 }
 
 int main(int argc, char* argv[]) {
@@ -45,6 +98,7 @@ int main(int argc, char* argv[]) {
     std::string output_file = "";
     std::string owner_address = "";
     std::string private_key = "";
+    std::string output_format = "car";
     bool generate_inscription = false;
     bool generate_wasm = false;
     bool validate_only = false;
@@ -59,6 +113,8 @@ int main(int argc, char* argv[]) {
             owner_address = argv[++i];
         } else if (arg == "--sign" && i + 1 < argc) {
             private_key = argv[++i];
+        } else if (arg == "--format" && i + 1 < argc) {
+            output_format = argv[++i];
         } else if (arg == "--inscription") {
             generate_inscription = true;
         } else if (arg == "--wasm") {
@@ -91,7 +147,11 @@ int main(int argc, char* argv[]) {
             throw std::runtime_error("Failed to open input file: " + input_file);
         }
         
-        json car_data = json::parse(ifs);
+        std::string content((std::istreambuf_iterator<char>(ifs)),
+                           std::istreambuf_iterator<char>());
+        
+        // 解析编程语言格式
+        json car_data = parse_programming_language_format(content);
         
         // 验证格式
         std::cout << "✅ Validating protocol format..." << std::endl;
@@ -104,9 +164,18 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         
+        // 如果输出格式是 JSON，直接输出
+        if (output_format == "json") {
+            std::cout << "📝 Outputting JSON format..." << std::endl;
+            std::ofstream ofs(output_file);
+            ofs << car_data.dump(2) << std::endl;
+            std::cout << "✅ JSON output saved to: " << output_file << std::endl;
+            return 0;
+        }
+        
         // 创建部署包
         std::cout << "📦 Creating deployment package..." << std::endl;
-        CarFile car_file = CarDeployer::create_deployment_package(input_file);
+        CarFile car_file = CarDeployer::create_deployment_package_from_json(car_data);
         
         // 设置所有者
         if (!owner_address.empty()) {

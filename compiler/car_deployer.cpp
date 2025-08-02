@@ -69,6 +69,52 @@ CarFile CarDeployer::create_deployment_package(const std::string& car_file_path)
     return car_file;
 }
 
+CarFile CarDeployer::create_deployment_package_from_json(const json& car_data) {
+    // 验证基本格式
+    if (!validate_car_format(car_data)) {
+        throw std::runtime_error("Invalid .car file format");
+    }
+    
+    // 创建 CarFile 结构
+    CarFile car_file;
+    car_file.protocol = car_data.value("protocol", "unknown");
+    car_file.version = car_data.value("version", "1.0");
+    car_file.cpl = car_data["cpl"];
+    
+    // 生成 ABI
+    ABIGenerator abi_gen(car_file.protocol, car_file.version);
+    if (car_file.cpl.contains("methods")) {
+        abi_gen.set_methods(car_file.cpl["methods"]);
+    }
+    if (car_file.cpl.contains("events")) {
+        EventManager event_manager;
+        event_manager.parse_events_from_json(car_file.cpl["events"]);
+        
+        auto events_def = event_manager.export_events_to_json();
+        std::unordered_map<std::string, EventDefinition> events_map;
+        
+        for (auto& [event_name, event_data] : events_def.items()) {
+            EventDefinition event_def(event_name);
+            if (event_data.contains("params")) {
+                auto params = event_data["params"];
+                for (const auto& param : params) {
+                    event_def.add_param(param["name"], param["type"]);
+                }
+            }
+            events_map[event_name] = event_def;
+        }
+        
+        abi_gen.set_events(events_map);
+    }
+    
+    car_file.abi = abi_gen.generate_abi();
+    
+    // 计算哈希
+    car_file.hash = calculate_hash(car_data);
+    
+    return car_file;
+}
+
 json CarDeployer::generate_deployment_json(const json& cpl_data) {
     json deployment;
     

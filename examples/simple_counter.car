@@ -1,0 +1,87 @@
+protocol simple_counter {
+  version: "1.0";
+  owner: "doge1abc123def456";
+
+  state {
+    count: int = 0;
+    max_count: int = 100;
+    min_count: int = 0;
+    step: int = 1;
+  }
+
+  event CountChanged {
+    old_count: int;
+    new_count: int;
+  }
+
+  event LimitReached {
+    count: int;
+    limit: int;
+  }
+
+  method increment() {
+    if (state.count < state.max_count) {
+      let old_count = state.count;
+      state.count = state.count + state.step;
+      
+      if (state.count > state.max_count) {
+        state.count = state.max_count;
+      }
+      
+      emit CountChanged(old_count, state.count);
+    } else {
+      emit LimitReached(state.count, state.max_count);
+    }
+  }
+
+  method decrement() {
+    if (state.count > state.min_count) {
+      let old_count = state.count;
+      state.count = state.count - state.step;
+      
+      if (state.count < state.min_count) {
+        state.count = state.min_count;
+      }
+      
+      emit CountChanged(old_count, state.count);
+    } else {
+      emit LimitReached(state.count, state.min_count);
+    }
+  }
+
+  method set_count(value: int) {
+    if (value >= state.min_count && value <= state.max_count) {
+      let old_count = state.count;
+      state.count = value;
+      emit CountChanged(old_count, state.count);
+    }
+  }
+
+  method set_step(new_step: int) {
+    if (new_step > 0) {
+      state.step = new_step;
+    }
+  }
+
+  method reset() {
+    let old_count = state.count;
+    state.count = state.min_count;
+    emit CountChanged(old_count, state.count);
+  }
+
+  method get_count() {
+    return state.count;
+  }
+
+  method get_max() {
+    return state.max_count;
+  }
+
+  method get_min() {
+    return state.min_count;
+  }
+
+  method get_step() {
+    return state.step;
+  }
+} 

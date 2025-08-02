@@ -2,9 +2,9 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <fstream>
+#include <filesystem>
 #include "package_manager.h"
-#include "package_config.h"
-#include "package_builder.h"
 
 using namespace cardity;
 
@@ -57,20 +57,25 @@ int cmd_init(int argc, char* argv[]) {
     std::string license = "MIT";
     
     // 交互式输入
-    std::cout << "Project name: ";
+    std::cout << "Project name [" << project_name << "]: ";
     std::getline(std::cin, project_name);
+    if (project_name.empty()) project_name = "my-cardity-project";
     
-    std::cout << "Version: ";
+    std::cout << "Version [" << version << "]: ";
     std::getline(std::cin, version);
+    if (version.empty()) version = "1.0.0";
     
-    std::cout << "Description: ";
+    std::cout << "Description [" << description << "]: ";
     std::getline(std::cin, description);
+    if (description.empty()) description = "A Cardity protocol project";
     
-    std::cout << "Author: ";
+    std::cout << "Author [" << author << "]: ";
     std::getline(std::cin, author);
+    if (author.empty()) author = "";
     
-    std::cout << "License: ";
+    std::cout << "License [" << license << "]: ";
     std::getline(std::cin, license);
+    if (license.empty()) license = "MIT";
     
     // 创建项目结构
     fs::create_directories("src");
@@ -93,29 +98,44 @@ int cmd_init(int argc, char* argv[]) {
     
     config.save();
     
-    // 创建示例协议文件
-    std::ofstream protocol_file("src/main.cardity");
+    // 创建示例协议文件 (.car 编程语言格式)
+    std::string protocol_filename = "src/" + project_name + ".car";
+    if (project_name.empty() || project_name == "my-cardity-project") {
+        protocol_filename = "src/main.car";
+    }
+    
+    std::ofstream protocol_file(protocol_filename);
     protocol_file << "protocol " << project_name << " {\n";
     protocol_file << "  version: \"" << version << "\";\n";
-    protocol_file << "  owner: \"doge1...\";\n\n";
+    protocol_file << "  owner: \"doge1abc123def456\";\n\n";
     protocol_file << "  state {\n";
     protocol_file << "    message: string = \"Hello, Cardity!\";\n";
     protocol_file << "    count: int = 0;\n";
     protocol_file << "  }\n\n";
-    protocol_file << "  events {\n";
-    protocol_file << "    MessageUpdated(new_msg: string);\n";
-    protocol_file << "    CounterIncremented(old_count: int, new_count: int);\n";
+    protocol_file << "  event MessageUpdated {\n";
+    protocol_file << "    new_message: string;\n";
     protocol_file << "  }\n\n";
-    protocol_file << "  method set_message(new_msg: string) {\n";
-    protocol_file << "    state.message = params.new_msg;\n";
-    protocol_file << "    emit MessageUpdated(params.new_msg);\n";
+    protocol_file << "  event CounterIncremented {\n";
+    protocol_file << "    old_count: int;\n";
+    protocol_file << "    new_count: int;\n";
+    protocol_file << "  }\n\n";
+    protocol_file << "  method set_message(new_message: string) {\n";
+    protocol_file << "    state.message = new_message;\n";
+    protocol_file << "    emit MessageUpdated(new_message);\n";
     protocol_file << "  }\n\n";
     protocol_file << "  method get_message() {\n";
     protocol_file << "    return state.message;\n";
     protocol_file << "  }\n\n";
     protocol_file << "  method increment() {\n";
+    protocol_file << "    let old_count = state.count;\n";
     protocol_file << "    state.count = state.count + 1;\n";
-    protocol_file << "    emit CounterIncremented(state.count - 1, state.count);\n";
+    protocol_file << "    emit CounterIncremented(old_count, state.count);\n";
+    protocol_file << "  }\n\n";
+    protocol_file << "  method get_count() {\n";
+    protocol_file << "    return state.count;\n";
+    protocol_file << "  }\n\n";
+    protocol_file << "  method set_count(value: int) {\n";
+    protocol_file << "    state.count = value;\n";
     protocol_file << "  }\n";
     protocol_file << "}\n";
     protocol_file.close();
@@ -124,21 +144,46 @@ int cmd_init(int argc, char* argv[]) {
     std::ofstream readme_file("README.md");
     readme_file << "# " << project_name << "\n\n";
     readme_file << description << "\n\n";
-    readme_file << "## Installation\n\n";
-    readme_file << "```bash\n";
-    readme_file << "cardity install\n";
+    readme_file << "## 项目结构\n\n";
+    readme_file << "```\n";
+    readme_file << project_name << "/\n";
+    readme_file << "├── src/\n";
+    readme_file << "│   └── " << (project_name.empty() || project_name == "my-cardity-project" ? "main.car" : project_name + ".car") << "          # 主协议文件\n";
+    readme_file << "├── tests/                # 测试文件\n";
+    readme_file << "├── docs/                 # 文档\n";
+    readme_file << "├── cardity.json          # 项目配置\n";
+    readme_file << "└── README.md             # 项目说明\n";
     readme_file << "```\n\n";
-    readme_file << "## Build\n\n";
+    readme_file << "## 开发命令\n\n";
+    std::string car_filename = (project_name.empty() || project_name == "my-cardity-project") ? "main.car" : project_name + ".car";
+    readme_file << "### 验证协议格式\n";
     readme_file << "```bash\n";
-    readme_file << "cardity build\n";
+    readme_file << "cardityc src/" << car_filename << " --validate\n";
     readme_file << "```\n\n";
-    readme_file << "## Test\n\n";
+    readme_file << "### 编译协议\n";
     readme_file << "```bash\n";
-    readme_file << "cardity test\n";
+    readme_file << "cardityc src/" << car_filename << " -o dist/" << car_filename << "\n";
     readme_file << "```\n\n";
-    readme_file << "## Publish\n\n";
+    readme_file << "### 生成 ABI 接口\n";
     readme_file << "```bash\n";
-    readme_file << "cardity publish\n";
+    readme_file << "cardity_abi src/" << car_filename << "\n";
+    readme_file << "```\n\n";
+    readme_file << "### 测试协议方法\n";
+    readme_file << "```bash\n";
+    readme_file << "cardity_runtime src/" << car_filename << " get_message\n";
+    readme_file << "cardity_runtime src/" << car_filename << " increment\n";
+    readme_file << "cardity_runtime src/" << car_filename << " get_count\n";
+    readme_file << "```\n\n";
+    readme_file << "## 协议说明\n\n";
+    readme_file << "这是一个示例 Cardity 协议，包含：\n\n";
+    readme_file << "- **状态变量**: message (字符串), count (整数)\n";
+    readme_file << "- **事件**: MessageUpdated, CounterIncremented\n";
+    readme_file << "- **方法**: set_message, get_message, increment, get_count\n\n";
+    readme_file << "## 构建和发布\n\n";
+    readme_file << "```bash\n";
+    readme_file << "cardity build    # 构建项目\n";
+    readme_file << "cardity test     # 运行测试\n";
+    readme_file << "cardity publish  # 发布到注册表\n";
     readme_file << "```\n";
     readme_file.close();
     

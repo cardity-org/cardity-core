@@ -1,0 +1,121 @@
+{
+  "cpl": {
+    "state": {
+      "balance": {
+        "type": "int",
+        "default": "1000"
+      },
+      "owner": {
+        "type": "string",
+        "default": "doge1abc123def456"
+      },
+      "active": {
+        "type": "bool",
+        "default": "true"
+      },
+      "transaction_count": {
+        "type": "int",
+        "default": "0"
+      },
+      "total_deposits": {
+        "type": "int",
+        "default": "0"
+      },
+      "total_withdrawals": {
+        "type": "int",
+        "default": "0"
+      }
+    },
+    "events": {
+      "BalanceUpdated": {
+        "params": [
+          {
+            "name": "old_balance",
+            "type": "int"
+          },
+          {
+            "name": "new_balance",
+            "type": "int"
+          }
+        ]
+      },
+      "TransactionCreated": {
+        "params": [
+          {
+            "name": "amount",
+            "type": "int"
+          },
+          {
+            "name": "type",
+            "type": "string"
+          }
+        ]
+      },
+      "StatusChanged": {
+        "params": [
+          {
+            "name": "new_status",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    "methods": {
+      "get_balance": {
+        "returns": {
+          "type": "int",
+          "expr": "state.balance"
+        }
+      },
+      "get_owner": {
+        "returns": {
+          "type": "string",
+          "expr": "state.owner"
+        }
+      },
+      "get_active": {
+        "returns": {
+          "type": "bool",
+          "expr": "state.active"
+        }
+      },
+      "get_transaction_count": {
+        "returns": {
+          "type": "int",
+          "expr": "state.transaction_count"
+        }
+      },
+      "get_total_deposits": {
+        "returns": {
+          "type": "int",
+          "expr": "state.total_deposits"
+        }
+      },
+      "get_total_withdrawals": {
+        "returns": {
+          "type": "int",
+          "expr": "state.total_withdrawals"
+        }
+      },
+      "deposit": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0) { state.balance = balance_plus_amount; state.transaction_count = transaction_count_plus_one; state.total_deposits = total_deposits_plus_amount }"
+      },
+      "withdraw": {
+        "params": ["amount"],
+        "logic": "if (params.amount > 0 && params.amount <= state.balance) { state.balance = balance_minus_amount; state.transaction_count = transaction_count_plus_one; state.total_withdrawals = total_withdrawals_plus_amount }"
+      },
+      "toggle_active": {
+        "logic": "state.active = status_toggle"
+      },
+      "transfer": {
+        "params": ["to", "amount"],
+        "logic": "if (params.amount > 0 && params.amount <= state.balance) { state.balance = balance_minus_amount; state.transaction_count = transaction_count_plus_one; state.total_withdrawals = total_withdrawals_plus_amount }"
+      },
+      "set_owner": {
+        "params": ["new_owner"],
+        "logic": "if (msg_sender == state.owner) { state.owner = new_owner }"
+      }
+    }
+  }
+} 

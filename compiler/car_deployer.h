@@ -39,6 +39,9 @@ public:
     // 从 .car 协议文件创建部署包
     static CarFile create_deployment_package(const std::string& car_file_path);
     
+    // 从 JSON 数据创建部署包
+    static CarFile create_deployment_package_from_json(const json& car_data);
+    
     // 生成完整的 .car 部署文件
     json generate_deployment_json(const json& cpl_data);
     

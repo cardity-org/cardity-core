@@ -9,6 +9,26 @@
 
 namespace cardity {
 
+// 辅助函数
+static size_t copy_data(struct archive* ar, struct archive* aw) {
+    int r;
+    const void* buff;
+    size_t size;
+    int64_t offset;
+    
+    for (;;) {
+        r = archive_read_data_block(ar, &buff, &size, &offset);
+        if (r == ARCHIVE_EOF)
+            return ARCHIVE_OK;
+        if (r < ARCHIVE_OK)
+            return r;
+        r = archive_write_data_block(aw, buff, size, offset);
+        if (r < ARCHIVE_OK) {
+            return r;
+        }
+    }
+}
+
 // PackageManager 实现
 PackageManager::PackageManager() 
     : registry_url("https://registry.cardity.dev"), 
@@ -527,24 +547,30 @@ void PackageManager::save_installed_packages() {
     ofs << data.dump(2) << std::endl;
 }
 
-// 辅助函数
-static size_t copy_data(struct archive* ar, struct archive* aw) {
-    int r;
-    const void* buff;
-    size_t size;
-    int64_t offset;
+std::vector<PackageInfo> PackageManager::search_packages(const std::string& query) {
+    std::vector<PackageInfo> result;
     
-    for (;;) {
-        r = archive_read_data_block(ar, &buff, &size, &offset);
-        if (r == ARCHIVE_EOF)
-            return ARCHIVE_OK;
-        if (r < ARCHIVE_OK)
-            return r;
-        r = archive_write_data_block(aw, buff, size, offset);
-        if (r < ARCHIVE_OK) {
-            return r;
+    // 这里应该实现实际的搜索逻辑
+    // 简化实现：返回空结果
+    (void)query; // 避免未使用参数警告
+    return result;
+}
+
+bool PackageManager::resolve_dependencies(const std::vector<Dependency>& deps) {
+    for (const auto& dep : deps) {
+        if (!install_package(dep.name, dep.version)) {
+            std::cerr << "Failed to install dependency: " << dep.name << std::endl;
+            return false;
         }
     }
+    return true;
+}
+
+bool PackageManager::update_package(const std::string& package_name) {
+    std::cout << "🔄 Updating package: " << package_name << std::endl;
+    
+    // 简化实现：重新安装包
+    return install_package(package_name, "latest");
 }
 
 } // namespace cardity 

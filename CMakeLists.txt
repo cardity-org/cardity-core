@@ -11,7 +11,44 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
 # 查找必要的包
 find_package(nlohmann_json REQUIRED)
 find_package(CURL REQUIRED)
-find_package(LibArchive REQUIRED)
+
+# 查找 LibArchive
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(LIBARCHIVE QUIET libarchive)
+endif()
+
+if(LIBARCHIVE_FOUND)
+    set(LibArchive_INCLUDE_DIRS ${LIBARCHIVE_INCLUDE_DIRS})
+    set(LibArchive_LIBRARIES ${LIBARCHIVE_LIBRARIES})
+    set(LibArchive_LIBRARY_DIRS ${LIBARCHIVE_LIBRARY_DIRS})
+    set(LibArchive_LDFLAGS ${LIBARCHIVE_LDFLAGS})
+    set(LibArchive_CFLAGS ${LIBARCHIVE_CFLAGS})
+else()
+    # 尝试手动查找
+    find_path(LibArchive_INCLUDE_DIR archive.h
+        PATHS
+        /usr/local/opt/libarchive/include
+        /usr/include
+        /usr/local/include
+    )
+    
+    find_library(LibArchive_LIBRARY
+        NAMES archive
+        PATHS
+        /usr/local/opt/libarchive/lib
+        /usr/lib
+        /usr/local/lib
+    )
+    
+    if(LibArchive_INCLUDE_DIR AND LibArchive_LIBRARY)
+        set(LibArchive_FOUND TRUE)
+        set(LibArchive_INCLUDE_DIRS ${LibArchive_INCLUDE_DIR})
+        set(LibArchive_LIBRARIES ${LibArchive_LIBRARY})
+    else()
+        message(FATAL_ERROR "LibArchive not found. Please install it with: brew install libarchive")
+    endif()
+endif()
 
 # 包含目录
 include_directories(compiler)
@@ -55,16 +92,11 @@ set(PACKAGE_SOURCES
 # 包管理系统头文件
 set(PACKAGE_HEADERS
     package_manager.h
-    package_config.h
-    package_builder.h
     registry_client.h
 )
 
-# 创建主可执行文件
-add_executable(cardity ${SOURCES} ${HEADERS})
-
-# 链接库
-target_link_libraries(cardity nlohmann_json::nlohmann_json)
+# 注意：移除了有问题的 cardity 可执行文件
+# 使用 cardity_cli 作为主要的 CLI 工具
 
 # 创建词法分析器测试程序
 add_executable(lexer_test compiler/lexer_test.cpp compiler/tokenizer.cpp)
@@ -85,7 +117,7 @@ add_executable(cardity_abi compiler/abi_generator_main.cpp compiler/event_system
 target_link_libraries(cardity_abi nlohmann_json::nlohmann_json)
 
 # 创建 Cardity 编译器
-add_executable(cardityc compiler/cardityc_main.cpp compiler/car_deployer.cpp compiler/event_system.cpp)
+add_executable(cardityc compiler/cardityc_main.cpp compiler/car_deployer.cpp compiler/event_system.cpp compiler/parser.cpp compiler/tokenizer.cpp compiler/car_generator.cpp)
 
 # 链接库
 target_link_libraries(cardityc nlohmann_json::nlohmann_json)
@@ -97,7 +129,7 @@ add_executable(cardity_cli cardity_cli.cpp ${PACKAGE_SOURCES} ${PACKAGE_HEADERS}
 target_link_libraries(cardity_cli 
     nlohmann_json::nlohmann_json 
     CURL::libcurl 
-    LibArchive::LibArchive
+    ${LibArchive_LIBRARIES}
 )
 
 # 创建包管理器库
@@ -107,7 +139,7 @@ add_library(cardity_package_manager STATIC ${PACKAGE_SOURCES} ${PACKAGE_HEADERS}
 target_link_libraries(cardity_package_manager 
     nlohmann_json::nlohmann_json 
     CURL::libcurl 
-    LibArchive::LibArchive
+    ${LibArchive_LIBRARIES}
 )
 
 # 创建运行时测试程序
@@ -129,14 +161,13 @@ add_executable(type_system_test tests/test_type_system.cpp compiler/type_system.
 target_link_libraries(type_system_test nlohmann_json::nlohmann_json)
 
 # 创建包管理器测试程序
-add_executable(package_manager_test tests/test_package_manager.cpp cardity_package_manager)
+add_executable(package_manager_test tests/test_package_manager.cpp)
 
 # 链接库
 target_link_libraries(package_manager_test cardity_package_manager)
 
 # 安装规则
 install(TARGETS 
-    cardity 
     cardity_runtime 
     cardity_abi 
     cardityc 

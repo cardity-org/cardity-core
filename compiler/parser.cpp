@@ -11,7 +11,12 @@ Parser::Parser(Tokenizer& lex) : lexer(lex) {
 }
 
 ProtocolAST Parser::parse_protocol() {
-    expect("protocol");
+    // 如果当前token不是"protocol"，则期望它是
+    if (current.value != "protocol") {
+        expect("protocol");
+    } else {
+        advance(); // 跳过当前的"protocol"token
+    }
     std::string protocol_name = expect_identifier();
     expect("{");
 
@@ -31,6 +36,10 @@ ProtocolAST Parser::parse_protocol() {
             ast.state_variables = parse_state_block();
         } else if (match("method")) {
             ast.methods.push_back(parse_method());
+        } else if (match("event")) {
+            // 跳过整个 event 块
+            std::cout << "Warning: Skipping event block" << std::endl;
+            skip_event_block();
         } else if (current.value.empty() || current.value == " ") {
             // 跳过空字符串或空格
             advance();
@@ -165,6 +174,10 @@ std::vector<ParserMethod> Parser::parse_methods_block() {
 }
 
 ParserMethod Parser::parse_method() {
+    // 如果当前token是"method"关键字，跳过它
+    if (current.value == "method") {
+        advance();
+    }
     std::string name = expect_identifier();
     expect("(");
     
@@ -186,7 +199,23 @@ std::vector<std::string> Parser::parse_method_params() {
     }
     
     while (true) {
-        params.push_back(expect_identifier());
+        // 读取参数名
+        std::string param_name = expect_identifier();
+        
+        // 如果有类型注解（冒号），跳过类型
+        if (match(":")) {
+            // 跳过类型（可以是关键字或标识符）
+            if (current.type == TokenType::IDENTIFIER || 
+                current.type == TokenType::KEYWORD_STRING ||
+                current.type == TokenType::KEYWORD_INT ||
+                current.type == TokenType::KEYWORD_BOOL) {
+                advance(); // 跳过类型
+            } else {
+                expect_identifier(); // 期望一个标识符作为类型
+            }
+        }
+        
+        params.push_back(param_name);
         
         if (match(",")) {
             continue;
@@ -222,6 +251,23 @@ std::string Parser::parse_method_body() {
     }
     
     return logic;
+}
+
+void Parser::skip_event_block() {
+    // 跳过 event 名称
+    expect_identifier();
+    expect("{");
+    
+    // 跳过 event 块的内容，直到遇到结束的 }
+    int brace_count = 1;
+    while (brace_count > 0 && !is_at_end()) {
+        if (current.value == "{") {
+            brace_count++;
+        } else if (current.value == "}") {
+            brace_count--;
+        }
+        advance();
+    }
 }
 
 void Parser::error(const std::string& msg) {

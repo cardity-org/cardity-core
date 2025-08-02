@@ -1,31 +1,44 @@
 # Build directories
 build/
-output/
+dist/
+cmake-build-*/
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
-*.a
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
 *.so
 *.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
 
 # Executables
-cardity
-cardity_runtime
-cardity_abi
-cardityc
-lexer_test
-parser_test
-runtime_test
-expression_test
-type_system_test
+*.exe
+*.out
+*.app
+run_protocol
+debug_*
 
-# Test files
-test_*.sh
-test_*.cpp
-tests/
-
-# Generated files
-*.car.inscription
-deployed_*.car
-*.wasm
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
 
 # IDE files
 .vscode/
@@ -34,10 +47,29 @@ deployed_*.car
 *.swo
 *~
 
-# OS files
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Temporary files
 *.tmp
-*.log 
+*.temp
+*.log
+
+# Package files
+*.tar.gz
+*.zip
+
+# Test files
+test_*.sh
+*_test
+*_demo.sh
+
+# Example output files
+*_deployed.car
+*_source.car 
