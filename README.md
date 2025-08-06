@@ -450,9 +450,10 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - [语言文档](https://docs.cardity.dev)
 - [示例项目](https://github.com/cardity/examples)
 - [包注册表](https://registry.cardity.dev)
+- [npm 包](https://www.npmjs.com/package/cardity)
 
 ---
 
 **Cardity Core** - Cardity 编程语言的核心实现 🚀
 
-**最新更新**: 支持 npm 包安装、完整的区块链协议开发工作流程，包括 .carc 二进制格式、Dogecoin 链上部署、DRC-20 代币标准和智能 ABI 生成器！
+**最新更新**: 成功发布到 npm 注册表！现在可以通过 `npm install -g cardity` 全局安装，支持完整的区块链协议开发工作流程，包括 .carc 二进制格式、Dogecoin 链上部署、DRC-20 代币标准和智能 ABI 生成器！
