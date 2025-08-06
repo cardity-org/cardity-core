@@ -1,6 +1,6 @@
 {
   "name": "cardity",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cardity - A modern programming language for blockchain protocol development on Dogecoin",
   "main": "dist/index.js",
   "bin": {

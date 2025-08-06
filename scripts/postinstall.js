@@ -7,13 +7,17 @@ const chalk = require('chalk').default;
 
 console.log(chalk.blue('🔧 Cardity post-install script running...'));
 
-// 检查是否在开发环境中
+// 检查是否在开发环境中或全局安装
 const isDev = process.env.NODE_ENV === 'development' || 
               process.env.npm_config_dev === 'true' ||
               process.argv.includes('--dev');
 
-if (isDev) {
-  console.log(chalk.yellow('⚠️  Development mode detected, skipping build'));
+const isGlobal = process.env.npm_config_global === 'true' || 
+                 process.argv.includes('--global') ||
+                 process.env.npm_config_prefix !== undefined;
+
+if (isDev || isGlobal) {
+  console.log(chalk.yellow('⚠️  Development/Global mode detected, skipping build'));
   console.log(chalk.gray('Run "npm run build" manually to compile C++ binaries'));
   process.exit(0);
 }
