@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
 # 查找必要的包
 find_package(nlohmann_json REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # 查找 LibArchive
 find_package(PkgConfig QUIET)
@@ -98,11 +99,12 @@ set(PACKAGE_HEADERS
 # 注意：移除了有问题的 cardity 可执行文件
 # 使用 cardity_cli 作为主要的 CLI 工具
 
-# 创建词法分析器测试程序
-add_executable(lexer_test compiler/lexer_test.cpp compiler/tokenizer.cpp)
+# 注意：测试程序已移除，因为测试文件不存在
+# # 创建词法分析器测试程序
+# add_executable(lexer_test compiler/lexer_test.cpp compiler/tokenizer.cpp)
 
-# 创建解析器测试程序
-add_executable(parser_test compiler/parser_test.cpp compiler/tokenizer.cpp compiler/parser.cpp)
+# # 创建解析器测试程序
+# add_executable(parser_test compiler/parser_test.cpp compiler/tokenizer.cpp compiler/parser.cpp)
 
 # 创建运行时执行器
 add_executable(cardity_runtime compiler/runtime_main.cpp compiler/runtime.cpp compiler/expression.cpp compiler/type_system.cpp compiler/event_system.cpp)
@@ -117,10 +119,28 @@ add_executable(cardity_abi compiler/abi_generator_main.cpp compiler/event_system
 target_link_libraries(cardity_abi nlohmann_json::nlohmann_json)
 
 # 创建 Cardity 编译器
-add_executable(cardityc compiler/cardityc_main.cpp compiler/car_deployer.cpp compiler/event_system.cpp compiler/parser.cpp compiler/tokenizer.cpp compiler/car_generator.cpp)
+add_executable(cardityc 
+    compiler/cardityc_main.cpp 
+    compiler/car_deployer.cpp 
+    compiler/event_system.cpp 
+    compiler/parser.cpp 
+    compiler/tokenizer.cpp 
+    compiler/car_generator.cpp 
+    compiler/carc_generator.cpp
+    compiler/drc20_standard.cpp
+    compiler/drc20_compiler.cpp
+)
+
+# 创建 Dogecoin 部署工具
+add_executable(cardity_deploy compiler/deploy_main.cpp compiler/dogecoin_deployer.cpp compiler/carc_generator.cpp)
+
+# 创建 DRC-20 CLI 工具
+add_executable(cardity_drc20 compiler/drc20_cli.cpp compiler/drc20_standard.cpp compiler/drc20_compiler.cpp)
 
 # 链接库
 target_link_libraries(cardityc nlohmann_json::nlohmann_json)
+target_link_libraries(cardity_deploy nlohmann_json::nlohmann_json OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(cardity_drc20 nlohmann_json::nlohmann_json)
 
 # 创建包管理器 CLI
 add_executable(cardity_cli cardity_cli.cpp ${PACKAGE_SOURCES} ${PACKAGE_HEADERS})
@@ -142,35 +162,32 @@ target_link_libraries(cardity_package_manager
     ${LibArchive_LIBRARIES}
 )
 
-# 创建运行时测试程序
-add_executable(runtime_test tests/test_runtime.cpp compiler/runtime.cpp compiler/expression.cpp compiler/type_system.cpp compiler/event_system.cpp)
+# 注意：测试文件暂时不存在，已注释掉相关测试程序
+# 如果需要测试，请先创建 tests/ 目录和相应的测试文件
 
-# 链接库
-target_link_libraries(runtime_test nlohmann_json::nlohmann_json)
+# # 创建运行时测试程序
+# add_executable(runtime_test tests/test_runtime.cpp compiler/runtime.cpp compiler/expression.cpp compiler/type_system.cpp compiler/event_system.cpp)
+# target_link_libraries(runtime_test nlohmann_json::nlohmann_json)
 
-# 创建表达式测试程序
-add_executable(expression_test tests/test_expression.cpp compiler/expression.cpp compiler/type_system.cpp)
+# # 创建表达式测试程序
+# add_executable(expression_test tests/test_expression.cpp compiler/expression.cpp compiler/type_system.cpp)
+# target_link_libraries(expression_test nlohmann_json::nlohmann_json)
 
-# 链接库
-target_link_libraries(expression_test nlohmann_json::nlohmann_json)
+# # 创建类型系统测试程序
+# add_executable(type_system_test tests/test_type_system.cpp compiler/type_system.cpp)
+# target_link_libraries(type_system_test nlohmann_json::nlohmann_json)
 
-# 创建类型系统测试程序
-add_executable(type_system_test tests/test_type_system.cpp compiler/type_system.cpp)
-
-# 链接库
-target_link_libraries(type_system_test nlohmann_json::nlohmann_json)
-
-# 创建包管理器测试程序
-add_executable(package_manager_test tests/test_package_manager.cpp)
-
-# 链接库
-target_link_libraries(package_manager_test cardity_package_manager)
+# # 创建包管理器测试程序
+# add_executable(package_manager_test tests/test_package_manager.cpp)
+# target_link_libraries(package_manager_test cardity_package_manager)
 
 # 安装规则
 install(TARGETS 
     cardity_runtime 
     cardity_abi 
     cardityc 
+    cardity_deploy
+    cardity_drc20
     cardity_cli 
     cardity_package_manager
     DESTINATION bin

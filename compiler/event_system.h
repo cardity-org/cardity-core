@@ -91,6 +91,10 @@ public:
     
     // 从 .car 文件生成 ABI
     static nlohmann::json generate_abi_from_car(const std::string& car_file);
+    
+private:
+    // 解析编程语言格式
+    static nlohmann::json parse_programming_language_format(const std::string& content);
 };
 
 } // namespace cardity 

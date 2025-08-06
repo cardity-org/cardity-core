@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "tokenizer.h"
 #include "car_generator.h"
+#include "carc_generator.h"
 
 using namespace cardity;
 
@@ -20,20 +21,22 @@ void print_usage(const std::string& program_name) {
     std::cout << "  input_file    - Input .car protocol file (programming language format)" << std::endl;
     std::cout << std::endl;
     std::cout << "Options:" << std::endl;
-    std::cout << "  -o <output>   - Output file (default: input.car)" << std::endl;
+    std::cout << "  -o <output>   - Output file (default: input.carc)" << std::endl;
     std::cout << "  --owner <addr> - Set protocol owner address" << std::endl;
     std::cout << "  --sign <key>  - Sign the protocol with private key" << std::endl;
     std::cout << "  --inscription - Generate inscription format for deployment" << std::endl;
     std::cout << "  --wasm        - Generate WASM module" << std::endl;
     std::cout << "  --validate    - Validate protocol format only" << std::endl;
-    std::cout << "  --format <fmt> - Output format: json, car, or wasm" << std::endl;
+    std::cout << "  --format <fmt> - Output format: carc (binary), json, car, or wasm" << std::endl;
+    std::cout << "  --carc        - Generate .carc binary format (default)" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << program_name << " protocol.car" << std::endl;
-    std::cout << "  " << program_name << " protocol.car -o deployed.car --owner doge1abc..." << std::endl;
+    std::cout << "  " << program_name << " protocol.car -o deployed.carc --owner doge1abc..." << std::endl;
     std::cout << "  " << program_name << " protocol.car --inscription" << std::endl;
     std::cout << "  " << program_name << " protocol.car --validate" << std::endl;
     std::cout << "  " << program_name << " protocol.car --format json" << std::endl;
+    std::cout << "  " << program_name << " protocol.car --format carc" << std::endl;
 }
 
 // 解析编程语言格式的协议
@@ -98,7 +101,7 @@ int main(int argc, char* argv[]) {
     std::string output_file = "";
     std::string owner_address = "";
     std::string private_key = "";
-    std::string output_format = "car";
+    std::string output_format = "carc";
     bool generate_inscription = false;
     bool generate_wasm = false;
     bool validate_only = false;
@@ -115,6 +118,8 @@ int main(int argc, char* argv[]) {
             private_key = argv[++i];
         } else if (arg == "--format" && i + 1 < argc) {
             output_format = argv[++i];
+        } else if (arg == "--carc") {
+            output_format = "carc";
         } else if (arg == "--inscription") {
             generate_inscription = true;
         } else if (arg == "--wasm") {
@@ -133,7 +138,22 @@ int main(int argc, char* argv[]) {
     
     // 设置默认输出文件名
     if (output_file.empty()) {
-        output_file = input_file;
+        // 根据输出格式设置默认扩展名
+        std::string base_name = input_file;
+        size_t dot_pos = base_name.find_last_of('.');
+        if (dot_pos != std::string::npos) {
+            base_name = base_name.substr(0, dot_pos);
+        }
+        
+        if (output_format == "carc") {
+            output_file = base_name + ".carc";
+        } else if (output_format == "json") {
+            output_file = base_name + ".json";
+        } else if (output_format == "car") {
+            output_file = base_name + ".car";
+        } else {
+            output_file = base_name + "." + output_format;
+        }
     }
     
     try {
@@ -171,6 +191,54 @@ int main(int argc, char* argv[]) {
             ofs << car_data.dump(2) << std::endl;
             std::cout << "✅ JSON output saved to: " << output_file << std::endl;
             return 0;
+        }
+        
+        // 如果输出格式是 CARC，生成二进制格式
+        if (output_format == "carc") {
+            std::cout << "🔧 Generating .carc binary format..." << std::endl;
+            
+            // 将 JSON 数据转换回 Protocol 对象
+            Protocol protocol;
+            protocol.name = car_data["protocol"];
+            protocol.metadata.version = car_data["version"];
+            protocol.metadata.owner = car_data["cpl"]["owner"];
+            
+            // 解析状态变量
+            json state_json = car_data["cpl"]["state"];
+            for (auto it = state_json.begin(); it != state_json.end(); ++it) {
+                StateVariable var;
+                var.name = it.key();
+                var.type = it.value()["type"];
+                var.default_value = it.value()["default"];
+                protocol.state.variables.push_back(var);
+            }
+            
+            // 解析方法
+            json methods_json = car_data["cpl"]["methods"];
+            for (auto it = methods_json.begin(); it != methods_json.end(); ++it) {
+                Method method;
+                method.name = it.key();
+                method.params = it.value()["params"].get<std::vector<std::string>>();
+                method.logic_lines.push_back(it.value()["logic"]);
+                protocol.methods.push_back(method);
+            }
+            
+            // 生成 .carc 二进制数据
+            std::vector<uint8_t> carc_data = CarcGenerator::compile_to_carc(protocol);
+            
+            // 写入文件
+            if (CarcGenerator::write_to_file(carc_data, output_file)) {
+                std::cout << "✅ .carc binary file saved to: " << output_file << std::endl;
+                std::cout << "📊 Binary size: " << carc_data.size() << " bytes" << std::endl;
+                std::cout << "📋 Protocol: " << protocol.name << std::endl;
+                std::cout << "📋 Version: " << protocol.metadata.version << std::endl;
+                std::cout << "📋 Owner: " << protocol.metadata.owner << std::endl;
+                std::cout << "📋 State variables: " << protocol.state.variables.size() << std::endl;
+                std::cout << "📋 Methods: " << protocol.methods.size() << std::endl;
+                return 0;
+            } else {
+                throw std::runtime_error("Failed to write .carc file");
+            }
         }
         
         // 创建部署包

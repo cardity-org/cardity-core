@@ -1,0 +1,122 @@
+protocol MyDrc20Token {
+  version: "1.0.0";
+  owner: "doge1token123";
+  
+  // DRC-20 代币定义
+  drc20 {
+    tick: "MYT";
+    name: "My Token";
+    max_supply: "1000000";
+    mint_limit: "1000";
+    decimals: "18";
+    deployer: "doge1token123";
+  }
+  
+  // 状态变量
+  state {
+    total_supply: int = 0;
+    deployed: bool = false;
+    mint_count: int = 0;
+    transfer_count: int = 0;
+  }
+  
+  // 自定义部署逻辑
+  method deploy() {
+    if (!state.deployed) {
+      // 验证代币参数
+      if (drc20.tick.length() < 3 || drc20.tick.length() > 4) {
+        return "Invalid tick length";
+      }
+      
+      if (drc20.max_supply <= 0) {
+        return "Invalid max supply";
+      }
+      
+      // 执行部署
+      state.deployed = true;
+      emit TokenDeployed(drc20.tick, drc20.max_supply);
+      return "Token deployed successfully";
+    }
+    return "Token already deployed";
+  }
+  
+  // 自定义铸造逻辑
+  method mint(amount) {
+    if (!state.deployed) {
+      return "Token not deployed";
+    }
+    
+    if (amount <= 0) {
+      return "Invalid amount";
+    }
+    
+    if (state.total_supply + amount > drc20.max_supply) {
+      return "Exceeds max supply";
+    }
+    
+    if (amount > drc20.mint_limit) {
+      return "Exceeds mint limit";
+    }
+    
+    // 执行铸造
+    state.total_supply = state.total_supply + amount;
+    state.mint_count = state.mint_count + 1;
+    emit TokenMinted(drc20.tick, amount, state.total_supply);
+    return "Minted successfully";
+  }
+  
+  // 自定义转账逻辑
+  method transfer(to_address, amount) {
+    if (!state.deployed) {
+      return "Token not deployed";
+    }
+    
+    if (amount <= 0) {
+      return "Invalid amount";
+    }
+    
+    if (to_address.length() < 26) {
+      return "Invalid address";
+    }
+    
+    // 执行转账
+    state.transfer_count = state.transfer_count + 1;
+    emit TokenTransferred(drc20.tick, amount, to_address);
+    return "Transfer successful";
+  }
+  
+  // 查询方法
+  method get_total_supply() {
+    return state.total_supply;
+  }
+  
+  method get_mint_count() {
+    return state.mint_count;
+  }
+  
+  method get_transfer_count() {
+    return state.transfer_count;
+  }
+  
+  method is_deployed() {
+    return state.deployed;
+  }
+  
+  // 事件定义
+  event TokenDeployed {
+    tick: string;
+    max_supply: string;
+  }
+  
+  event TokenMinted {
+    tick: string;
+    amount: int;
+    total_supply: int;
+  }
+  
+  event TokenTransferred {
+    tick: string;
+    amount: int;
+    to_address: string;
+  }
+} 

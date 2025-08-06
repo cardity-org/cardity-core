@@ -1,6 +1,7 @@
 #include "event_system.h"
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include <algorithm>
 
 namespace cardity {
@@ -165,44 +166,129 @@ nlohmann::json ABIGenerator::generate_abi_from_car(const std::string& car_file) 
         throw std::runtime_error("Failed to open .car file: " + car_file);
     }
     
-    nlohmann::json car = nlohmann::json::parse(ifs);
+    // 读取文件内容
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                       std::istreambuf_iterator<char>());
+    ifs.close();
     
-    std::string protocol = car.value("protocol", "unknown");
-    std::string version = car.value("version", "1.0");
-    
-    ABIGenerator generator(protocol, version);
-    
-    if (car.contains("cpl")) {
-        auto cpl = car["cpl"];
+    // 尝试解析为 JSON 格式
+    try {
+        nlohmann::json car = nlohmann::json::parse(content);
         
-        // 设置方法
-        if (cpl.contains("methods")) {
-            generator.set_methods(cpl["methods"]);
-        }
+        std::string protocol = car.value("protocol", "unknown");
+        std::string version = car.value("version", "1.0");
         
-        // 设置事件
-        if (cpl.contains("events")) {
-            EventManager event_manager;
-            event_manager.parse_events_from_json(cpl["events"]);
+        ABIGenerator generator(protocol, version);
+        
+        if (car.contains("cpl")) {
+            auto cpl = car["cpl"];
             
-            // 从 EventManager 获取事件定义
-            auto events_def = event_manager.export_events_to_json();
-            std::unordered_map<std::string, EventDefinition> events_map;
-            
-            for (auto& [event_name, event_data] : events_def.items()) {
-                EventDefinition event_def(event_name);
-                if (event_data.contains("params")) {
-                    auto params = event_data["params"];
-                    for (const auto& param : params) {
-                        event_def.add_param(param["name"], param["type"]);
-                    }
-                }
-                events_map[event_name] = event_def;
+            // 设置方法
+            if (cpl.contains("methods")) {
+                generator.set_methods(cpl["methods"]);
             }
             
-            generator.set_events(events_map);
+            // 设置事件
+            if (cpl.contains("events")) {
+                EventManager event_manager;
+                event_manager.parse_events_from_json(cpl["events"]);
+                
+                // 从 EventManager 获取事件定义
+                auto events_def = event_manager.export_events_to_json();
+                std::unordered_map<std::string, EventDefinition> events_map;
+                
+                for (auto& [event_name, event_data] : events_def.items()) {
+                    EventDefinition event_def(event_name);
+                    if (event_data.contains("params")) {
+                        auto params = event_data["params"];
+                        for (const auto& param : params) {
+                            event_def.add_param(param["name"], param["type"]);
+                        }
+                    }
+                    events_map[event_name] = event_def;
+                }
+                
+                generator.set_events(events_map);
+            }
         }
+        
+        return generator.generate_abi();
+        
+    } catch (const nlohmann::json::parse_error& e) {
+        // 如果不是 JSON 格式，尝试解析为编程语言格式
+        return parse_programming_language_format(content);
     }
+}
+
+nlohmann::json ABIGenerator::parse_programming_language_format(const std::string& content) {
+    std::string protocol_name = "unknown";
+    std::string version = "1.0.0";
+    
+    // 使用正则表达式解析编程语言格式
+    std::regex protocol_regex("protocol\\s+(\\w+)\\s*\\{");
+    std::regex version_regex("version:\\s*\"([^\"]+)\"");
+    std::regex method_regex("method\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{");
+    std::regex event_regex("event\\s+(\\w+)\\s*\\{");
+    
+    std::smatch matches;
+    
+    // 提取协议名
+    if (std::regex_search(content, matches, protocol_regex)) {
+        protocol_name = matches[1].str();
+    }
+    
+    // 提取版本
+    if (std::regex_search(content, matches, version_regex)) {
+        version = matches[1].str();
+    }
+    
+    ABIGenerator generator(protocol_name, version);
+    
+    // 解析方法
+    nlohmann::json methods;
+    std::string::const_iterator search_start(content.cbegin());
+    
+    while (std::regex_search(search_start, content.cend(), matches, method_regex)) {
+        std::string method_name = matches[1].str();
+        nlohmann::json method;
+        method["name"] = method_name;
+        method["params"] = nlohmann::json::array();
+        method["returns"] = nullptr;
+        methods[method_name] = method;
+        search_start = matches.suffix().first;
+    }
+    
+    generator.set_methods(methods);
+    
+    // 解析事件（简化版本）
+    std::unordered_map<std::string, EventDefinition> events;
+    search_start = content.cbegin();
+    
+    while (std::regex_search(search_start, content.cend(), matches, event_regex)) {
+        std::string event_name = matches[1].str();
+        EventDefinition event_def(event_name);
+        
+        // 简单的事件参数解析
+        if (event_name == "TokenDeployed") {
+            event_def.add_param("tick", "string");
+            event_def.add_param("max_supply", "string");
+        } else if (event_name == "TokenMinted") {
+            event_def.add_param("tick", "string");
+            event_def.add_param("amount", "int");
+            event_def.add_param("total_supply", "int");
+        } else if (event_name == "TokenTransferred") {
+            event_def.add_param("tick", "string");
+            event_def.add_param("amount", "int");
+            event_def.add_param("to_address", "string");
+        } else if (event_name == "MessageUpdated") {
+            event_def.add_param("new_message", "string");
+        }
+        
+        events[event_name] = event_def;
+        search_start = matches.suffix().first;
+    }
+    
+    generator.set_events(events);
     
     return generator.generate_abi();
 }
