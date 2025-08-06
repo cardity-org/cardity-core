@@ -1,0 +1,72 @@
+{
+  "name": "cardity",
+  "version": "1.0.0",
+  "description": "Cardity - A modern programming language for blockchain protocol development on Dogecoin",
+  "main": "dist/index.js",
+  "bin": {
+    "cardity": "./bin/cardity.js",
+    "cardityc": "./bin/cardityc.js",
+    "cardity_runtime": "./bin/cardity_runtime.js",
+    "cardity_abi": "./bin/cardity_abi.js",
+    "cardity_deploy": "./bin/cardity_deploy.js",
+    "cardity_drc20": "./bin/cardity_drc20.js"
+  },
+  "scripts": {
+    "build": "mkdir -p build && cd build && cmake .. && make",
+    "install": "npm run build",
+    "postinstall": "node scripts/postinstall.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cardity",
+    "blockchain",
+    "dogecoin",
+    "drc20",
+    "protocol",
+    "compiler",
+    "programming-language",
+    "utxo",
+    "inscription"
+  ],
+  "author": "Cardity Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cardity-org/cardity-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cardity-org/cardity-core/issues"
+  },
+  "homepage": "https://github.com/cardity-org/cardity-core#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "chalk": "^5.3.0",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/fs-extra": "^11.0.0"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "scripts/",
+    "examples/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+} 

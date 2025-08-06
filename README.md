@@ -20,45 +20,50 @@ Cardity Core 是 Cardity 编程语言的完整实现，提供：
 
 ### 安装
 
+#### 通过 npm 安装（推荐）
+
 ```bash
-# 从源码编译安装
-git clone https://github.com/cardity/cardity-core.git
+# 全局安装 Cardity
+npm install -g cardity
+
+# 验证安装
+cardity --version
+
+# 查看帮助
+cardity --help
+```
+
+#### 从源码编译安装
+
+```bash
+# 克隆项目
+git clone https://github.com/cardity-org/cardity-core.git
 cd cardity-core
-mkdir build && cd build
-cmake ..
-make
-sudo make install
+
+# 安装依赖
+npm install
 
 # 验证安装
 cardity --version
 ```
 
-### 项目结构
+### 创建第一个项目
 
-```
-cardity_core/
-├── compiler/             # 编译器源码
-│   ├── lexer.cpp        # 词法分析器
-│   ├── parser.cpp       # 语法分析器
-│   ├── semantic.cpp     # 语义分析
-│   ├── type_system.cpp  # 类型系统
-│   ├── runtime.cpp      # 运行时
-│   ├── car_generator.cpp # CAR 格式生成器
-│   ├── carc_generator.cpp # CARC 二进制格式生成器
-│   ├── car_deployer.cpp # 部署工具
-│   ├── dogecoin_deployer.cpp # Dogecoin 部署工具
-│   ├── drc20_standard.cpp # DRC-20 标准库
-│   ├── drc20_compiler.cpp # DRC-20 编译器
-│   ├── drc20_cli.cpp    # DRC-20 CLI 工具
-│   └── event_system.cpp # 事件系统
-├── package_manager.cpp   # 包管理器
-├── package_config.cpp    # 配置管理
-├── package_builder.cpp   # 构建工具
-├── registry_client.cpp   # 注册表客户端
-├── cardity_cli.cpp      # CLI 工具
-├── examples/            # 示例项目
-├── docs/                # 文档
-└── CMakeLists.txt       # 构建配置
+```bash
+# 初始化新项目
+cardity init my-first-protocol
+
+# 进入项目目录
+cd my-first-protocol
+
+# 编译协议
+cardity compile src/index.car
+
+# 生成 ABI
+cardity abi src/index.car
+
+# 运行协议
+cardity run dist/index.carc
 ```
 
 ## 🔧 开发工具
@@ -67,46 +72,38 @@ cardity_core/
 
 ```bash
 # 项目初始化
-cardity init
+cardity init [project-name]
 
-# 构建项目
-cardity build
+# 编译协议
+cardity compile <file> [options]
 
-# 运行测试
-cardity test
+# 运行协议
+cardity run <file> [options]
 
-# 包管理
-cardity install <package>
-cardity uninstall <package>
-cardity list
-cardity search <query>
+# 生成 ABI
+cardity abi <file> [options]
 
-# 发布
-cardity publish
+# 部署到 Dogecoin
+cardity deploy <file> [options]
+
+# 查看帮助
+cardity help
 ```
 
 ### DRC-20 代币操作
 
-Cardity Core 支持完整的 DRC-20 代币标准，让开发者可以像编写 Solidity 智能合约一样创建 DRC-20 代币：
-
 ```bash
-# 生成 DRC-20 代币模板
-cardity_drc20 template basic --tick MYT --name "My Token" --output my_token.car
-
 # 编译 DRC-20 代币
-cardity_drc20 compile my_token.car
+cardity drc20 compile <file>
 
-# 验证代币定义
-cardity_drc20 validate my_token.car
+# 部署 DRC-20 代币
+cardity drc20 deploy <file> [options]
 
-# 生成部署铭文
-cardity_drc20 deploy my_token.car --output deploy.json
+# 铸造代币
+cardity drc20 mint <tick> <amount> [options]
 
-# 生成铸造铭文
-cardity_drc20 mint MYT 1000 --output mint.json
-
-# 生成转账铭文
-cardity_drc20 transfer MYT 100 doge1abc... --output transfer.json
+# 转账代币
+cardity drc20 transfer <tick> <to> <amount> [options]
 ```
 
 ### 编译器工具
@@ -124,56 +121,9 @@ cardityc main.car -o deployed.carc
 # 生成 ABI (支持编程语言格式和 JSON 格式)
 cardity_abi main.car                    # 输出到标准输出
 cardity_abi main.car main.abi          # 输出到文件
-cardity_abi dpptoken.car dpptoken.abi  # 处理 DRC-20 代币文件
 
 # 运行协议
 cardity_runtime main.car set_message "Hello"
-```
-
-### DRC-20 代币工具
-
-```bash
-# 查看 DRC-20 工具帮助
-cardity_drc20 --help
-
-# 生成基础 DRC-20 模板
-cardity_drc20 template basic --tick MYT --name "My Token" --output my_token.car
-
-# 生成高级 DRC-20 模板
-cardity_drc20 template advanced --tick ADV --name "Advanced Token" --max-supply 10000000 --output advanced_token.car
-
-# 编译 DRC-20 代币定义
-cardity_drc20 compile my_token.car
-
-# 验证 DRC-20 代币参数
-cardity_drc20 validate my_token.car
-
-# 生成部署铭文 (用于 Dogecoin 链上部署)
-cardity_drc20 deploy my_token.car --output deploy.json
-
-# 生成铸造铭文
-cardity_drc20 mint MYT 1000 --output mint.json
-
-# 生成转账铭文
-cardity_drc20 transfer MYT 100 doge1abc... --output transfer.json
-```
-
-### ABI 生成器工具
-
-```bash
-# 查看 ABI 生成器帮助
-cardity_abi
-
-# 从编程语言格式生成 ABI
-cardity_abi protocol.car
-cardity_abi protocol.car protocol.abi
-
-# 从 JSON 格式生成 ABI
-cardity_abi protocol.json
-cardity_abi protocol.json protocol.abi
-
-# 处理 DRC-20 代币文件
-cardity_abi dpptoken.car dpptoken.abi
 ```
 
 ### 部署工具
@@ -233,7 +183,7 @@ protocol HelloCardinals {
 
 ### DRC-20 代币格式
 
-Cardity 支持完整的 DRC-20 代币标准，让开发者可以轻松创建代币：
+Cardity 支持完整的 DRC-20 代币标准：
 
 ```cardity
 protocol MyDrc20Token {
@@ -254,8 +204,6 @@ protocol MyDrc20Token {
   state {
     total_supply: int = 0;
     deployed: bool = false;
-    mint_count: int = 0;
-    transfer_count: int = 0;
   }
   
   // 部署方法
@@ -280,7 +228,6 @@ protocol MyDrc20Token {
       return "Exceeds max supply";
     }
     state.total_supply = state.total_supply + amount;
-    state.mint_count = state.mint_count + 1;
     emit TokenMinted(drc20.tick, amount, state.total_supply);
     return "Minted successfully";
   }
@@ -293,26 +240,8 @@ protocol MyDrc20Token {
     if (amount <= 0) {
       return "Invalid amount";
     }
-    state.transfer_count = state.transfer_count + 1;
     emit TokenTransferred(drc20.tick, amount, to_address);
     return "Transfer successful";
-  }
-  
-  // 查询方法
-  method get_total_supply() {
-    return state.total_supply;
-  }
-  
-  method get_mint_count() {
-    return state.mint_count;
-  }
-  
-  method get_transfer_count() {
-    return state.transfer_count;
-  }
-  
-  method is_deployed() {
-    return state.deployed;
   }
   
   // 事件定义
@@ -388,51 +317,6 @@ cardity_deploy deploy protocol.carc --address doge1... --private-key ...
 1. **OP_RETURN 部署** - 将协议数据存储在 OP_RETURN 输出中
 2. **铭文部署** - 使用 ordinals 协议创建铭文
 
-## 🧪 测试
-
-```bash
-# 运行所有测试
-make test
-
-# 运行特定测试
-./lexer_test
-./parser_test
-./runtime_test
-./package_manager_test
-
-# 测试编译器
-cardityc examples/hello.car --validate
-```
-
-## 📦 包管理系统
-
-### 功能特性
-
-- **依赖解析** - 自动解析包依赖关系
-- **版本管理** - 支持语义化版本控制
-- **缓存系统** - 本地包缓存
-- **注册表集成** - 支持多个包注册表
-- **GitHub 集成** - 直接从 GitHub 安装包
-
-### 配置文件
-
-```json
-{
-  "name": "my-protocol",
-  "version": "1.0.0",
-  "description": "My Cardity Protocol",
-  "dependencies": {
-    "@cardity/standard": "^1.0.0",
-    "@cardity/utils": "~2.0.0"
-  },
-  "scripts": {
-    "build": "cardity build",
-    "test": "cardity test",
-    "publish": "cardity publish"
-  }
-}
-```
-
 ## 🔍 示例项目
 
 ### 基础示例
@@ -443,27 +327,7 @@ cardityc examples/hello.car --validate
 - `counter.car` - 计数器协议
 - `wallet.car` - 钱包协议
 - `event_demo.car` - 事件系统演示
-- `typed_counter.car` - 类型系统演示
 - `drc20_token.car` - DRC-20 代币示例
-
-### DRC-20 代币示例
-
-```bash
-# 查看 DRC-20 代币示例
-cat examples/drc20_token.car
-
-# 编译 DRC-20 代币
-cardity_drc20 compile examples/drc20_token.car
-
-# 生成部署铭文
-cardity_drc20 deploy examples/drc20_token.car --output deploy.json
-
-# 验证代币定义
-cardity_drc20 validate examples/drc20_token.car
-
-# 生成 ABI
-cardity_abi examples/drc20_token.car drc20_token.abi
-```
 
 ### 运行示例
 
@@ -532,7 +396,7 @@ cardity init
 
 # 这会创建：
 # - cardity.json (项目配置)
-# - src/main.car (编程语言格式的协议文件)
+# - src/index.car (编程语言格式的协议文件)
 # - README.md (项目文档)
 ```
 
@@ -552,12 +416,10 @@ make
 
 ## 📚 文档
 
-- [部署指南](README_DEPLOYMENT.md)
 - [DRC-20 代币开发指南](docs/drc20_guide.md)
 - [语言规范](docs/language_spec.md)
 - [包管理指南](docs/package_management.md)
 - [开发指南](docs/development_guide.md)
-- [发布指南](docs/release_guide.md)
 
 ## 🤝 贡献
 
@@ -593,4 +455,4 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 **Cardity Core** - Cardity 编程语言的核心实现 🚀
 
-**最新更新**: 支持完整的区块链协议开发工作流程，包括 .carc 二进制格式、Dogecoin 链上部署、DRC-20 代币标准和智能 ABI 生成器！
+**最新更新**: 支持 npm 包安装、完整的区块链协议开发工作流程，包括 .carc 二进制格式、Dogecoin 链上部署、DRC-20 代币标准和智能 ABI 生成器！

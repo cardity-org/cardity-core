@@ -1,0 +1,77 @@
+# 源代码和构建文件
+CMakeLists.txt
+*.cpp
+*.h
+*.c
+*.hpp
+*.cc
+*.cxx
+
+# 构建目录
+build/
+dist/build/
+dist/CMakeCache.txt
+dist/CMakeConfigureLog.yaml
+dist/CMakeLists.txt
+dist/install_manifest.txt
+dist/link.txt
+dist/TargetDirectories.txt
+dist/development_guide.md
+dist/language_spec.md
+dist/package_management.md
+dist/README.md
+dist/release_guide.md
+dist/cardity.json
+dist/package.json
+
+# 开发文件
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+
+# 测试文件
+tests/
+test_*.cpp
+*_test.cpp
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+
+# 文档源文件
+docs/*.md
+!README.md
+
+# 示例文件（保留一些重要的）
+examples/*.cpp
+examples/*.h
+examples/*.sh
+
+# 开发脚本
+scripts/build.sh
+scripts/test.sh
+
+# 其他
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# 保留的文件
+!bin/
+!dist/index.js
+!scripts/postinstall.js
+!examples/*.car
+!examples/*.carc
+!examples/*.cardity
+!docs/drc20_guide.md 
