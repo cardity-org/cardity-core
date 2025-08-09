@@ -153,6 +153,7 @@ program
   .command('invoke <contract> <method>')
   .description('Generate a Cardity invoke inscription JSON (p=cardity, op=invoke)')
   .option('-a, --args <json>', 'JSON array of args, e.g. "[\"addr\", 100]"', '[]')
+  .option('-m, --module <name>', 'Optional module name, or use dot in method (Module.method)')
   .action((contract, method, options) => {
     try {
       const args = JSON.parse(options.args || '[]');
@@ -163,9 +164,42 @@ program
         method,
         args,
       };
+      if (options.module) payload.module = options.module;
       console.log(JSON.stringify(payload, null, 2));
     } catch (e) {
       console.error('❌ Invalid JSON for --args');
+      process.exit(1);
+    }
+  });
+
+// Encode invoke payload to hex (for raw OP_RETURN usage)
+program
+  .command('encode-invoke <method>')
+  .description('Encode {method,args} into UTF-8 hex for OP_RETURN (ABI not required)')
+  .option('-a, --args <json>', 'JSON array of args, e.g. "[\"addr\", 100]"', '[]')
+  .action((method, options) => {
+    try {
+      const args = JSON.parse(options.args || '[]');
+      const payload = JSON.stringify({ method, args });
+      const hex = Buffer.from(payload, 'utf8').toString('hex');
+      console.log(hex);
+    } catch (e) {
+      console.error('❌ Invalid JSON for --args');
+      process.exit(1);
+    }
+  });
+
+// Convert .carc binary to hex for raw on-chain storage
+program
+  .command('ophex <carcFile>')
+  .description('Output hex of a compiled .carc file (for OP_RETURN/inscription)')
+  .action((carcFile) => {
+    try {
+      const data = fs.readFileSync(carcFile);
+      const hex = Buffer.from(data).toString('hex');
+      console.log(hex);
+    } catch (e) {
+      console.error(chalk.red(`❌ Failed to read ${carcFile}: ${e.message}`));
       process.exit(1);
     }
   });

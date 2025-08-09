@@ -1,0 +1,107 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const fse = require('fs-extra');
+const path = require('path');
+const { execSync, spawnSync } = require('child_process');
+
+function listCarFiles(rootDir, explicitModules) {
+  if (explicitModules && Array.isArray(explicitModules)) {
+    return explicitModules.map(m => path.resolve(rootDir, m.path || m.file || m));
+  }
+  const files = [];
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir)) {
+      const p = path.join(dir, entry);
+      const stat = fs.statSync(p);
+      if (stat.isDirectory()) {
+        // skip common build/output dirs
+        if (entry === 'build' || entry === 'dist' || entry === 'node_modules') continue;
+        walk(p);
+      } else if (stat.isFile() && entry.endsWith('.car')) {
+        files.push(p);
+      }
+    }
+  }
+  walk(rootDir);
+  return files;
+}
+
+function compileCar(projectRoot, carFile, outDir) {
+  fse.ensureDirSync(outDir);
+  const base = path.basename(carFile, '.car');
+  const outCarc = path.join(outDir, `${base}.carc`);
+  const bin = path.join(projectRoot, 'build', 'cardityc');
+  const args = [carFile, '--format', 'carc', '-o', outCarc];
+  const res = spawnSync(bin, args, { stdio: 'pipe', encoding: 'utf-8' });
+  if (res.status !== 0) {
+    throw new Error(`Compile failed for ${carFile}:\n${res.stdout}\n${res.stderr}`);
+  }
+  const abiPath = outCarc.replace(/\.carc$/, '.abi.json');
+  if (!fs.existsSync(abiPath)) {
+    throw new Error(`ABI not found for ${carFile}: expected ${abiPath}`);
+  }
+  return { outCarc, abiPath, log: res.stdout };
+}
+
+function b64(filePath) {
+  const buf = fs.readFileSync(filePath);
+  return buf.toString('base64');
+}
+
+function readJson(p) { return JSON.parse(fs.readFileSync(p, 'utf-8')); }
+
+function main() {
+  const [,, targetDirArg, outFileArg] = process.argv;
+  if (!targetDirArg) {
+    console.error('Usage: cardity_package <package_dir> [out.json]');
+    process.exit(1);
+  }
+  const repoRoot = path.resolve(__dirname, '..');
+  const pkgDir = path.resolve(targetDirArg);
+  const outFile = outFileArg ? path.resolve(outFileArg) : path.join(pkgDir, 'package.inscription.json');
+
+  // manifest optional
+  let manifest = {};
+  const manifestPath = path.join(pkgDir, 'cardity.json');
+  if (fs.existsSync(manifestPath)) {
+    try { manifest = readJson(manifestPath); } catch { manifest = {}; }
+  }
+
+  const name = manifest.name || path.basename(pkgDir);
+  const version = manifest.version || '1.0.0';
+  const moduleEntries = listCarFiles(pkgDir, manifest.modules);
+  if (moduleEntries.length === 0) {
+    console.error('No .car files found to package.');
+    process.exit(2);
+  }
+
+  const tmpOut = path.join(pkgDir, '.cardity_pkg_build');
+  fse.emptyDirSync(tmpOut);
+
+  const modules = [];
+  const packageAbi = {};
+  for (const carFile of moduleEntries) {
+    const { outCarc, abiPath } = compileCar(repoRoot, carFile, tmpOut);
+    const abi = readJson(abiPath);
+    const moduleName = abi.protocol || path.basename(carFile, '.car');
+    modules.push({ name: moduleName, abi, carc_b64: b64(outCarc) });
+    packageAbi[moduleName] = abi;
+  }
+
+  const inscription = {
+    p: 'cardity',
+    op: 'deploy_package',
+    package: name,
+    version,
+    modules,
+    package_abi: packageAbi,
+  };
+
+  fs.writeFileSync(outFile, JSON.stringify(inscription, null, 2));
+  console.log(`✅ Package inscription generated: ${outFile}`);
+}
+
+if (require.main === module) main();
+
+

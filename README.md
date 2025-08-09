@@ -469,6 +469,56 @@ node bin/cardity.js invoke my-contract-123 inc --args '[1]'
 
 说明：indexer 端已兼容 `abi` 为字符串或对象、以及历史 `car` 字段，但推荐优先产出上述标准字段。
 
+## 🧱 多模块/多文件打包与上链
+
+当协议由多个 `.car` 文件组成时，可用 `cardity_package` 生成“包级”部署铭文：
+
+```bash
+# 在包目录（包含多个 .car 或有 cardity.json）下执行
+node bin/cardity_package.js . /tmp/pkg.inscription.json
+
+# inscription 示例（精简）
+{
+  "p": "cardity",
+  "op": "deploy_package",
+  "package": "StablecoinSuite",
+  "version": "1.0.0",
+  "modules": [
+    { "name": "USDTLikeToken", "abi": { ... }, "carc_b64": "..." },
+    { "name": "Bank", "abi": { ... }, "carc_b64": "..." }
+  ],
+  "package_abi": { "USDTLikeToken": { ... }, "Bank": { ... } }
+}
+```
+
+调用某模块方法：
+
+```bash
+node bin/cardity.js invoke <contract_id> transfer --args '["D...",5000]' --module USDTLikeToken
+# 或者：method 使用 点号
+node bin/cardity.js invoke <contract_id> USDTLikeToken.transfer --args '["D...",5000]'
+```
+
+## 🔒 仅上链 Hex（不上链 ABI）工作流
+
+当你希望链上只存放二进制/调用数据而不包含 ABI：
+
+- 部署：
+  ```bash
+  # 1) 编译 .car 为 .carc
+  ./build/cardityc path/to/protocol.car --format carc -o /tmp/protocol.carc
+  # 2) 导出十六进制数据（直接放入 OP_RETURN/铭文）
+  node bin/cardity.js ophex /tmp/protocol.carc > /tmp/protocol.carc.hex
+  ```
+
+- 调用（方法 + 参数 → hex）：
+  ```bash
+  # method 可使用 Module.method 形式；args 为 JSON 数组
+  node bin/cardity.js encode-invoke USDTLikeToken.transfer --args '["D...",5000]' > /tmp/invoke.hex
+  ```
+
+说明：indexer/后端在拿到 hex 后按 UTF-8 解析 JSON（{method,args}），再关联到合约处理流程。
+
 ## 🧩 前端 SDK 生成器（cardity_sdk）
 
 为便于前端直接构造调用铭文（op: "invoke"），提供 SDK 代码生成器。它读取编译产出的 ABI（.abi.json），生成 TypeScript 客户端类，每个方法会返回一段可直接上链的 `invoke` JSON（payload）。

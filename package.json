@@ -10,7 +10,12 @@
     "cardity_abi": "./bin/cardity_abi.js",
     "cardity_deploy": "./bin/cardity_deploy.js",
     "cardity_drc20": "./bin/cardity_drc20.js",
-    "cardity_sdk": "./bin/cardity_sdk.js"
+    "cardity_sdk": "./bin/cardity_sdk.js",
+    "cardity_package": "./bin/cardity_package.js"
+  },
+  "scripts": {
+    "ophex": "node bin/cardity_ophex.js",
+    "encode:invoke": "node bin/cardity_encode_invoke.js"
   },
   "scripts": {
     "build": "mkdir -p build && cd build && cmake .. && make",
