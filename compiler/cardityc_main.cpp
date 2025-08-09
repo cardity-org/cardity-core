@@ -76,6 +76,9 @@ json parse_programming_language_format(const std::string& content) {
         method.name = method_ast.name;
         method.params = method_ast.params;
         method.logic_lines.push_back(method_ast.logic);
+        // 传递可选返回定义
+        method.return_expr = method_ast.return_expr;
+        method.return_type = method_ast.return_type;
         protocol.methods.push_back(method);
     }
     
@@ -220,6 +223,14 @@ int main(int argc, char* argv[]) {
                 method.name = it.key();
                 method.params = it.value()["params"].get<std::vector<std::string>>();
                 method.logic_lines.push_back(it.value()["logic"]);
+                if (it.value().contains("returns")) {
+                    if (it.value()["returns"].is_string()) {
+                        method.return_expr = it.value()["returns"].get<std::string>();
+                    } else if (it.value()["returns"].is_object()) {
+                        method.return_expr = it.value()["returns"].value("expr", "");
+                        method.return_type = it.value()["returns"].value("type", "");
+                    }
+                }
                 protocol.methods.push_back(method);
             }
             
@@ -235,6 +246,19 @@ int main(int argc, char* argv[]) {
                 std::cout << "📋 Owner: " << protocol.metadata.owner << std::endl;
                 std::cout << "📋 State variables: " << protocol.state.variables.size() << std::endl;
                 std::cout << "📋 Methods: " << protocol.methods.size() << std::endl;
+                // 如需生成铭文，同时输出 inscription 文件
+                if (generate_inscription) {
+                    try {
+                        CarFile cf = CarDeployer::create_deployment_package_from_json(car_data);
+                        json ins = CarDeployer::generate_inscription_format(cf);
+                        std::string inscription_file = std::string(output_file) + ".inscription";
+                        std::ofstream ofs(inscription_file);
+                        ofs << ins.dump(2) << std::endl;
+                        std::cout << "📝 Inscription saved to: " << inscription_file << std::endl;
+                    } catch (const std::exception& ex) {
+                        std::cerr << "⚠️  Failed to generate inscription: " << ex.what() << std::endl;
+                    }
+                }
                 return 0;
             } else {
                 throw std::runtime_error("Failed to write .carc file");

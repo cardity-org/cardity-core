@@ -1,0 +1,37 @@
+protocol HelloWorld {
+  version: "1.0.0";
+  owner: "doge1abc123def456";
+  
+  state {
+    message: string = "Hello, Cardity!";
+    count: int = 0;
+  }
+  
+  event MessageUpdated {
+    new_message: string;
+  }
+  
+  event CounterIncremented {
+    old_count: int;
+    new_count: int;
+  }
+  
+  method get_message() {
+    return state.message;
+  }
+  
+  method set_message(new_message) {
+    state.message = new_message;
+    emit MessageUpdated(new_message);
+  }
+  
+  method increment() {
+    let old_count = state.count;
+    state.count = state.count + 1;
+    emit CounterIncremented(old_count, state.count);
+  }
+  
+  method get_count() {
+    return state.count;
+  }
+}

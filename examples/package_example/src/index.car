@@ -1,0 +1,73 @@
+protocol PackageExample {
+  version: "1.0.0";
+  owner: "doge1package123";
+  
+  state {
+    name: string = "Package Example";
+    description: string = "Example package for Cardity development";
+    total_users: int = 0;
+    total_transactions: int = 0;
+    is_active: bool = true;
+    created_at: string = "";
+  }
+  
+  event PackageInitialized {
+    name: string;
+    owner: string;
+    timestamp: string;
+  }
+  
+  event UserRegistered {
+    user_id: string;
+    total_users: int;
+  }
+  
+  event TransactionExecuted {
+    method_name: string;
+    result: string;
+    total_transactions: int;
+  }
+  
+  method initialize(name, description) {
+    if (state.created_at.length() == 0) {
+      state.name = name;
+      state.description = description;
+      state.created_at = "now";
+      
+      emit PackageInitialized(state.name, state.owner, state.created_at);
+      return "Package initialized successfully";
+    }
+    return "Package already initialized";
+  }
+  
+  method register_user(user_id) {
+    if (state.is_active && user_id.length() > 0) {
+      state.total_users = state.total_users + 1;
+      emit UserRegistered(user_id, state.total_users);
+      return "User registered successfully";
+    }
+    return "Registration failed";
+  }
+  
+  method execute_transaction(method_name, params) {
+    if (state.is_active) {
+      state.total_transactions = state.total_transactions + 1;
+      let result = "Transaction executed: " + method_name;
+      emit TransactionExecuted(method_name, result, state.total_transactions);
+      return result;
+    }
+    return "Package is not active";
+  }
+  
+  method get_stats() {
+    return "Name: " + state.name + 
+           ", Users: " + state.total_users + 
+           ", Transactions: " + state.total_transactions + 
+           ", Active: " + state.is_active;
+  }
+  
+  method toggle_active() {
+    state.is_active = !state.is_active;
+    return "Package " + (state.is_active ? "activated" : "deactivated");
+  }
+}

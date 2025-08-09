@@ -421,6 +421,54 @@ make
 - [包管理指南](docs/package_management.md)
 - [开发指南](docs/development_guide.md)
 
+## 🔗 与 dogeuni-indexer 对接（Cardity 索引约定）
+
+为了让链上数据被 `dogeuni-indexer` 正确解析与入库，请遵循以下字段约定：
+
+- 通用：`p: "cardity"`
+- 部署（deploy）
+  - `op: "deploy"`
+  - `protocol: string` 协议名
+  - `version: string` 协议版本
+  - `abi: string` 字符串化后的 ABI JSON（stringified JSON）
+  - `carc_b64: string` `.carc` 二进制的 base64 编码
+  - 可选：`contract_id: string`（不提供时 indexer 将以部署 `txhash` 作为合约标识）
+
+- 调用（invoke）
+  - `op: "invoke"`
+  - `contract_id: string` 或 `contract_ref: string`（合约标识）
+  - `method: string` 方法名
+  - `args: any[]` 原始 JSON 数组参数
+
+### 生成方式
+
+- 生成 `.carc` 与部署铭文（deploy inscription）：
+
+```bash
+./build/cardityc examples/00_minimal.car --format carc -o /tmp/min.carc --inscription
+# 输出 /tmp/min.carc.inscription，内容示意：
+{
+  "p": "cardity",
+  "op": "deploy",
+  "protocol": "Minimal",
+  "version": "1.0.0",
+  "abi": "{\"events\":null,\"methods\":{...},\"protocol\":\"Minimal\",\"version\":\"1.0.0\"}",
+  "carc_b64": "...base64..."
+}
+```
+
+- 生成调用铭文（invoke inscription）：
+
+```bash
+node bin/cardity.js invoke <contract_id_or_txhash> <method> \
+  --args '[<json-array> ]'
+
+# 示例
+node bin/cardity.js invoke my-contract-123 inc --args '[1]'
+```
+
+说明：indexer 端已兼容 `abi` 为字符串或对象、以及历史 `car` 字段，但推荐优先产出上述标准字段。
+
 ## 🤝 贡献
 
 欢迎贡献代码！

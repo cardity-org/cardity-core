@@ -1,0 +1,13 @@
+protocol Minimal {
+  version: "1.0.0";
+  owner: "doge1owner...";
+
+  state {
+    x: int = 0;
+  }
+
+  method inc(n) { state.x = params.n }
+  returns: string "ok";
+}
+
+

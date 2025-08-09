@@ -122,7 +122,9 @@ std::vector<ParserStateVariable> Parser::parse_state_block() {
         if (current.type == TokenType::IDENTIFIER || 
             current.type == TokenType::KEYWORD_STRING ||
             current.type == TokenType::KEYWORD_INT ||
-            current.type == TokenType::KEYWORD_BOOL) {
+            current.type == TokenType::KEYWORD_BOOL ||
+            current.type == TokenType::KEYWORD_ADDRESS ||
+            current.type == TokenType::KEYWORD_MAP) {
             type = current.value;
             advance();
         } else {
@@ -187,8 +189,38 @@ ParserMethod Parser::parse_method() {
     
     std::string logic = parse_method_body();
     // parse_method_body() 已经消费了结束的 }，所以这里不需要再消费
-    
-    return {name, params, logic};
+
+    // 可选 returns 解析：
+    std::string return_expr = "";
+    std::string return_type = "";
+    if (current.value == "returns") {
+        advance();
+        expect(":");
+        // 可选类型标注
+        if (current.type == TokenType::IDENTIFIER ||
+            current.type == TokenType::KEYWORD_STRING ||
+            current.type == TokenType::KEYWORD_INT ||
+            current.type == TokenType::KEYWORD_BOOL) {
+            return_type = current.value;
+            advance();
+        }
+        std::ostringstream oss;
+        while (!is_at_end() && current.value != ";") {
+            oss << current.value;
+            if (current.type != TokenType::SEMICOLON) oss << " ";
+            advance();
+        }
+        expect(";");
+        return_expr = oss.str();
+    }
+
+    ParserMethod m;
+    m.name = name;
+    m.params = params;
+    m.logic = logic;
+    m.return_expr = return_expr;
+    m.return_type = return_type;
+    return m;
 }
 
 std::vector<std::string> Parser::parse_method_params() {
@@ -205,10 +237,12 @@ std::vector<std::string> Parser::parse_method_params() {
         // 如果有类型注解（冒号），跳过类型
         if (match(":")) {
             // 跳过类型（可以是关键字或标识符）
-            if (current.type == TokenType::IDENTIFIER || 
+            if (current.type == TokenType::IDENTIFIER ||
                 current.type == TokenType::KEYWORD_STRING ||
                 current.type == TokenType::KEYWORD_INT ||
-                current.type == TokenType::KEYWORD_BOOL) {
+                current.type == TokenType::KEYWORD_BOOL ||
+                current.type == TokenType::KEYWORD_ADDRESS ||
+                current.type == TokenType::KEYWORD_MAP) {
                 advance(); // 跳过类型
             } else {
                 expect_identifier(); // 期望一个标识符作为类型
@@ -277,7 +311,10 @@ void Parser::error(const std::string& msg) {
 
 void Parser::advance() {
     if (!is_at_end()) {
-        current = lexer.next_token();
+        // 跳过 UNKNOWN token（不可见字符或未识别符号），增强容错
+        do {
+            current = lexer.next_token();
+        } while (current.type == TokenType::UNKNOWN && !is_at_end());
     }
 }
 

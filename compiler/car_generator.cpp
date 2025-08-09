@@ -45,6 +45,13 @@ json CarGenerator::compile_methods(const std::vector<Method>& methods) {
         } else {
             m["logic"] = method.logic_lines;
         }
+        // 输出可选返回定义
+        if (!method.return_expr.empty() || !method.return_type.empty()) {
+            json r;
+            if (!method.return_type.empty()) r["type"] = method.return_type;
+            if (!method.return_expr.empty()) r["expr"] = method.return_expr;
+            m["returns"] = r;
+        }
         methods_json[method.name] = m;
     }
     return methods_json;

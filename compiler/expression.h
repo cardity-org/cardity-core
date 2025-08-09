@@ -20,19 +20,22 @@ public:
     static bool evaluate_condition(const std::string& expr, 
                                  const State& state, 
                                  const std::vector<std::string>& args, 
-                                 const json& method);
+                                 const json& method,
+                                 const std::unordered_map<std::string, std::string>& ctx);
     
     // 解析并执行 if 条件语句
     static bool execute_if_statement(const std::string& logic, 
                                    State& state, 
                                    const std::vector<std::string>& args, 
-                                   const json& method);
+                                   const json& method,
+                                   const std::unordered_map<std::string, std::string>& ctx);
     
     // 解析赋值语句
     static void parse_assignment(const std::string& assignment, 
                                State& state, 
                                const std::vector<std::string>& args, 
-                               const json& method);
+                               const json& method,
+                               const std::unordered_map<std::string, std::string>& ctx);
 
 public:
     // 解析表达式中的操作符
@@ -42,7 +45,11 @@ public:
     static std::string resolve_variable(const std::string& token, 
                                       const State& state, 
                                       const std::vector<std::string>& args, 
-                                      const json& method);
+                                      const json& method,
+                                      const std::unordered_map<std::string, std::string>& ctx);
+    // 解析上下文变量（ctx.sender/ctx.txid/ctx.data_length）
+    static std::string resolve_context(const std::string& token,
+                                       const std::unordered_map<std::string, std::string>& ctx);
     
     // 解析字面量（字符串或数字）
     static std::string resolve_literal(const std::string& token);

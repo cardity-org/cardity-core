@@ -17,6 +17,9 @@ struct ParserMethod {
     std::string name;
     std::vector<std::string> params;
     std::string logic;
+    // Optional return support
+    std::string return_expr;   // e.g. "state.count" or literal/expr
+    std::string return_type;   // optional type annotation (e.g. int/string/bool)
 };
 
 struct ProtocolAST {

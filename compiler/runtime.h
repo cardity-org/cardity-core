@@ -31,6 +31,10 @@ public:
     std::string invoke_method(const json& car, State& state, 
                             const std::string& method_name, 
                             const std::vector<std::string>& args);
+
+    // 设置调用上下文（可选）：sender/txid/data_length 等
+    void set_context(const std::string& key, const std::string& value) { context[key] = value; }
+    const std::unordered_map<std::string, std::string>& get_context() const { return context; }
     
     // 打印当前状态
     static void print_state(const State& state, const std::string& title = "Current State");
@@ -49,6 +53,7 @@ public:
 
 private:
     EventManager event_manager;
+    std::unordered_map<std::string, std::string> context;
     
     // 解析简单的赋值语句：state.xxx = yyy
     static void parse_assignment(const std::string& logic, State& state, 

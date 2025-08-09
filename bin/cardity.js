@@ -148,6 +148,28 @@ program
       })
   );
 
+// Cardity invoke inscription generator
+program
+  .command('invoke <contract> <method>')
+  .description('Generate a Cardity invoke inscription JSON (p=cardity, op=invoke)')
+  .option('-a, --args <json>', 'JSON array of args, e.g. "[\"addr\", 100]"', '[]')
+  .action((contract, method, options) => {
+    try {
+      const args = JSON.parse(options.args || '[]');
+      const payload = {
+        p: 'cardity',
+        op: 'invoke',
+        contract_id: contract,
+        method,
+        args,
+      };
+      console.log(JSON.stringify(payload, null, 2));
+    } catch (e) {
+      console.error('❌ Invalid JSON for --args');
+      process.exit(1);
+    }
+  });
+
 // 初始化项目命令
 program
   .command('init [name]')

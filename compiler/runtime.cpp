@@ -57,23 +57,40 @@ std::string Runtime::invoke_method(const json& car, State& state,
     // 处理逻辑字段：state.xxx = yyy 或 if 条件语句
     if (method.contains("logic")) {
         if (method["logic"].is_string()) {
-            // 单个逻辑语句
+            // 可能包含多条以分号分隔的简单语句
             std::string logic = method["logic"];
-            
-            // 尝试解析 if 语句
-            if (ExpressionEvaluator::execute_if_statement(logic, state, args, method)) {
-                return "ok";
-            }
-            
-            // 尝试解析 emit 语句
-            if (logic.find("emit ") == 0) {
+            // 跳过空白逻辑字符串
+            std::string no_space = logic;
+            no_space.erase(std::remove_if(no_space.begin(), no_space.end(), ::isspace), no_space.end());
+            if (!no_space.empty()) {
+            // 如果是 if 开头，按 if 语句处理
+            std::string trimmed = logic;
+            trimmed.erase(std::remove_if(trimmed.begin(), trimmed.end(), ::isspace), trimmed.end());
+            bool is_if = logic.find("if") != std::string::npos && logic.find("(") != std::string::npos && logic.find(")") != std::string::npos && logic.find("{") != std::string::npos;
+            if (is_if) {
+                (void)ExpressionEvaluator::execute_if_statement(logic, state, args, method, context);
+            } else if (logic.find("emit ") == 0) {
                 parse_emit_statement(logic, state, args, param_names);
-                return "ok";
+            } else if (logic.find(';') != std::string::npos) {
+                // 按分号分割逐条执行
+                size_t start = 0;
+                while (true) {
+                    size_t pos = logic.find(';', start);
+                    std::string stmt = (pos == std::string::npos) ? logic.substr(start) : logic.substr(start, pos - start);
+                    // trim spaces
+                    stmt.erase(stmt.begin(), std::find_if(stmt.begin(), stmt.end(), [](int ch){ return !std::isspace(ch); }));
+                    stmt.erase(std::find_if(stmt.rbegin(), stmt.rend(), [](int ch){ return !std::isspace(ch); }).base(), stmt.end());
+                    if (!stmt.empty()) {
+                        ExpressionEvaluator::parse_assignment(stmt, state, args, method, context);
+                    }
+                    if (pos == std::string::npos) break;
+                    start = pos + 1;
+                }
+            } else {
+                // 单条赋值
+                ExpressionEvaluator::parse_assignment(logic, state, args, method, context);
             }
-            
-            // 如果不是 if 或 emit，当作普通赋值处理
-            parse_assignment(logic, state, args, param_names);
-            return "ok";
+            }
         } else if (method["logic"].is_array()) {
             // 多个逻辑语句
             auto logic_array = method["logic"];
@@ -81,9 +98,7 @@ std::string Runtime::invoke_method(const json& car, State& state,
                 std::string logic = logic_item;
                 
                 // 尝试解析 if 语句
-                if (ExpressionEvaluator::execute_if_statement(logic, state, args, method)) {
-                    continue;
-                }
+                (void)ExpressionEvaluator::execute_if_statement(logic, state, args, method, context);
                 
                 // 尝试解析 emit 语句
                 if (logic.find("emit ") == 0) {
@@ -92,13 +107,12 @@ std::string Runtime::invoke_method(const json& car, State& state,
                 }
                 
                 // 如果不是 if 或 emit，当作普通赋值处理
-                parse_assignment(logic, state, args, param_names);
+                ExpressionEvaluator::parse_assignment(logic, state, args, method, context);
             }
-            return "ok";
         }
     }
 
-    // 处理返回语句：return state.xxx 或类型化返回
+    // 处理返回语句：return 表达式（支持 state/params/ctx 与简单比较/取值）
     if (method.contains("returns")) {
         if (method["returns"].is_string()) {
             // 旧格式：简单字符串
@@ -109,12 +123,33 @@ std::string Runtime::invoke_method(const json& car, State& state,
             auto returns_obj = method["returns"];
             if (returns_obj.contains("expr")) {
                 std::string expr = returns_obj["expr"];
+                // 尝试用表达式求值：优先条件，其次变量解析
+                try {
+                    // 条件表达式
+                    if (expr.find("==") != std::string::npos || expr.find("!=") != std::string::npos ||
+                        expr.find(">=") != std::string::npos || expr.find("<=") != std::string::npos ||
+                        expr.find(">") != std::string::npos || expr.find("<") != std::string::npos) {
+                        bool b = ExpressionEvaluator::evaluate_condition(expr, state, args, method, context);
+                        return b ? "true" : "false";
+                    }
+                    // 变量/索引/ctx/params 解析
+                    std::string expr_trimmed = ExpressionEvaluator::trim(expr);
+                    if (expr_trimmed.find("state.") == 0 || expr_trimmed.find("params.") == 0) {
+                        return ExpressionEvaluator::resolve_variable(expr_trimmed, state, args, method, context);
+                    }
+                    if (expr_trimmed.find("ctx.") == 0) {
+                        return ExpressionEvaluator::resolve_context(expr_trimmed, context);
+                    }
+                } catch (...) {
+                    // 回退到原有解析
+                    return parse_return(expr, state);
+                }
                 return parse_return(expr, state);
             }
         }
     }
 
-    return "undefined";
+    return "ok";
 }
 
 void Runtime::parse_assignment(const std::string& logic, State& state, 
@@ -245,37 +280,38 @@ void Runtime::parse_emit_statement(const std::string& emit_stmt, const State& st
     
 
     
-    // 解析参数
+    // 解析参数（支持逗号分隔的多个参数）
     std::vector<std::string> event_values;
     
     if (!params_str.empty()) {
-        // 简单处理：假设只有一个参数
-        if (params_str.find("params.") == 0) {
-            std::string param_name = params_str.substr(7); // 移除 "params."
-            
-            // 查找参数位置
-            auto it = std::find(param_names.begin(), param_names.end(), param_name);
-            if (it != param_names.end()) {
-                size_t idx = std::distance(param_names.begin(), it);
-                if (idx < args.size()) {
+        size_t start = 0;
+        while (true) {
+            size_t pos = params_str.find(',', start);
+            std::string tok = (pos == std::string::npos) ? params_str.substr(start) : params_str.substr(start, pos - start);
+            // trim spaces
+            tok.erase(tok.begin(), std::find_if(tok.begin(), tok.end(), [](int ch){ return !std::isspace(ch); }));
+            tok.erase(std::find_if(tok.rbegin(), tok.rend(), [](int ch){ return !std::isspace(ch); }).base(), tok.end());
+            if (!tok.empty()) {
+                if (tok.rfind("params.", 0) == 0) {
+                    std::string param_name = tok.substr(7);
+                    auto it = std::find(param_names.begin(), param_names.end(), param_name);
+                    if (it == param_names.end()) throw std::runtime_error("Unknown parameter: " + param_name);
+                    size_t idx = std::distance(param_names.begin(), it);
+                    if (idx >= args.size()) throw std::runtime_error("Missing argument for parameter: " + param_name);
                     event_values.push_back(args[idx]);
+                } else if (tok.rfind("state.", 0) == 0) {
+                    std::string state_ref = tok.substr(6);
+                    auto it2 = state.find(state_ref);
+                    if (it2 != state.end()) event_values.push_back(it2->second); else event_values.push_back("");
+                } else if (tok.rfind("ctx.", 0) == 0) {
+                    event_values.push_back(ExpressionEvaluator::resolve_context(tok, context));
                 } else {
-                    throw std::runtime_error("Missing argument for parameter: " + param_name);
+                    // 原样字面量
+                    event_values.push_back(tok);
                 }
-            } else {
-                throw std::runtime_error("Unknown parameter: " + param_name);
             }
-        } else if (params_str.find("state.") == 0) {
-            std::string state_var = params_str.substr(6); // 移除 "state."
-            auto it = state.find(state_var);
-            if (it != state.end()) {
-                event_values.push_back(it->second);
-            } else {
-                throw std::runtime_error("State variable not found: " + state_var);
-            }
-        } else {
-            // 字面量
-            event_values.push_back(params_str);
+            if (pos == std::string::npos) break;
+            start = pos + 1;
         }
     }
     

@@ -38,6 +38,9 @@ struct Method : public ASTNode {
     std::string name;
     std::vector<std::string> params;
     std::vector<std::string> logic_lines; // 暂用字符串表达逻辑
+    // 新增：可选返回定义
+    std::string return_expr;   // 表达式/变量引用
+    std::string return_type;   // 返回类型（可选）
 };
 
 // ----------------------

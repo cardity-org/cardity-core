@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
+#include "ast.h"
+#include "carc_generator.h"
 
 namespace cardity {
 
@@ -257,24 +259,94 @@ json CarDeployer::decode_from_base64(const std::string& base64_data) {
 
 json CarDeployer::generate_inscription_format(const CarFile& car_file) {
     json inscription;
-    
-    inscription["p"] = "cardinals";
+    // indexer 期望 p=cardity
+    inscription["p"] = "cardity";
     inscription["op"] = "deploy";
     inscription["protocol"] = car_file.protocol;
     inscription["version"] = car_file.version;
-    
-    // 将整个 .car 文件编码为 base64
-    json car_json;
-    car_json["cpl"] = car_file.cpl;
-    car_json["abi"] = car_file.abi;
-    car_json["hash"] = car_file.hash;
-    
-    if (!car_file.owner.empty()) {
-        car_json["owner"] = car_file.owner;
+
+    // abi 以字符串形式输出
+    try {
+        inscription["abi"] = car_file.abi.dump();
+    } catch (...) {
+        inscription["abi"] = std::string("{}");
     }
-    
-    inscription["car"] = encode_to_base64(car_json);
-    
+
+    // 重新从 cpl 构建 Protocol 并生成 .carc，然后 base64 输出
+    try {
+        Protocol protocol;
+        protocol.name = car_file.protocol;
+        protocol.metadata.version = car_file.version;
+        protocol.metadata.owner = car_file.cpl.value("owner", "");
+
+        // 解析状态
+        if (car_file.cpl.contains("state")) {
+            auto state_json = car_file.cpl["state"];
+            for (auto it = state_json.begin(); it != state_json.end(); ++it) {
+                StateVariable var;
+                var.name = it.key();
+                var.type = it.value().value("type", "string");
+                var.default_value = it.value().value("default", "");
+                protocol.state.variables.push_back(var);
+            }
+        }
+        // 解析方法
+        if (car_file.cpl.contains("methods")) {
+            auto methods_json = car_file.cpl["methods"];
+            for (auto it = methods_json.begin(); it != methods_json.end(); ++it) {
+                Method m;
+                m.name = it.key();
+                if (it.value().contains("params")) {
+                    m.params = it.value()["params"].get<std::vector<std::string>>();
+                }
+                if (it.value().contains("logic")) {
+                    if (it.value()["logic"].is_string()) {
+                        m.logic_lines.push_back(it.value()["logic"].get<std::string>());
+                    } else if (it.value()["logic"].is_array()) {
+                        for (const auto& ln : it.value()["logic"]) m.logic_lines.push_back(ln.get<std::string>());
+                    }
+                }
+                if (it.value().contains("returns")) {
+                    if (it.value()["returns"].is_string()) {
+                        m.return_expr = it.value()["returns"].get<std::string>();
+                    } else if (it.value()["returns"].is_object()) {
+                        m.return_expr = it.value()["returns"].value("expr", "");
+                        m.return_type = it.value()["returns"].value("type", "");
+                    }
+                }
+                protocol.methods.push_back(m);
+            }
+        }
+        std::vector<uint8_t> carc_bytes = CarcGenerator::compile_to_carc(protocol);
+        // base64 编码字节
+        std::string carc_data(reinterpret_cast<const char*>(carc_bytes.data()), carc_bytes.size());
+        // 复用现有字符串编码方法
+        json tmp = json::object();
+        tmp["raw"] = carc_data; // 占位
+        // 直接对 carc_data 编码
+        std::string base64_chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789+/";
+        std::string result;
+        int val = 0, valb = -6;
+        for (unsigned char c : carc_bytes) {
+            val = (val << 8) + c;
+            valb += 8;
+            while (valb >= 0) {
+                result.push_back(base64_chars[(val >> valb) & 0x3F]);
+                valb -= 6;
+            }
+        }
+        if (valb > -6) {
+            result.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
+        }
+        while (result.size() % 4) result.push_back('=');
+        inscription["carc_b64"] = result;
+    } catch (...) {
+        // 忽略 .carc 编码失败
+    }
+
     return inscription;
 }
 

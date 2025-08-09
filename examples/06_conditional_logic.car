@@ -1,0 +1,139 @@
+protocol ConditionalLogic {
+  version: "1.0.0";
+  owner: "doge1logic123";
+  
+  state {
+    score: int = 0;
+    level: int = 1;
+    status: string = "active";
+    attempts: int = 0;
+    max_attempts: int = 3;
+  }
+  
+  event ScoreUpdated {
+    old_score: int;
+    new_score: int;
+    reason: string;
+  }
+  
+  event LevelUp {
+    old_level: int;
+    new_level: int;
+  }
+  
+  event StatusChanged {
+    old_status: string;
+    new_status: string;
+  }
+  
+  // 基础条件逻辑
+  method add_score(points) {
+    if (points > 0) {
+      let old_score = state.score;
+      state.score = state.score + points;
+      
+      emit ScoreUpdated(old_score, state.score, "points_added");
+      
+      // 检查是否升级
+      if (state.score >= 100 && state.level == 1) {
+        level_up();
+      } else if (state.score >= 250 && state.level == 2) {
+        level_up();
+      } else if (state.score >= 500 && state.level == 3) {
+        level_up();
+      }
+    }
+  }
+  
+  // 复杂条件逻辑
+  method attempt_action(action_type) {
+    if (state.status == "active") {
+      if (state.attempts < state.max_attempts) {
+        state.attempts = state.attempts + 1;
+        
+        if (action_type == "easy") {
+          add_score(10);
+          return "Easy action completed";
+        } else if (action_type == "medium") {
+          if (state.level >= 2) {
+            add_score(25);
+            return "Medium action completed";
+          } else {
+            return "Level 2 required for medium actions";
+          }
+        } else if (action_type == "hard") {
+          if (state.level >= 3) {
+            add_score(50);
+            return "Hard action completed";
+          } else {
+            return "Level 3 required for hard actions";
+          }
+        } else {
+          return "Invalid action type";
+        }
+      } else {
+        change_status("locked");
+        return "Max attempts reached";
+      }
+    } else {
+      return "Account is not active";
+    }
+  }
+  
+  // 状态管理
+  method change_status(new_status) {
+    if (new_status == "active" || new_status == "locked" || new_status == "suspended") {
+      let old_status = state.status;
+      state.status = new_status;
+      emit StatusChanged(old_status, new_status);
+    }
+  }
+  
+  // 重置方法
+  method reset_attempts() {
+    if (state.status == "active") {
+      state.attempts = 0;
+      return "Attempts reset";
+    }
+    return "Cannot reset while locked";
+  }
+  
+  // 升级逻辑
+  method level_up() {
+    let old_level = state.level;
+    state.level = state.level + 1;
+    emit LevelUp(old_level, state.level);
+  }
+  
+  // 查询方法
+  method get_score() {
+    return state.score;
+  }
+  
+  method get_level() {
+    return state.level;
+  }
+  
+  method get_status() {
+    return state.status;
+  }
+  
+  method get_attempts() {
+    return state.attempts;
+  }
+  
+  method can_perform_action(action_type) {
+    if (action_type == "easy") {
+      return state.status == "active";
+    } else if (action_type == "medium") {
+      return state.status == "active" && state.level >= 2;
+    } else if (action_type == "hard") {
+      return state.status == "active" && state.level >= 3;
+    }
+    return false;
+  }
+  
+  method get_stats() {
+    return "Score: " + state.score + ", Level: " + state.level + ", Status: " + state.status;
+  }
+}

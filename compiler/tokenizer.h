@@ -15,6 +15,8 @@ enum class TokenType {
     KEYWORD_STRING,
     KEYWORD_INT,
     KEYWORD_BOOL,
+    KEYWORD_ADDRESS,
+    KEYWORD_MAP,
     KEYWORD_TRUE,
     KEYWORD_FALSE,
     
@@ -32,6 +34,8 @@ enum class TokenType {
     RBRACE,
     LPAREN,
     RPAREN,
+    LBRACKET,
+    RBRACKET,
     COMMA,
     DOT,
     

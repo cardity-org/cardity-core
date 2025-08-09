@@ -60,14 +60,32 @@ void Tokenizer::reset() {
 }
 
 void Tokenizer::skip_whitespace() {
-    while (pos < source.size() && std::isspace(source[pos])) {
-        if (source[pos] == '\n') {
+    while (pos < source.size()) {
+        unsigned char ch = static_cast<unsigned char>(source[pos]);
+        // UTF-8 non-breaking space (0xC2 0xA0)
+        if (ch == 0xC2 && pos + 1 < source.size() && static_cast<unsigned char>(source[pos + 1]) == 0xA0) {
+            pos += 2;
+            column += 2;
+            continue;
+        }
+        if (ch == '\r') {
+            // treat CR as newline
             line++;
             column = 1;
-        } else {
-            column++;
+            pos++;
+            continue;
         }
-        pos++;
+        if (std::isspace(ch)) {
+            if (ch == '\n') {
+                line++;
+                column = 1;
+            } else {
+                column++;
+            }
+            pos++;
+            continue;
+        }
+        break;
     }
 }
 
@@ -156,6 +174,12 @@ Token Tokenizer::parse_symbol() {
         } else if (two_char == "<=") {
             advance_position();
             return Token(TokenType::LESS_EQUAL, two_char, start_line, start_column);
+        } else if (two_char == "&&") {
+            advance_position();
+            return Token(TokenType::UNKNOWN, two_char, start_line, start_column); // accept and pass through
+        } else if (two_char == "||") {
+            advance_position();
+            return Token(TokenType::UNKNOWN, two_char, start_line, start_column);
         }
     }
     
@@ -168,6 +192,8 @@ Token Tokenizer::parse_symbol() {
         case '}': type = TokenType::RBRACE; break;
         case '(': type = TokenType::LPAREN; break;
         case ')': type = TokenType::RPAREN; break;
+        case '[': type = TokenType::LBRACKET; break;
+        case ']': type = TokenType::RBRACKET; break;
         case ',': type = TokenType::COMMA; break;
         case '.': type = TokenType::DOT; break;
         case '+': type = TokenType::PLUS; break;
@@ -177,6 +203,8 @@ Token Tokenizer::parse_symbol() {
         case '!': type = TokenType::NOT; break;
         case '>': type = TokenType::GREATER_THAN; break;
         case '<': type = TokenType::LESS_THAN; break;
+        case '&': type = TokenType::UNKNOWN; break; // allow '&' to pass
+        case '|': type = TokenType::UNKNOWN; break;
         default:
             type = TokenType::UNKNOWN;
     }
@@ -188,7 +216,8 @@ bool Tokenizer::is_symbol(char c) const {
     return c == '{' || c == '}' || c == ':' || c == ';' || 
            c == '(' || c == ')' || c == '=' || c == ',' || 
            c == '.' || c == '+' || c == '-' || c == '*' || 
-           c == '/' || c == '!' || c == '>' || c == '<';
+           c == '/' || c == '!' || c == '>' || c == '<' ||
+           c == '[' || c == ']';
 }
 
 bool Tokenizer::is_keyword(const std::string& word) const {
@@ -207,6 +236,8 @@ TokenType Tokenizer::get_keyword_type(const std::string& word) const {
     if (word == "bool") return TokenType::KEYWORD_BOOL;
     if (word == "true") return TokenType::KEYWORD_TRUE;
     if (word == "false") return TokenType::KEYWORD_FALSE;
+    if (word == "address") return TokenType::KEYWORD_ADDRESS;
+    if (word == "map") return TokenType::KEYWORD_MAP;
     
     return TokenType::UNKNOWN;
 }

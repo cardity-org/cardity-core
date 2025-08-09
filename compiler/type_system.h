@@ -15,7 +15,9 @@ using json = nlohmann::json;
 enum class ValueType { 
     INT, 
     BOOL, 
-    STRING 
+    STRING,
+    ADDRESS,
+    MAP
 };
 
 // 类型字符串映射
@@ -24,6 +26,8 @@ inline std::string type_to_string(ValueType type) {
         case ValueType::INT: return "int";
         case ValueType::BOOL: return "bool";
         case ValueType::STRING: return "string";
+        case ValueType::ADDRESS: return "address";
+        case ValueType::MAP: return "map";
         default: return "unknown";
     }
 }
@@ -32,6 +36,8 @@ inline ValueType string_to_type(const std::string& type_str) {
     if (type_str == "int") return ValueType::INT;
     if (type_str == "bool") return ValueType::BOOL;
     if (type_str == "string") return ValueType::STRING;
+    if (type_str == "address") return ValueType::ADDRESS;
+    if (type_str == "map") return ValueType::MAP;
     throw std::runtime_error("Unknown type: " + type_str);
 }
 
@@ -54,6 +60,8 @@ struct Value {
             case ValueType::BOOL: 
                 return std::get<bool>(data) ? "true" : "false";
             case ValueType::STRING: 
+                return std::get<std::string>(data);
+            case ValueType::ADDRESS:
                 return std::get<std::string>(data);
             default: 
                 return "undefined";
