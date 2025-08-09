@@ -41,9 +41,7 @@ npm run build
   node bin/cardity_package.js <package_dir> /tmp/pkg.inscription.json
   ```
 - 分片（Dogecoin 单笔 ≤50KB）：
-  ```bash
-  node bin/cardity_split_parts.js /tmp/protocol.carc MyBundle MyModule --version 1.0.0 -o /tmp/parts
-  ```
+  （不推荐自定义分片，建议使用 dogeuni-sdk 的 commit/reveal 方案，见下“铭文计划”）
 - SDK 生成：
   ```bash
   node bin/cardity_sdk.js /tmp/protocol.abi.json /tmp/protocol.sdk.ts
@@ -55,6 +53,7 @@ npm run build
 - 调用（invoke）：`op: "invoke"`, `contract_id` 或 `contract_ref`, `method` 或 `Module.method`, `args` 数组
 - 包部署（deploy_package）：`package_id`, `version`, `abi`(包级), `modules[{name, abi, carc_b64}]`
 - 分片（deploy_part）：`bundle_id`, `idx`, `total`, `package_id`, `version`, `module`, `carc_b64`
+  - 说明：不推荐自行切片。大文件推荐通过 dogeuni-sdk 的 commit/reveal 流程自动分段入脚本。
 
 ## 工作流速览
 - 部署（仅 hex 上链）：
@@ -71,8 +70,17 @@ npm run build
 - 包/模块：
   ```bash
   node bin/cardity_package.js examples/usdt_package /tmp/usdt_package.inscription.json
-  # 或按 50KB 分片：node bin/cardity_split_parts.js /tmp/usdt.carc USDTBundle USDTLikeToken --version 1.0.0 -o /tmp/parts
+  # 大文件发布（推荐 dogeuni-sdk）：生成铭文计划 JSON 交给 dogeuni-sdk 执行
+  node bin/cardity_inscribe_plan.js /tmp/usdt.carc <revealAddr> > /tmp/usdt.inscribe.plan.json
   ```
+
+## 铭文计划（dogeuni-sdk 方式，推荐）
+- 生成计划：
+  ```bash
+  node bin/cardity_inscribe_plan.js /tmp/protocol.carc <revealAddr> > /tmp/protocol.inscribe.plan.json
+  ```
+- 说明：产物结构与 dogeuni-sdk 的 FileInscriptionRequest 对齐（核心字段为 `inscriptionDataList[0].file_b64` 装载 .carc 字节）。
+- 使用：在你方环境用 dogeuni-sdk 读取该计划 JSON，补充 UTXO/费率/找零地址后，按 commit/reveal 流程上链。无需我们侧自定义分片。
 
 ## 安全与提交
 - `.gitignore` 已默认排除 `.env`、密钥/证书、钱包及生成产物（hex/abi/inscription）。
