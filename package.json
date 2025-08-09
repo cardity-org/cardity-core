@@ -11,11 +11,15 @@
     "cardity_deploy": "./bin/cardity_deploy.js",
     "cardity_drc20": "./bin/cardity_drc20.js",
     "cardity_sdk": "./bin/cardity_sdk.js",
-    "cardity_package": "./bin/cardity_package.js"
+    "cardity_package": "./bin/cardity_package.js",
+    "cardity_inscribe_plan": "./bin/cardity_inscribe_plan.js",
+    "cardity_inscribe": "./bin/cardity_inscribe.js",
+    "cardity_inscribe_full": "./bin/cardity_inscribe_full.js"
   },
   "scripts": {
     "ophex": "node bin/cardity_ophex.js",
-    "encode:invoke": "node bin/cardity_encode_invoke.js"
+    "encode:invoke": "node bin/cardity_encode_invoke.js",
+    "split:parts": "node bin/cardity_split_parts.js"
   },
   "scripts": {
     "build": "mkdir -p build && cd build && cmake .. && make",
