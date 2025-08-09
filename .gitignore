@@ -73,3 +73,28 @@ test_*.sh
 # Example output files
 *_deployed.car
 *_source.car 
+
+# Secrets and environment files (do not commit)
+.env
+.env.*
+*.env
+*.env.*
+*.secrets
+*secret*
+*private*
+*password*
+*passwd*
+*credentials*
+*.pem
+*.key
+*.p12
+*.pfx
+id_*
+*.wallet
+
+# Generated artifacts to avoid committing
+/tmp/
+*.carc
+*.carc.hex
+*.abi.json
+*.inscription
