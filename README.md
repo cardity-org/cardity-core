@@ -70,17 +70,20 @@ npm run build
 - 包/模块：
   ```bash
   node bin/cardity_package.js examples/usdt_package /tmp/usdt_package.inscription.json
-  # 大文件发布（推荐 dogeuni-sdk）：生成铭文计划 JSON 交给 dogeuni-sdk 执行
-  node bin/cardity_inscribe_plan.js /tmp/usdt.carc <revealAddr> > /tmp/usdt.inscribe.plan.json
+  # 大文件发布（推荐铭文计划）：生成计划 JSON → 直接上链（无需外部 SDK）
+  node bin/cardity_inscribe_plan.js /tmp/usdt.carc <revealAddr> \
+    --op deploy --protocol USDTLikeToken --version 1.0.0 > /tmp/usdt.inscribe.plan.json
+  node bin/cardity_inscribe.js /tmp/usdt.inscribe.plan.json   # 需 .env RPC
   ```
 
-## 铭文计划（dogeuni-sdk 方式，推荐）
+## 铭文计划（推荐）
 - 生成计划：
   ```bash
-  node bin/cardity_inscribe_plan.js /tmp/protocol.carc <revealAddr> > /tmp/protocol.inscribe.plan.json
+  node bin/cardity_inscribe_plan.js /tmp/protocol.carc <revealAddr> \
+    [--op deploy|deploy_package|deploy_part] [--protocol <name>] [--package-id <id>] [--module <name>] [--version <v>] > /tmp/protocol.inscribe.plan.json
   ```
-- 说明：产物结构与 dogeuni-sdk 的 FileInscriptionRequest 对齐（核心字段为 `inscriptionDataList[0].file_b64` 装载 .carc 字节）。
-- 使用：在你方环境用 dogeuni-sdk 读取该计划 JSON，补充 UTXO/费率/找零地址后，按 commit/reveal 流程上链。无需我们侧自定义分片。
+- 说明：产物结构与 dogeuni-sdk 的 FileInscriptionRequest 对齐（核心字段为 `inscriptionDataList[0].file_b64` 装载 .carc 字节；body 可写最小 envelope）。
+- 直接上链：`node bin/cardity_inscribe.js /tmp/protocol.inscribe.plan.json`（读取 .env RPC，完成 fund/sign/send）。
 
 ## 安全与提交
 - `.gitignore` 已默认排除 `.env`、密钥/证书、钱包及生成产物（hex/abi/inscription）。

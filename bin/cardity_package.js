@@ -52,9 +52,9 @@ function b64(filePath) {
 function readJson(p) { return JSON.parse(fs.readFileSync(p, 'utf-8')); }
 
 function main() {
-  const [,, targetDirArg, outFileArg] = process.argv;
+  const [,, targetDirArg, outFileArg, ...rest] = process.argv;
   if (!targetDirArg) {
-    console.error('Usage: cardity_package <package_dir> [out.json]');
+    console.error('Usage: cardity_package <package_dir> [out.json] [--no-abi]');
     process.exit(1);
   }
   const repoRoot = path.resolve(__dirname, '..');
@@ -81,21 +81,29 @@ function main() {
 
   const modules = [];
   const packageAbi = {};
+  const includeAbi = !rest.includes('--no-abi');
   for (const carFile of moduleEntries) {
     const { outCarc, abiPath } = compileCar(repoRoot, carFile, tmpOut);
-    const abi = readJson(abiPath);
-    const moduleName = abi.protocol || path.basename(carFile, '.car');
-    modules.push({ name: moduleName, abi, carc_b64: b64(outCarc) });
-    packageAbi[moduleName] = abi;
+    const abi = includeAbi ? readJson(abiPath) : undefined;
+    const moduleName = (abi && abi.protocol) ? abi.protocol : path.basename(carFile, '.car');
+    const mod = { name: moduleName, carc_b64: b64(outCarc) };
+    if (includeAbi && abi) mod.abi = abi;
+    modules.push(mod);
+    if (includeAbi && abi) packageAbi[moduleName] = abi;
   }
 
   const inscription = {
     p: 'cardity',
     op: 'deploy_package',
+    // indexer expects package_id; keep legacy 'package' for compatibility
+    package_id: name,
     package: name,
     version,
+    // provide package-level ABI as object (optional)
+    ...(includeAbi ? { abi: packageAbi } : {}),
     modules,
-    package_abi: packageAbi,
+    // keep legacy 'package_abi' for compatibility
+    ...(includeAbi ? { package_abi: packageAbi } : {}),
   };
 
   fs.writeFileSync(outFile, JSON.stringify(inscription, null, 2));

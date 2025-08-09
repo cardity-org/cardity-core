@@ -1,0 +1,1 @@
+protocol USDTokenMeta { version: "1.0.0"; owner: "doge1..."; state { decimals: int = 6; symbol: string = "USDT"; name: string = "Tether USD"; } method meta() { state.decimals = state.decimals } returns: string state.symbol; }
