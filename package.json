@@ -9,7 +9,8 @@
     "cardity_runtime": "./bin/cardity_runtime.js",
     "cardity_abi": "./bin/cardity_abi.js",
     "cardity_deploy": "./bin/cardity_deploy.js",
-    "cardity_drc20": "./bin/cardity_drc20.js"
+    "cardity_drc20": "./bin/cardity_drc20.js",
+    "cardity_sdk": "./bin/cardity_sdk.js"
   },
   "scripts": {
     "build": "mkdir -p build && cd build && cmake .. && make",

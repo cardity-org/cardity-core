@@ -469,6 +469,61 @@ node bin/cardity.js invoke my-contract-123 inc --args '[1]'
 
 说明：indexer 端已兼容 `abi` 为字符串或对象、以及历史 `car` 字段，但推荐优先产出上述标准字段。
 
+## 🧩 前端 SDK 生成器（cardity_sdk）
+
+为便于前端直接构造调用铭文（op: "invoke"），提供 SDK 代码生成器。它读取编译产出的 ABI（.abi.json），生成 TypeScript 客户端类，每个方法会返回一段可直接上链的 `invoke` JSON（payload）。
+
+### 安装与命令
+
+已随本项目发布（package.json 中的 bin）。构建后可直接使用：
+
+```bash
+npm run build
+node bin/cardity_sdk.js <abi.json> <out.ts>
+```
+
+### 生成流程示例（Minimal）
+
+```bash
+# 1) 编译 .car，产出 .carc 与 ABI（编译器会打印 ABI 路径）
+./build/cardityc examples/00_minimal.car --format carc -o /tmp/min.carc
+
+# 2) 生成 TS SDK（将上一步打印的 ABI 路径替换到 <ABI_PATH>）
+node bin/cardity_sdk.js <ABI_PATH> /tmp/min.sdk.ts
+
+# 3) 使用（示意）
+// import { MinimalClient } from '/tmp/min.sdk.ts'
+// const client = new MinimalClient('contract-id-or-txhash')
+// const payload = client.inc(1)  // => { p:'cardity', op:'invoke', contract_id:'...', method:'inc', args:[1] }
+```
+
+### 生成流程示例（USDT-like）
+
+```bash
+# 1) 编译 USDT-like 示例
+./build/cardityc examples/08_usdt_like.car --format carc -o /tmp/usdt.carc
+
+# 2) 生成 TS SDK（使用编译器打印的 ABI 路径，一般为 /tmp/usdt.abi.json）
+node bin/cardity_sdk.js /tmp/usdt.abi.json /tmp/usdt.sdk.ts
+
+# 3) 使用（示意）
+// import { USDTLikeTokenClient } from '/tmp/usdt.sdk.ts'
+// const c = new USDTLikeTokenClient('contract-id-or-txhash')
+// const p1 = c.set_fee_policy(30, 1000)
+// const p2 = c.issue(1000000)
+// const p3 = c.transfer('doge1recipient...', 5000)
+// 将 payload 提交到你的上链/铭文发送服务
+```
+
+### 类型映射说明
+
+- 方法参数类型映射到 TS：
+  - int → number
+  - bool → boolean
+  - 其余（string/address 等）→ string
+- 生成类名：`<protocol>Client`，例如 `USDTLikeTokenClient`
+- 构造参数：可选 `contractId`，生成的 payload 将自动带上 `contract_id`
+
 ## 🤝 贡献
 
 欢迎贡献代码！
