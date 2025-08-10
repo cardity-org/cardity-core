@@ -19,7 +19,8 @@
   "scripts": {
     "ophex": "node bin/cardity_ophex.js",
     "encode:invoke": "node bin/cardity_encode_invoke.js",
-    "split:parts": "node bin/cardity_split_parts.js"
+    "split:parts": "node bin/cardity_split_parts.js",
+    "check:imports": "node bin/cardity_check_imports.js"
   },
   "scripts": {
     "build": "mkdir -p build && cd build && cmake .. && make",
