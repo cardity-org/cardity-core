@@ -1,0 +1,33 @@
+{
+  "cpl": {
+    "methods": {
+      "meta": {
+        "logic": "state . decimals = state . decimals",
+        "params": [],
+        "returns": {
+          "expr": "state . symbol ",
+          "type": "string"
+        }
+      }
+    },
+    "owner": "doge1...",
+    "state": {
+      "decimals": {
+        "default": "6",
+        "type": "int"
+      },
+      "name": {
+        "default": "Tether USD",
+        "type": "string"
+      },
+      "symbol": {
+        "default": "USDT",
+        "type": "string"
+      }
+    }
+  },
+  "op": "deploy",
+  "p": "cardinals",
+  "protocol": "USDTokenMeta",
+  "version": "1.0.0"
+}
