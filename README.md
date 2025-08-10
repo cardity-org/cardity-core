@@ -40,6 +40,12 @@ npm run build
   ```bash
   node bin/cardity_package.js <package_dir> /tmp/pkg.inscription.json
   ```
+- 跨模块静态检查（已集成到打包前置校验）：
+  ```bash
+  # 单独运行
+  node bin/cardity_check_imports.js <package_dir>
+  # 或打包时自动执行 --package-check，发现问题将中止
+  ```
 - 分片（Dogecoin 单笔 ≤50KB）：
   （不推荐自定义分片，建议使用 dogeuni-sdk 的 commit/reveal 方案，见下“铭文计划”）
 - SDK 生成：
@@ -87,6 +93,13 @@ npm run build
 
 ## 安全与提交
 - `.gitignore` 已默认排除 `.env`、密钥/证书、钱包及生成产物（hex/abi/inscription）。
+
+## 类型校验（跨模块）
+- 在 `.car` 中为方法参数增加类型注解（推荐）：
+  - 例：`method transfer(to: address, amount: int) { ... }`
+- 编译输出会包含 `param_types`；检查器与打包前置校验会使用它做基础类型匹配：
+  - 支持 int/string/bool/address/map 的匹配与别名归一（number→int, boolean→bool）
+  - 能对常量、`params.x`、`ctx.sender` 做轻量类型推断
 
 ## 许可证
 MIT License

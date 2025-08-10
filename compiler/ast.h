@@ -37,6 +37,7 @@ struct StateBlock : public ASTNode {
 struct Method : public ASTNode {
     std::string name;
     std::vector<std::string> params;
+    std::vector<std::string> param_types; // optional types
     std::vector<std::string> logic_lines; // 暂用字符串表达逻辑
     // 新增：可选返回定义
     std::string return_expr;   // 表达式/变量引用
@@ -48,6 +49,9 @@ struct Method : public ASTNode {
 struct Protocol : public ASTNode {
     std::string name;
     Metadata metadata;
+    // import/using declarations
+    std::vector<std::string> imports; // module names
+    std::vector<std::pair<std::string,std::string>> using_aliases; // {module, alias}
     StateBlock state;
     std::vector<Method> methods;
 };

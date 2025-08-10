@@ -36,8 +36,9 @@ private:
     std::vector<ParserStateVariable> parse_state_block();
     std::vector<ParserMethod> parse_methods_block();
     ParserMethod parse_method();
-    std::vector<std::string> parse_method_params();
+    std::vector<std::string> parse_method_params(std::vector<std::string>& out_types);
     std::string parse_method_body();
+    void parse_import_or_using(ProtocolAST& ast);
     
     // 跳过 event 块
     void skip_event_block();

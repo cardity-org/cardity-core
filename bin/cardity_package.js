@@ -61,6 +61,19 @@ function main() {
   const pkgDir = path.resolve(targetDirArg);
   const outFile = outFileArg ? path.resolve(outFileArg) : path.join(pkgDir, 'package.inscription.json');
 
+  // Pre-check: run compiler built-in package check to enforce import/using semantics
+  try {
+    const cc = path.join(repoRoot, 'build', 'cardityc');
+    const pre = spawnSync(cc, ['dummy.car', '--package-check', pkgDir], { encoding: 'utf-8' });
+    if (pre.status !== 0) {
+      console.error(pre.stdout || '');
+      console.error(pre.stderr || '');
+      throw new Error('Package import/using semantic check failed. Fix issues before packaging.');
+    }
+  } catch (e) {
+    throw e;
+  }
+
   // manifest optional
   let manifest = {};
   const manifestPath = path.join(pkgDir, 'cardity.json');

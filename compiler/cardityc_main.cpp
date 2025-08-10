@@ -4,11 +4,15 @@
 #include <fstream>
 #include <sstream>
 #include <regex>
+#include <filesystem>
+#include <map>
+#include <set>
 #include "car_deployer.h"
 #include "parser.h"
 #include "tokenizer.h"
 #include "car_generator.h"
 #include "carc_generator.h"
+#include "event_system.h"
 
 using namespace cardity;
 
@@ -60,6 +64,9 @@ json parse_programming_language_format(const std::string& content) {
     protocol.name = ast.protocol_name;
     protocol.metadata.version = ast.version;
     protocol.metadata.owner = ast.owner;
+    // 传递 imports/using 到 Protocol
+    protocol.imports = ast.imports;
+    protocol.using_aliases = ast.using_aliases;
     
     // 转换状态变量
     for (const auto& state_var : ast.state_variables) {
@@ -75,6 +82,7 @@ json parse_programming_language_format(const std::string& content) {
         Method method;
         method.name = method_ast.name;
         method.params = method_ast.params;
+        method.param_types = method_ast.param_types;
         method.logic_lines.push_back(method_ast.logic);
         // 传递可选返回定义
         method.return_expr = method_ast.return_expr;
@@ -86,6 +94,144 @@ json parse_programming_language_format(const std::string& content) {
     json car_data = CarGenerator::compile_to_car(protocol);
     
     return car_data;
+}
+
+struct ModuleSignature {
+    std::map<std::string,int> methodParamCount; // method -> param count
+};
+
+struct FileSemanticInfo {
+    std::string path;
+    std::string moduleName;
+    std::map<std::string,std::string> aliasToModule; // alias -> module
+    std::set<std::string> imports;
+    std::vector<std::pair<std::string,std::string>> methodLogic; // name, logic string
+};
+
+static std::string read_file_all(const std::string& p){
+    std::ifstream ifs(p);
+    return std::string((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+}
+
+static std::vector<std::string> list_car_files(const std::string& root){
+    std::vector<std::string> files;
+    for (auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+        if (!entry.is_regular_file()) continue;
+        auto p = entry.path();
+        if (p.extension() == ".car") files.push_back(p.string());
+    }
+    return files;
+}
+
+static void scan_external_calls(const std::string& logic, std::vector<std::tuple<std::string,std::string,int>>& outCalls){
+    // find alias . method ( ... ) with spaces tolerated
+    std::regex re(R"(([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\()");
+    auto begin = std::sregex_iterator(logic.begin(), logic.end(), re);
+    auto end = std::sregex_iterator();
+    for (auto it = begin; it != end; ++it) {
+        auto m = *it;
+        std::string alias = m.str(1);
+        std::string method = m.str(2);
+        // count args by scanning from m.position()+m.length()-1 to matching ')'
+        size_t pos = m.position() + m.length() - 1; // at '('
+        int depth = 0; int argCount = 0; bool inToken = false; bool anyChar=false;
+        for (size_t i = pos; i < logic.size(); ++i) {
+            char c = logic[i];
+            if (c == '(') { depth++; anyChar=true; }
+            else if (c == ')') { if (depth==1) { if (inToken||anyChar) argCount++; } depth--; if (depth<=0) { break; } }
+            else if (c == ',' && depth==1) { argCount++; inToken=false; anyChar=false; }
+            else if (!isspace(static_cast<unsigned char>(c)) && depth>=1) { inToken=true; anyChar=true; }
+        }
+        outCalls.emplace_back(alias, method, argCount);
+    }
+}
+
+static int package_check(const std::string& dir){
+    std::vector<std::string> files = list_car_files(dir);
+    if (files.empty()) {
+        std::cerr << "No .car files found in " << dir << std::endl; return 2;
+    }
+    std::map<std::string, ModuleSignature> registry;
+    std::vector<FileSemanticInfo> fileInfos;
+
+    for (const auto& f : files) {
+        std::string content = read_file_all(f);
+        json car = parse_programming_language_format(content);
+        FileSemanticInfo info; info.path = f; info.moduleName = car.value("protocol", std::string(""));
+        // using aliases
+        if (car.contains("cpl") && car["cpl"].contains("using")) {
+            for (const auto& ua : car["cpl"]["using"]) {
+                std::string mod = ua.value("module", "");
+                std::string alias = ua.value("alias", mod);
+                info.aliasToModule[alias] = mod;
+            }
+        }
+        // imports
+        if (car.contains("cpl") && car["cpl"].contains("imports")) {
+            for (const auto& im : car["cpl"]["imports"]) {
+                info.imports.insert(im.get<std::string>());
+            }
+        }
+        // own methods
+        if (car.contains("cpl") && car["cpl"].contains("methods")) {
+            ModuleSignature sig;
+            for (auto it = car["cpl"]["methods"].begin(); it != car["cpl"]["methods"].end(); ++it) {
+                std::string mname = it.key();
+                int pc = 0;
+                if (it.value().contains("params") && it.value()["params"].is_array()) pc = static_cast<int>(it.value()["params"].size());
+                sig.methodParamCount[mname] = pc;
+                std::string logicStr;
+                if (it.value().contains("logic")) {
+                    if (it.value()["logic"].is_string()) logicStr = it.value()["logic"].get<std::string>();
+                    else if (it.value()["logic"].is_array()) {
+                        for (const auto& ln : it.value()["logic"]) { logicStr += ln.get<std::string>(); logicStr += '\n'; }
+                    }
+                }
+                info.methodLogic.emplace_back(mname, logicStr);
+            }
+            registry[info.moduleName] = sig;
+        }
+        fileInfos.push_back(std::move(info));
+    }
+
+    std::vector<std::string> errors;
+    for (const auto& fi : fileInfos) {
+        for (const auto& ml : fi.methodLogic) {
+            std::vector<std::tuple<std::string,std::string,int>> calls;
+            scan_external_calls(ml.second, calls);
+            for (const auto& c : calls) {
+                std::string alias = std::get<0>(c);
+                std::string method = std::get<1>(c);
+                int argc = std::get<2>(c);
+                std::string module = fi.aliasToModule.count(alias) ? fi.aliasToModule.at(alias) : alias;
+                // must be in imports or using
+                if (!fi.aliasToModule.count(alias) && !fi.imports.count(module) && module != fi.moduleName) {
+                    errors.push_back(fi.path + ":" + ml.first + ": Unknown module alias '" + alias + "' → '" + module + "'");
+                    continue;
+                }
+                if (!registry.count(module)) {
+                    errors.push_back(fi.path + ":" + ml.first + ": Unknown module '" + module + "'");
+                    continue;
+                }
+                if (!registry[module].methodParamCount.count(method)) {
+                    errors.push_back(fi.path + ":" + ml.first + ": Unknown method '" + module + "." + method + "'");
+                    continue;
+                }
+                int expected = registry[module].methodParamCount.at(method);
+                if (expected != argc) {
+                    errors.push_back(fi.path + ":" + ml.first + ": Argument count mismatch for '" + module + "." + method + "' (expected " + std::to_string(expected) + ", got " + std::to_string(argc) + ")");
+                }
+            }
+        }
+    }
+
+    if (!errors.empty()) {
+        std::cerr << "❌ Import/using semantic check failed:" << std::endl;
+        for (const auto& e : errors) std::cerr << " - " << e << std::endl;
+        return 3;
+    }
+    std::cout << "✅ Import/using semantic check passed" << std::endl;
+    return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -108,6 +254,7 @@ int main(int argc, char* argv[]) {
     bool generate_inscription = false;
     bool generate_wasm = false;
     bool validate_only = false;
+    std::string package_check_dir = "";
     
     // 解析命令行参数
     for (int i = 2; i < argc; ++i) {
@@ -129,6 +276,8 @@ int main(int argc, char* argv[]) {
             generate_wasm = true;
         } else if (arg == "--validate") {
             validate_only = true;
+        } else if (arg == "--package-check" && i + 1 < argc) {
+            package_check_dir = argv[++i];
         } else if (arg == "-h" || arg == "--help") {
             print_usage(argv[0]);
             return 0;
@@ -137,6 +286,10 @@ int main(int argc, char* argv[]) {
             print_usage(argv[0]);
             return 1;
         }
+    }
+
+    if (!package_check_dir.empty()) {
+        return package_check(package_check_dir);
     }
     
     // 设置默认输出文件名
@@ -187,12 +340,40 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         
+        // 预生成 ABI JSON（供后续写文件）
+        nlohmann::json abi_json;
+        try {
+            ABIGenerator abi_gen(car_data.value("protocol", ""), car_data.value("version", ""));
+            if (car_data.contains("cpl") && car_data["cpl"].contains("methods")) {
+                abi_gen.set_methods(car_data["cpl"]["methods"]);
+            }
+            // 如有事件定义可在此补充
+            abi_json = abi_gen.generate_abi();
+        } catch (...) {
+            // 忽略 ABI 生成失败
+        }
+
+        auto write_abi_file = [&](const std::string& base_path){
+            if (abi_json.is_null()) return;
+            std::string abi_path = base_path + ".abi.json";
+            std::ofstream aofs(abi_path);
+            if (aofs.is_open()) {
+                aofs << abi_json.dump(2) << std::endl;
+                std::cout << "🧾 ABI saved to: " << abi_path << std::endl;
+            }
+        };
+
         // 如果输出格式是 JSON，直接输出
         if (output_format == "json") {
             std::cout << "📝 Outputting JSON format..." << std::endl;
             std::ofstream ofs(output_file);
             ofs << car_data.dump(2) << std::endl;
             std::cout << "✅ JSON output saved to: " << output_file << std::endl;
+            // 写 ABI 文件（与 JSON 同名 base）
+            std::string base = output_file;
+            size_t dot_pos = base.find_last_of('.');
+            if (dot_pos != std::string::npos) base = base.substr(0, dot_pos);
+            write_abi_file(base);
             return 0;
         }
         
@@ -246,6 +427,13 @@ int main(int argc, char* argv[]) {
                 std::cout << "📋 Owner: " << protocol.metadata.owner << std::endl;
                 std::cout << "📋 State variables: " << protocol.state.variables.size() << std::endl;
                 std::cout << "📋 Methods: " << protocol.methods.size() << std::endl;
+                // 写 ABI 文件（与 CARC 同名 base）
+                {
+                    std::string base = output_file;
+                    size_t dot_pos = base.find_last_of('.');
+                    if (dot_pos != std::string::npos) base = base.substr(0, dot_pos);
+                    write_abi_file(base);
+                }
                 // 如需生成铭文，同时输出 inscription 文件
                 if (generate_inscription) {
                     try {

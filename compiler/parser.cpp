@@ -32,6 +32,8 @@ ProtocolAST Parser::parse_protocol() {
             expect(":");
             ast.owner = expect_string();
             expect(";");
+        } else if (current.value == "import" || current.value == "using") {
+            parse_import_or_using(ast);
         } else if (match("state")) {
             ast.state_variables = parse_state_block();
         } else if (match("method")) {
@@ -52,6 +54,34 @@ ProtocolAST Parser::parse_protocol() {
     expect("}"); // 消费协议块的结束大括号
 
     return ast;
+}
+
+void Parser::parse_import_or_using(ProtocolAST& ast) {
+    if (match("import")) {
+        // import ModuleName from "./path";  或 import ModuleName;
+        std::string module = expect_identifier();
+        // 支持可选的 from 子句
+        if (match("from")) {
+            expect("\""); // 简化：consume opening quote if tokenizer kept it separate
+        }
+        // 允许有可选路径字符串；忽略实际路径，先记录模块名
+        // 容错：直到分号
+        while (!is_at_end() && current.value != ";") advance();
+        expect(";");
+        ast.imports.push_back(module);
+        return;
+    }
+    if (match("using")) {
+        // using Module as Alias; 或 using Module;
+        std::string module = expect_identifier();
+        std::string alias = module;
+        if (match("as")) {
+            alias = expect_identifier();
+        }
+        expect(";");
+        ast.using_aliases.push_back({module, alias});
+        return;
+    }
 }
 
 std::string Parser::get_current_position() const {
@@ -183,7 +213,8 @@ ParserMethod Parser::parse_method() {
     std::string name = expect_identifier();
     expect("(");
     
-    std::vector<std::string> params = parse_method_params();
+    std::vector<std::string> param_types;
+    std::vector<std::string> params = parse_method_params(param_types);
     expect(")");
     expect("{");
     
@@ -217,13 +248,14 @@ ParserMethod Parser::parse_method() {
     ParserMethod m;
     m.name = name;
     m.params = params;
+    m.param_types = param_types;
     m.logic = logic;
     m.return_expr = return_expr;
     m.return_type = return_type;
     return m;
 }
 
-std::vector<std::string> Parser::parse_method_params() {
+std::vector<std::string> Parser::parse_method_params(std::vector<std::string>& out_types) {
     std::vector<std::string> params;
     
     if (current.value == ")") {
@@ -234,7 +266,7 @@ std::vector<std::string> Parser::parse_method_params() {
         // 读取参数名
         std::string param_name = expect_identifier();
         
-        // 如果有类型注解（冒号），跳过类型
+        // 如果有类型注解（冒号），记录类型
         if (match(":")) {
             // 跳过类型（可以是关键字或标识符）
             if (current.type == TokenType::IDENTIFIER ||
@@ -243,10 +275,14 @@ std::vector<std::string> Parser::parse_method_params() {
                 current.type == TokenType::KEYWORD_BOOL ||
                 current.type == TokenType::KEYWORD_ADDRESS ||
                 current.type == TokenType::KEYWORD_MAP) {
-                advance(); // 跳过类型
+                out_types.push_back(current.value);
+                advance(); // 消费类型
             } else {
-                expect_identifier(); // 期望一个标识符作为类型
+                std::string t = expect_identifier();
+                out_types.push_back(t);
             }
+        } else {
+            out_types.push_back(""); // 无类型注解
         }
         
         params.push_back(param_name);

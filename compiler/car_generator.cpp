@@ -13,6 +13,18 @@ json CarGenerator::compile_to_car(const Protocol& protocol) {
     json cpl;
     cpl["owner"] = protocol.metadata.owner;
 
+    // 输出 imports/using（可选）
+    if (!protocol.imports.empty()) {
+        cpl["imports"] = protocol.imports;
+    }
+    if (!protocol.using_aliases.empty()) {
+        json arr = json::array();
+        for (const auto& pr : protocol.using_aliases) {
+            json o; o["module"] = pr.first; o["alias"] = pr.second; arr.push_back(o);
+        }
+        cpl["using"] = arr;
+    }
+
     // 编译 state
     cpl["state"] = compile_state(protocol.state);
 
@@ -39,6 +51,9 @@ json CarGenerator::compile_methods(const std::vector<Method>& methods) {
     for (const auto& method : methods) {
         json m;
         m["params"] = method.params;
+        if (!method.param_types.empty()) {
+            m["param_types"] = method.param_types;
+        }
         // 如果只有一行逻辑，直接使用字符串；否则使用数组
         if (method.logic_lines.size() == 1) {
             m["logic"] = method.logic_lines[0];

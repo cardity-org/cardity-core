@@ -16,6 +16,7 @@ struct ParserStateVariable {
 struct ParserMethod {
     std::string name;
     std::vector<std::string> params;
+    std::vector<std::string> param_types; // optional types for params
     std::string logic;
     // Optional return support
     std::string return_expr;   // e.g. "state.count" or literal/expr
@@ -26,6 +27,9 @@ struct ProtocolAST {
     std::string protocol_name;
     std::string version;
     std::string owner;
+    // import/using declarations
+    std::vector<std::string> imports; // module names (resolved later)
+    std::vector<std::pair<std::string,std::string>> using_aliases; // {module, alias}
     std::vector<ParserStateVariable> state_variables;
     std::vector<ParserMethod> methods;
 };

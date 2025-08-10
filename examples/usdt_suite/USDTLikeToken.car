@@ -24,10 +24,10 @@ protocol USDTLikeToken {
     _result: string = "ok";
   }
 
-  method set_fee_policy(bps, cap) { state.basis_points_rate = params.bps; state.maximum_fee = params.cap }
+  method set_fee_policy(bps: int, cap: int) { state.basis_points_rate = params.bps; state.maximum_fee = params.cap }
   returns: string "ok";
 
-  method issue(amount) {
+  method issue(amount: int) {
     state._result = "ok";
     if (params.amount <= 0) { state._result = "InvalidAmount" }
     if (state.total_supply + params.amount > state.max_supply) { state._result = "ExceedsMaxSupply" }
@@ -37,7 +37,7 @@ protocol USDTLikeToken {
   }
   returns: string state._result;
 
-  method balance_of(user) { state.total_supply = state.total_supply }
+  method balance_of(user: address) { state.total_supply = state.total_supply }
   returns: int state.balances[params.user];
 
   method pause() { state.paused = "true" }
@@ -46,16 +46,16 @@ protocol USDTLikeToken {
   method unpause() { state.paused = "false" }
   returns: string "unpaused";
 
-  method calc_fee(amount) { state.total_supply = state.total_supply }
+  method calc_fee(amount: int) { state.total_supply = state.total_supply }
   returns: int (params.amount * state.basis_points_rate) / 10000;
 
-  method freeze(user) { state.frozen[params.user] = "true" }
+  method freeze(user: address) { state.frozen[params.user] = "true" }
   returns: string "ok";
 
-  method unfreeze(user) { state.frozen[params.user] = "false" }
+  method unfreeze(user: address) { state.frozen[params.user] = "false" }
   returns: string "ok";
 
-  method transfer(to, amount) {
+  method transfer(to: address, amount: int) {
     state._result = "ok";
     if (params.amount <= 0) { state._result = "InvalidAmount" }
     if (state.paused == "true") { state._result = "Paused" }

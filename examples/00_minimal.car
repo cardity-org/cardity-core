@@ -6,7 +6,7 @@ protocol Minimal {
     x: int = 0;
   }
 
-  method inc(n) { state.x = params.n }
+  method inc(n: int) { state.x = params.n }
   returns: string "ok";
 }
 
