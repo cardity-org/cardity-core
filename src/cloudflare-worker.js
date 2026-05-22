@@ -178,6 +178,70 @@ function hasParams(event, required) {
   return required.every((name) => params.has(name));
 }
 
+function normalizeTableSchema(table) {
+  const columns = new Set((table.columns || []).map((column) => column.name));
+  const normalized = {
+    ...table,
+    columns: (table.columns || []).map((column) => ({
+      nullable: true,
+      ...column
+    }))
+  };
+  if (!normalized.primary_key) {
+    const businessIds = [
+      "goods_id", "product_id", "order_id", "message_id",
+      "inventory_id", "customer_id", "sku_id", "id"
+    ];
+    if (columns.has("merchant_id")) {
+      const id = businessIds.find((candidate) => columns.has(candidate) && candidate !== "merchant_id");
+      if (id) normalized.primary_key = ["merchant_id", id];
+    }
+    if (!normalized.primary_key && columns.has("user")) normalized.primary_key = ["user"];
+    if (!normalized.primary_key && columns.has("id")) normalized.primary_key = ["id"];
+  }
+  if (!normalized.indexes) {
+    if (columns.has("merchant_id") && columns.has("status")) {
+      normalized.indexes = [{
+        name: `${snake(table.name)}_merchant_status_idx`,
+        columns: ["merchant_id", "status"]
+      }];
+    } else if (columns.has("merchant_id")) {
+      normalized.indexes = [{
+        name: `${snake(table.name)}_merchant_idx`,
+        columns: ["merchant_id"]
+      }];
+    } else if (columns.has("user")) {
+      normalized.indexes = [{
+        name: `${snake(table.name)}_user_idx`,
+        columns: ["user"]
+      }];
+    } else {
+      normalized.indexes = [];
+    }
+  }
+  return normalized;
+}
+
+function inferReadModels(tables) {
+  return tables.map((table) => ({
+    name: table.name,
+    kind: "read_model",
+    columns: table.columns || [],
+    primary_key: table.primary_key || [],
+    indexes: table.indexes || [],
+    query_contracts: [`${snake(table.name)}.list`]
+  }));
+}
+
+function inferQueries(readModels) {
+  return readModels.map((model) => ({
+    name: `${snake(model.name)}.list`,
+    read_model: model.name,
+    operation: "list",
+    filters: model.primary_key || []
+  }));
+}
+
 function inferProjections(tables, events) {
   const balanceTable = tables.find((table) => hasColumns(table, ["user", "balance"]));
   const ledgerTable = tables.find((table) => hasColumns(table, ["user", "delta", "reason", "actor", "operation"]));
@@ -231,6 +295,7 @@ function inferProjections(tables, events) {
 
 function compile(sourceText, options = {}) {
   const protocol = parseProtocol(sourceText);
+  const normalizedTables = protocol.tables.map(normalizeTableSchema);
 
   const protocolJson = {
     p: "cardity",
@@ -240,7 +305,7 @@ function compile(sourceText, options = {}) {
     cpl: {
       owner: protocol.owner,
       state: Object.fromEntries(protocol.state.map((item) => [item.name, { type: item.type, default: item.default || "" }])),
-      tables: protocol.tables,
+      tables: normalizedTables,
       methods: Object.fromEntries(protocol.methods.map((method) => [method.name, {
         params: method.params.map((param) => param.name),
         param_types: method.params.map((param) => param.type),
@@ -302,20 +367,22 @@ function compile(sourceText, options = {}) {
     name: `${snake(protocol.name)}_state`,
     columns: protocol.state.map((item) => ({ name: item.name, type: item.type }))
   };
-  const projections = inferProjections(protocol.tables, events);
+  const readModels = inferReadModels(normalizedTables);
+  const queries = inferQueries(readModels);
+  const projections = inferProjections(normalizedTables, events);
 
   const manifest = {
     schema: "cardity.agent_manifest.v1",
     protocol: { name: protocol.name, version: protocol.version, owner: protocol.owner },
     source: { p: "cardity", op: "deploy" },
     state: protocol.state.map((item) => ({ name: item.name, type: item.type, storage: "persistent", ...(item.default !== undefined ? { default: item.default } : {}) })),
-    tables: protocol.tables,
+    tables: normalizedTables,
     events,
     methods: manifestMethods,
     permissions,
     system: {
       api: { routes },
-      database: { tables: [stateTable, ...protocol.tables], projections },
+      database: { tables: [stateTable, ...normalizedTables], read_models: readModels, projections, queries },
       ui: { resources: [protocol.name], actions: tools },
       workflows: events.map((event) => ({ name: `on_${event.name}`, trigger: { event: event.name }, actions: [] }))
     },
@@ -365,6 +432,7 @@ function generationGuide(requirement = "") {
       "Methods define callable intent, params, return type, events, and scalar summary/audit state.",
       "Methods that write state or emit events will be marked requires_confirmation in the Agent OS manifest.",
       "When events and tables imply business records, the manifest may include system.database.projections for event-to-table writes.",
+      "ERP read models should rely on upsert_snapshot projections, composite keys, tenant context, and confirmed readback when available.",
       "Read-only query methods should avoid writes and emits so they become GET/query tools.",
       "After drafting source, call cardity_compile and fix any compiler or agent-safety errors."
     ],

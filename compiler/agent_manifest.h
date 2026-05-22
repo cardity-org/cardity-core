@@ -13,6 +13,9 @@ public:
 private:
     static std::string normalize_logic(const std::string& logic);
     static json infer_effects(const json& method_json);
+    static json normalize_table_schema(const json& table);
+    static json infer_read_models(const json& tables);
+    static json infer_queries(const json& read_models);
     static json infer_projections(const json& tables, const json& events);
     static json build_input_schema(const json& params);
     static std::string json_schema_type(const std::string& cardity_type);

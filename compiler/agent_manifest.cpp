@@ -43,7 +43,7 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     if (cpl_tables.is_array()) {
         for (const auto& table_def : cpl_tables) {
             if (table_def.is_object()) {
-                manifest["tables"].push_back(table_def);
+                manifest["tables"].push_back(normalize_table_schema(table_def));
             }
         }
     }
@@ -116,9 +116,9 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
         {"name", to_snake_case(protocol_name) + "_state"},
         {"columns", columns}
     });
-    for (const auto& table_item : manifest["tables"]) {
-        tables.push_back(table_item);
-    }
+    for (const auto& table_item : manifest["tables"]) tables.push_back(table_item);
+    json read_models = infer_read_models(manifest["tables"]);
+    json queries = infer_queries(read_models);
     json projections = infer_projections(manifest["tables"], manifest["events"]);
 
     json workflows = json::array();
@@ -133,7 +133,12 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     manifest["permissions"] = permissions;
     manifest["system"] = {
         {"api", {{"routes", routes}}},
-        {"database", {{"tables", tables}, {"projections", projections}}},
+        {"database", {
+            {"tables", tables},
+            {"read_models", read_models},
+            {"projections", projections},
+            {"queries", queries}
+        }},
         {"ui", {
             {"resources", json::array({protocol_name})},
             {"actions", tools}
@@ -146,6 +151,96 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     };
 
     return manifest;
+}
+
+json AgentManifestGenerator::normalize_table_schema(const json& table) {
+    json normalized = table;
+    std::set<std::string> columns;
+    if (normalized.contains("columns") && normalized["columns"].is_array()) {
+        for (auto& column : normalized["columns"]) {
+            if (!column.is_object()) continue;
+            std::string name = column.value("name", "");
+            if (!name.empty()) columns.insert(name);
+            if (!column.contains("nullable")) column["nullable"] = true;
+        }
+    }
+
+    if (!normalized.contains("primary_key")) {
+        json primary_key = json::array();
+        const std::vector<std::string> business_ids = {
+            "goods_id", "product_id", "order_id", "message_id",
+            "inventory_id", "customer_id", "sku_id", "id"
+        };
+        if (columns.count("merchant_id")) {
+            for (const auto& id : business_ids) {
+                if (columns.count(id) && id != "merchant_id") {
+                    primary_key.push_back("merchant_id");
+                    primary_key.push_back(id);
+                    break;
+                }
+            }
+        }
+        if (primary_key.empty() && columns.count("user")) primary_key.push_back("user");
+        if (primary_key.empty() && columns.count("id")) primary_key.push_back("id");
+        if (!primary_key.empty()) normalized["primary_key"] = primary_key;
+    }
+
+    if (!normalized.contains("indexes")) {
+        json indexes = json::array();
+        std::string table_name = to_snake_case(normalized.value("name", "table"));
+        if (columns.count("merchant_id") && columns.count("status")) {
+            indexes.push_back({
+                {"name", table_name + "_merchant_status_idx"},
+                {"columns", json::array({"merchant_id", "status"})}
+            });
+        } else if (columns.count("merchant_id")) {
+            indexes.push_back({
+                {"name", table_name + "_merchant_idx"},
+                {"columns", json::array({"merchant_id"})}
+            });
+        } else if (columns.count("user")) {
+            indexes.push_back({
+                {"name", table_name + "_user_idx"},
+                {"columns", json::array({"user"})}
+            });
+        }
+        normalized["indexes"] = indexes;
+    }
+
+    return normalized;
+}
+
+json AgentManifestGenerator::infer_read_models(const json& tables) {
+    json read_models = json::array();
+    if (!tables.is_array()) return read_models;
+    for (const auto& table : tables) {
+        if (!table.is_object()) continue;
+        json model;
+        model["name"] = table.value("name", "");
+        model["kind"] = "read_model";
+        model["columns"] = table.value("columns", json::array());
+        model["primary_key"] = table.value("primary_key", json::array());
+        model["indexes"] = table.value("indexes", json::array());
+        model["query_contracts"] = json::array({to_snake_case(model.value("name", "resource")) + ".list"});
+        read_models.push_back(model);
+    }
+    return read_models;
+}
+
+json AgentManifestGenerator::infer_queries(const json& read_models) {
+    json queries = json::array();
+    if (!read_models.is_array()) return queries;
+    for (const auto& model : read_models) {
+        std::string name = model.value("name", "");
+        if (name.empty()) continue;
+        queries.push_back({
+            {"name", to_snake_case(name) + ".list"},
+            {"read_model", name},
+            {"operation", "list"},
+            {"filters", model.value("primary_key", json::array())}
+        });
+    }
+    return queries;
 }
 
 json AgentManifestGenerator::infer_projections(const json& tables, const json& events) {

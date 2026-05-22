@@ -108,6 +108,7 @@ function generationGuide(args = {}) {
       'Methods define callable intent, params, return type, events, and scalar summary/audit state.',
       'Methods that write state or emit events will be marked requires_confirmation in the Agent OS manifest.',
       'When events and tables imply business records, the manifest may include system.database.projections for event-to-table writes.',
+      'ERP read models should rely on upsert_snapshot projections, composite keys, tenant context, and confirmed readback when available.',
       'Read-only query methods should avoid writes and emits so they become GET/query tools.',
       'After drafting source, call cardity_compile and fix any compiler or agent-safety errors.'
     ],

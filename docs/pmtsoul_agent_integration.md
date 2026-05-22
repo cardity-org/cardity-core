@@ -116,6 +116,8 @@ PMTSoul Agent should prefer explicit table projections from:
   "system": {
     "database": {
       "tables": [],
+      "read_models": [],
+      "queries": [],
       "projections": []
     }
   }
@@ -161,9 +163,28 @@ Required PMTSoul behavior:
 | Read `system.database.projections` | Treat it as the primary event-to-table write contract. |
 | Support `insert` | Insert a row using `values`. |
 | Support `upsert_delta` | Find row by `key`; insert if missing; otherwise add `delta` fields to existing numeric columns. |
-| Resolve expressions | Support `$event.<field>`, `-$event.<field>`, `$ctx.sender`, and literal strings/numbers. |
+| Support `upsert_snapshot` | Find row by `key`; insert if missing; otherwise replace the current-state columns from `values` or `snapshot`. |
+| Support composite keys | Accept `key` as either an object map or an ordered array such as `["merchant_id", "goods_id"]`. |
+| Support delete semantics | Support `delete` and `soft_delete` for removed or archived read-model rows. |
+| Resolve expressions | Support `$event.<field>`, `-$event.<field>`, `$readback.<field>`, `-$readback.<field>`, `$source.<field>`, `$ctx.sender`, `$ctx.merchant_id`, `$ctx.workspace_id`, `$run.id`, and literal strings/numbers. |
+| Support readback source | `source: "confirmed_readback"` means projection values should be read from the post-write readback payload after commit. |
+| Preserve idempotency | Use `source_id`, `projection.name`, `projection.version`, and write index to prevent duplicate replay writes. |
 | Keep confirmation policy | Apply projections only after the corresponding write operation has passed confirmation and committed. |
 | Keep fallback compatibility | If `projections` is absent, PMTSoul may keep its existing heuristic event mapping. |
+
+Read-model schemas are emitted under `system.database.read_models` and include
+`columns`, `primary_key`, `indexes`, nullable/default metadata, and optional
+`query_contracts`. Query/view contracts are also summarized under
+`system.database.queries`, for example:
+
+```json
+{
+  "name": "merchant_products.list",
+  "read_model": "merchant_products",
+  "operation": "list",
+  "filters": ["merchant_id", "goods_id"]
+}
+```
 
 ## Adapter Strategy
 
