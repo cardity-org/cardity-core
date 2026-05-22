@@ -1,0 +1,187 @@
+{
+  "schema": "cardity.projection_contract_example.v1",
+  "contract": "cardity.projection_contract.v1.1",
+  "protocol": "MerchantERPSystem",
+  "system": {
+    "database": {
+      "tables": [
+        {
+          "name": "merchant_products",
+          "primary_key": ["merchant_id", "goods_id"],
+          "indexes": [
+            {
+              "name": "merchant_products_status_idx",
+              "columns": ["merchant_id", "status"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "goods_id", "type": "string", "nullable": false },
+            { "name": "workspace_id", "type": "string" },
+            { "name": "name", "type": "string" },
+            { "name": "price", "type": "int", "default": "0" },
+            { "name": "status", "type": "string", "default": "active" },
+            { "name": "deleted", "type": "bool", "default": false },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        },
+        {
+          "name": "merchant_inventory",
+          "primary_key": ["merchant_id", "goods_id", "sku_id"],
+          "indexes": [
+            {
+              "name": "merchant_inventory_goods_idx",
+              "columns": ["merchant_id", "goods_id"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "goods_id", "type": "string", "nullable": false },
+            { "name": "sku_id", "type": "string", "nullable": false },
+            { "name": "available_qty", "type": "int", "default": "0" },
+            { "name": "reserved_qty", "type": "int", "default": "0" },
+            { "name": "status", "type": "string", "default": "active" },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        },
+        {
+          "name": "merchant_orders",
+          "primary_key": ["merchant_id", "order_id"],
+          "indexes": [
+            {
+              "name": "merchant_orders_status_idx",
+              "columns": ["merchant_id", "status"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "order_id", "type": "string", "nullable": false },
+            { "name": "buyer_id", "type": "string" },
+            { "name": "status", "type": "string", "default": "created" },
+            { "name": "total_amount", "type": "int", "default": "0" },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        }
+      ],
+      "read_models": [
+        {
+          "name": "merchant_products",
+          "primary_key": ["merchant_id", "goods_id"],
+          "query_contracts": ["products.list", "products.detail"]
+        },
+        {
+          "name": "merchant_inventory",
+          "primary_key": ["merchant_id", "goods_id", "sku_id"],
+          "query_contracts": ["inventory.summary", "inventory.detail"]
+        },
+        {
+          "name": "merchant_orders",
+          "primary_key": ["merchant_id", "order_id"],
+          "query_contracts": ["orders.list", "orders.detail"]
+        }
+      ],
+      "projections": [
+        {
+          "name": "product_saved_snapshot",
+          "version": "1",
+          "source": "confirmed_readback",
+          "source_id": "$run.id",
+          "on": { "event": "ProductSaved" },
+          "writes": [
+            {
+              "table": "merchant_products",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "goods_id"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "name": "$readback.name",
+                "price": "$readback.price",
+                "status": "$readback.status",
+                "deleted": false,
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "product_archived_soft_delete",
+          "version": "1",
+          "source_id": "$run.id",
+          "on": { "event": "ProductArchived" },
+          "writes": [
+            {
+              "table": "merchant_products",
+              "operation": "soft_delete",
+              "key": ["merchant_id", "goods_id"],
+              "values": {
+                "status": "archived",
+                "deleted": true,
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "inventory_adjusted_delta",
+          "version": "1",
+          "source_id": "$run.id",
+          "on": { "event": "InventoryAdjusted" },
+          "writes": [
+            {
+              "table": "merchant_inventory",
+              "operation": "upsert_delta",
+              "key": ["merchant_id", "goods_id", "sku_id"],
+              "delta": { "available_qty": "$event.delta" }
+            }
+          ]
+        },
+        {
+          "name": "order_created_snapshot",
+          "version": "1",
+          "source": "confirmed_readback",
+          "source_id": "$run.id",
+          "on": { "event": "OrderCreated" },
+          "writes": [
+            {
+              "table": "merchant_orders",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "order_id"],
+              "values": {
+                "buyer_id": "$readback.buyer_id",
+                "status": "$readback.status",
+                "total_amount": "$readback.total_amount",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        }
+      ],
+      "queries": [
+        {
+          "name": "products.list",
+          "read_model": "merchant_products",
+          "operation": "list",
+          "filters": ["merchant_id", "status"]
+        },
+        {
+          "name": "products.detail",
+          "read_model": "merchant_products",
+          "operation": "detail",
+          "filters": ["merchant_id", "goods_id"]
+        },
+        {
+          "name": "inventory.summary",
+          "read_model": "merchant_inventory",
+          "operation": "list",
+          "filters": ["merchant_id", "goods_id"]
+        },
+        {
+          "name": "orders.list",
+          "read_model": "merchant_orders",
+          "operation": "list",
+          "filters": ["merchant_id", "status"]
+        }
+      ]
+    }
+  }
+}

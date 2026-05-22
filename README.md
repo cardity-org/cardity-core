@@ -20,7 +20,7 @@ user intent
   -> Cardity protocol
   -> compiler validation
   -> ABI + Agent OS manifest
-  -> API routes, database tables, UI actions, workflows, permissions
+  -> API routes, database tables, read models, projections, permissions
   -> agent-generated system
 ```
 
@@ -65,6 +65,19 @@ Cardity exposes two primary MCP tools:
 |---|---|
 | `cardity_generation_guide` | Return the current agent-safe protocol generation rules. |
 | `cardity_compile` | Compile Cardity source text into protocol JSON, ABI, CARC, and an Agent OS manifest. |
+| `cardity_manifest` | Generate only the Agent OS manifest. |
+
+Remote MCP configuration for hosted agents:
+
+```json
+{
+  "mcpServers": {
+    "cardity_core": {
+      "url": "https://api.cardity.org/mcp"
+    }
+  }
+}
+```
 
 For local desktop agents, run the stdio MCP server:
 
@@ -310,9 +323,17 @@ api.cardity.org/*
 ## Documentation
 
 - [Agent protocol layer](docs/agent_protocol_layer.md)
+- [Projection contract v1.1](docs/projection_contract_v1_1.md)
 - [Public API](docs/public_api.md)
 - [PMTSoul Agent integration](docs/pmtsoul_agent_integration.md)
 - [Release plan](docs/release_plan.md)
+
+## Agent Examples
+
+- [Counter protocol](examples/01_counter.car)
+- [Member points protocol](examples/02_member_points_agent.car)
+- [Merchant ERP protocol](examples/03_merchant_erp_agent.car)
+- [Merchant ERP projection contract v1.1 example](examples/03_merchant_erp_projection_v1_1.json)
 
 Legacy Dogecoin/Cardinals deployment, package, inscription, and SDK tools remain
 in the repository for compatibility. They are no longer the primary README

@@ -1,0 +1,115 @@
+protocol MerchantERPSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    result: string = "ok";
+    last_actor: address = "";
+    last_merchant_id: string = "";
+    last_object_id: string = "";
+    last_operation: string = "none";
+  }
+
+  table merchant_products {
+    merchant_id: string;
+    goods_id: string;
+    name: string = "";
+    price: int = 0;
+    status: string = "active";
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  table merchant_inventory {
+    merchant_id: string;
+    goods_id: string;
+    sku_id: string;
+    available_qty: int = 0;
+    reserved_qty: int = 0;
+    status: string = "active";
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  table merchant_orders {
+    merchant_id: string;
+    order_id: string;
+    buyer_id: string = "";
+    status: string = "created";
+    total_amount: int = 0;
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  event ProductSaved {
+    merchant_id: string;
+    goods_id: string;
+  }
+
+  event ProductArchived {
+    merchant_id: string;
+    goods_id: string;
+  }
+
+  event InventoryAdjusted {
+    merchant_id: string;
+    goods_id: string;
+    sku_id: string;
+    delta: int;
+  }
+
+  event OrderCreated {
+    merchant_id: string;
+    order_id: string;
+  }
+
+  method save_product(merchant_id: string, goods_id: string) {
+    state.result = "ok";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.goods_id;
+    state.last_operation = "save_product";
+    emit ProductSaved(params.merchant_id, params.goods_id);
+  }
+  returns: string state.result;
+
+  method archive_product(merchant_id: string, goods_id: string) {
+    state.result = "ok";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.goods_id;
+    state.last_operation = "archive_product";
+    emit ProductArchived(params.merchant_id, params.goods_id);
+  }
+  returns: string state.result;
+
+  method adjust_inventory(merchant_id: string, goods_id: string, sku_id: string, delta: int) {
+    state.result = "ok";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.sku_id;
+    state.last_operation = "adjust_inventory";
+    emit InventoryAdjusted(params.merchant_id, params.goods_id, params.sku_id, params.delta);
+  }
+  returns: string state.result;
+
+  method create_order(merchant_id: string, order_id: string) {
+    state.result = "ok";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.order_id;
+    state.last_operation = "create_order";
+    emit OrderCreated(params.merchant_id, params.order_id);
+  }
+  returns: string state.result;
+
+  method list_products(merchant_id: string) {
+    state.result = state.result;
+  }
+  returns: string state.result;
+
+  method list_orders(merchant_id: string) {
+    state.result = state.result;
+  }
+  returns: string state.result;
+}

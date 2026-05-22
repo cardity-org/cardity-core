@@ -155,7 +155,12 @@ The manifest is designed as the handoff from Cardity Core to an agent runtime:
   "permissions": [],
   "system": {
     "api": { "routes": [] },
-    "database": { "tables": [] },
+    "database": {
+      "tables": [],
+      "read_models": [],
+      "projections": [],
+      "queries": []
+    },
     "ui": { "resources": [], "actions": [] },
     "workflows": []
   },

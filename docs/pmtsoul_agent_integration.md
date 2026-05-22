@@ -20,7 +20,19 @@ events, workspace writes, policy confirmation, and user-visible execution.
 
 ## MCP Configuration
 
-Add Cardity Core as an external MCP server in the PMTSoul/Hermes MCP config:
+Hosted MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "cardity_core": {
+      "url": "https://api.cardity.org/mcp"
+    }
+  }
+}
+```
+
+Local stdio MCP configuration:
 
 ```yaml
 mcp_servers:
@@ -109,6 +121,9 @@ Read-only methods can be treated as query tools by PMTSoul Agent.
 
 ## Database Projection Contract
 
+Projection contract v1.1 is the first stable Cardity <-> PMTSoul Agent OS
+baseline. See `docs/projection_contract_v1_1.md` for the normative contract.
+
 PMTSoul Agent should prefer explicit table projections from:
 
 ```json
@@ -191,3 +206,12 @@ Read-model schemas are emitted under `system.database.read_models` and include
 Start with MCP because it keeps the repo boundary clean. Once the manifest
 contract stabilizes, PMTSoul can add a built-in `tools/cardity_tool.py` wrapper
 that calls the same `cardity_agent` CLI or links a future Cardity SDK.
+
+## Reference ERP Example
+
+- Protocol: `examples/03_merchant_erp_agent.car`
+- Projection contract example: `examples/03_merchant_erp_projection_v1_1.json`
+
+The reference ERP shape covers product, inventory, and order read models,
+confirmed readback projections, merchant-scoped composite keys, replay-safe
+projection writes, and list/detail query contracts.
