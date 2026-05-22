@@ -1,8 +1,10 @@
 #include "agent_manifest.h"
 #include <algorithm>
 #include <cctype>
+#include <map>
 #include <regex>
 #include <set>
+#include <stdexcept>
 
 namespace cardity {
 
@@ -150,6 +152,7 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     json read_models = infer_read_models(manifest["tables"]);
     json queries = infer_queries(read_models);
     json projections = infer_projections(manifest["tables"], manifest["events"]);
+    validate_projection_event_references(projections, manifest["events"]);
 
     json workflows = json::array();
     for (const auto& event_item : manifest["events"]) {
@@ -380,6 +383,69 @@ json AgentManifestGenerator::infer_projections(const json& tables, const json& e
     }
 
     return projections;
+}
+
+void AgentManifestGenerator::validate_projection_event_references(const json& projections, const json& events) {
+    if (!projections.is_array()) return;
+
+    std::map<std::string, std::set<std::string>> event_fields;
+    if (events.is_array()) {
+        for (const auto& event : events) {
+            if (!event.is_object()) continue;
+            std::string name = event.value("name", "");
+            if (name.empty()) continue;
+            auto& fields = event_fields[name];
+            for (const auto& section : {"params", "runtime_fields"}) {
+                if (!event.contains(section) || !event[section].is_array()) continue;
+                for (const auto& field : event[section]) {
+                    if (field.is_object()) {
+                        std::string field_name = field.value("name", "");
+                        if (!field_name.empty()) fields.insert(field_name);
+                    }
+                }
+            }
+        }
+    }
+
+    const std::regex event_ref_re(R"(\$event\.([A-Za-z_][A-Za-z0-9_]*))");
+    auto collect_refs = [&](const auto& self, const json& value, std::set<std::string>& refs) -> void {
+        if (value.is_string()) {
+            std::string text = value.get<std::string>();
+            for (auto it = std::sregex_iterator(text.begin(), text.end(), event_ref_re); it != std::sregex_iterator(); ++it) {
+                refs.insert((*it)[1].str());
+            }
+        } else if (value.is_array()) {
+            for (const auto& item : value) self(self, item, refs);
+        } else if (value.is_object()) {
+            for (const auto& item : value.items()) self(self, item.value(), refs);
+        }
+    };
+
+    for (const auto& projection : projections) {
+        if (!projection.is_object()) continue;
+        std::set<std::string> refs;
+        collect_refs(collect_refs, projection, refs);
+        if (refs.empty()) continue;
+
+        std::string event_name;
+        if (projection.contains("on") && projection["on"].is_object()) {
+            event_name = projection["on"].value("event", "");
+        }
+        if (event_name.empty() || !event_fields.count(event_name)) {
+            throw std::runtime_error("Projection " + projection.value("name", "<unnamed>") + " references $event.* without a known trigger event");
+        }
+
+        const auto& declared = event_fields[event_name];
+        for (const auto& ref : refs) {
+            if (!declared.count(ref)) {
+                throw std::runtime_error(
+                    "Projection " + projection.value("name", "<unnamed>") +
+                    " references undeclared $event." + ref +
+                    "; add it to events[].params or events[].runtime_fields"
+                );
+            }
+        }
+    }
 }
 
 std::string AgentManifestGenerator::normalize_logic(const std::string& logic) {

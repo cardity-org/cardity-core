@@ -26,6 +26,10 @@ cd "$ROOT"
 node bin/cardity_agent.js compile examples/01_counter.car --out-dir "$AGENT_DIR" --include-manifest > "$AGENT_OUT"
 node bin/cardity_agent.js compile examples/02_member_points_agent.car --out-dir "$MEMBER_AGENT_DIR" --include-manifest > /tmp/cardity_member_points_agent_result.json
 node bin/cardity_agent.js compile --source-text "$(cat examples/01_counter.car)" --out-dir /tmp/cardity_agent_text_artifacts --include-manifest > "$AGENT_TEXT_OUT"
+node scripts/verify_projection_contract.js \
+  "$MEMBER_MANIFEST_OUT" \
+  /tmp/cardity_member_points_agent_result.json \
+  examples/03_merchant_erp_projection_v1_1.json >/dev/null
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \

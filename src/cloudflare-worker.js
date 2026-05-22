@@ -301,6 +301,45 @@ function inferProjections(tables, events) {
   return projections;
 }
 
+function collectEventReferences(value, refs = new Set()) {
+  if (typeof value === "string") {
+    for (const match of value.matchAll(/\$event\.([A-Za-z_][A-Za-z0-9_]*)/g)) {
+      refs.add(match[1]);
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectEventReferences(item, refs);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectEventReferences(item, refs);
+  }
+  return refs;
+}
+
+function validateProjectionEventReferences(projections, events) {
+  const eventFields = new Map();
+  for (const event of events) {
+    const fields = new Set();
+    for (const field of [...(event.params || []), ...(event.runtime_fields || [])]) {
+      if (field.name) fields.add(field.name);
+    }
+    eventFields.set(event.name, fields);
+  }
+
+  for (const projection of projections) {
+    const refs = collectEventReferences(projection);
+    if (!refs.size) continue;
+    const eventName = projection.on?.event;
+    const declared = eventFields.get(eventName);
+    if (!declared) {
+      throw new Error(`Projection ${projection.name || "<unnamed>"} references $event.* without a known trigger event`);
+    }
+    for (const ref of refs) {
+      if (!declared.has(ref)) {
+        throw new Error(`Projection ${projection.name || "<unnamed>"} references undeclared $event.${ref}; add it to events[].params or events[].runtime_fields`);
+      }
+    }
+  }
+}
+
 function compile(sourceText, options = {}) {
   const protocol = parseProtocol(sourceText);
   const normalizedTables = protocol.tables.map(normalizeTableSchema);
@@ -408,6 +447,7 @@ function compile(sourceText, options = {}) {
   const readModels = inferReadModels(normalizedTables);
   const queries = inferQueries(readModels);
   const projections = inferProjections(normalizedTables, events);
+  validateProjectionEventReferences(projections, events);
 
   const manifest = {
     schema: "cardity.agent_manifest.v1",

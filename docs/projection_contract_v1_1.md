@@ -117,6 +117,12 @@ named payload fields, it may fall back to its internal `event_id` /
 `idempotency_key`, but that should be treated as a degraded replay guard rather
 than a fully Cardity-specified source id.
 
+Cardity compilers validate this rule for generated manifests: every `$event.*`
+reference in a projection must resolve against the trigger event's declared
+`params` or `runtime_fields`. `confirmed_readback` projections should use
+`idempotency.source_id = "$event.id"` and replay-safe projections should use
+`idempotency.write_index = "$event.write_index"`.
+
 ## Confirmed Readback Projection
 
 Use `source: "confirmed_readback"` when the current-state row must come from the
