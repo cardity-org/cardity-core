@@ -1,7 +1,8 @@
 # Cardity Projection Contract v1.1
 
-Projection contract v1.1 is the first stable Cardity <-> PMTSoul Agent OS
-baseline for generated merchant ERP systems.
+Projection contract v1.1 is the first stable Cardity <-> downstream Agent OS
+baseline for replay-safe read-model writes. Merchant ERP is a reference
+implementation, not a Cardity-specific DSL.
 
 Cardity emits an Agent OS manifest. Agent runtimes consume the manifest to
 generate API routes, tables, read models, UI actions, workflows, permissions,
@@ -192,7 +193,7 @@ Query contracts describe generated list/detail views for agents.
 }
 ```
 
-PMTSoul Agent OS validated v1.1 with a complete merchant ERP demo covering
-product, inventory, and order read models, confirmed readback projections,
-composite merchant-scoped keys, replay-safe idempotency metadata, and list/detail
-query contracts.
+PMTSoul Agent OS validated v1.1 with a complete merchant ERP reference covering
+product, inventory, order, store dashboard, store profile, ranking, and
+complaint read models, confirmed readback projections, composite scoped keys,
+replay-safe idempotency metadata, and list/detail query contracts.

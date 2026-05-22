@@ -125,6 +125,9 @@ Cardity stays runtime-agnostic. Downstream Agent runtimes should consume
 actions from `system.ui.actions` as a generic planning and execution contract,
 not as PMTSoul-specific ERP instructions.
 
+Agent action contract v1 is the normative generic action contract. See
+`docs/agent_action_contract_v1.md`.
+
 Each action includes:
 
 | Field | Detail |

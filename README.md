@@ -323,6 +323,7 @@ api.cardity.org/*
 ## Documentation
 
 - [Agent protocol layer](docs/agent_protocol_layer.md)
+- [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
 - [Public API](docs/public_api.md)
 - [PMTSoul Agent integration](docs/pmtsoul_agent_integration.md)
