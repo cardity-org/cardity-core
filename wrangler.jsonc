@@ -30,6 +30,7 @@
   ],
   "containers": [
     {
+      "name": "cardity-core-api-cardityapicontainer",
       "class_name": "CardityApiContainer",
       "image": "./Dockerfile",
       "instance_type": "basic",
