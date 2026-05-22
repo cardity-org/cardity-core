@@ -119,6 +119,7 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     for (const auto& table_item : manifest["tables"]) {
         tables.push_back(table_item);
     }
+    json projections = infer_projections(manifest["tables"], manifest["events"]);
 
     json workflows = json::array();
     for (const auto& event_item : manifest["events"]) {
@@ -132,7 +133,7 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     manifest["permissions"] = permissions;
     manifest["system"] = {
         {"api", {{"routes", routes}}},
-        {"database", {{"tables", tables}}},
+        {"database", {{"tables", tables}, {"projections", projections}}},
         {"ui", {
             {"resources", json::array({protocol_name})},
             {"actions", tools}
@@ -145,6 +146,107 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     };
 
     return manifest;
+}
+
+json AgentManifestGenerator::infer_projections(const json& tables, const json& events) {
+    auto table_has_columns = [](const json& table, const std::set<std::string>& required) {
+        if (!table.is_object() || !table.contains("columns") || !table["columns"].is_array()) {
+            return false;
+        }
+        std::set<std::string> columns;
+        for (const auto& column : table["columns"]) {
+            if (column.is_object()) {
+                columns.insert(column.value("name", ""));
+            }
+        }
+        for (const auto& name : required) {
+            if (!columns.count(name)) return false;
+        }
+        return true;
+    };
+
+    auto event_has_params = [](const json& event, const std::set<std::string>& required) {
+        if (!event.is_object() || !event.contains("params") || !event["params"].is_array()) {
+            return false;
+        }
+        std::set<std::string> params;
+        for (const auto& param : event["params"]) {
+            if (param.is_object()) {
+                params.insert(param.value("name", ""));
+            }
+        }
+        for (const auto& name : required) {
+            if (!params.count(name)) return false;
+        }
+        return true;
+    };
+
+    std::string balance_table;
+    std::string ledger_table;
+    if (tables.is_array()) {
+        for (const auto& table : tables) {
+            if (balance_table.empty() && table_has_columns(table, {"user", "balance"})) {
+                balance_table = table.value("name", "");
+            }
+            if (ledger_table.empty() && table_has_columns(table, {"user", "delta", "reason", "actor", "operation"})) {
+                ledger_table = table.value("name", "");
+            }
+        }
+    }
+    if (balance_table.empty() && ledger_table.empty()) {
+        return json::array();
+    }
+
+    json projections = json::array();
+    auto add_point_projection = [&](const std::string& event_name, const std::string& delta_expr, const json& actor_expr, const std::string& operation_name) {
+        json projection;
+        projection["name"] = to_snake_case(event_name) + "_to_member_points";
+        projection["on"] = {{"event", event_name}};
+        projection["writes"] = json::array();
+        if (!balance_table.empty()) {
+            projection["writes"].push_back({
+                {"table", balance_table},
+                {"operation", "upsert_delta"},
+                {"key", {{"user", "$event.user"}}},
+                {"delta", {{"balance", delta_expr}}}
+            });
+        }
+        if (!ledger_table.empty()) {
+            projection["writes"].push_back({
+                {"table", ledger_table},
+                {"operation", "insert"},
+                {"values", {
+                    {"user", "$event.user"},
+                    {"delta", delta_expr},
+                    {"reason", "$event.reason"},
+                    {"actor", actor_expr},
+                    {"operation", operation_name}
+                }}
+            });
+        }
+        if (!projection["writes"].empty()) {
+            projections.push_back(projection);
+        }
+    };
+
+    if (events.is_array()) {
+        for (const auto& event : events) {
+            std::string name = event.value("name", "");
+            std::string lowered = name;
+            std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+            if (lowered.find("earned") != std::string::npos && event_has_params(event, {"user", "amount", "reason"})) {
+                add_point_projection(name, "$event.amount", "$ctx.sender", "earn_points");
+            } else if (lowered.find("spent") != std::string::npos && event_has_params(event, {"user", "amount", "reason"})) {
+                add_point_projection(name, "-$event.amount", "$ctx.sender", "spend_points");
+            } else if (lowered.find("adjusted") != std::string::npos && event_has_params(event, {"user", "delta", "reason"})) {
+                add_point_projection(name, "$event.delta", "$event.admin", "admin_adjust_points");
+            }
+        }
+    }
+
+    return projections;
 }
 
 std::string AgentManifestGenerator::normalize_logic(const std::string& logic) {

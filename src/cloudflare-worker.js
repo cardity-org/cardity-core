@@ -168,6 +168,67 @@ function inferEffects(method) {
   return { reads: [...reads], writes: [...writes], emits: [...emits] };
 }
 
+function hasColumns(table, required) {
+  const columns = new Set((table.columns || []).map((column) => column.name));
+  return required.every((name) => columns.has(name));
+}
+
+function hasParams(event, required) {
+  const params = new Set((event.params || []).map((param) => param.name));
+  return required.every((name) => params.has(name));
+}
+
+function inferProjections(tables, events) {
+  const balanceTable = tables.find((table) => hasColumns(table, ["user", "balance"]));
+  const ledgerTable = tables.find((table) => hasColumns(table, ["user", "delta", "reason", "actor", "operation"]));
+  if (!balanceTable && !ledgerTable) return [];
+
+  const projections = [];
+  const addPointProjection = (eventName, deltaExpr, actorExpr, operationName) => {
+    const writes = [];
+    if (balanceTable) {
+      writes.push({
+        table: balanceTable.name,
+        operation: "upsert_delta",
+        key: { user: "$event.user" },
+        delta: { balance: deltaExpr }
+      });
+    }
+    if (ledgerTable) {
+      writes.push({
+        table: ledgerTable.name,
+        operation: "insert",
+        values: {
+          user: "$event.user",
+          delta: deltaExpr,
+          reason: "$event.reason",
+          actor: actorExpr,
+          operation: operationName
+        }
+      });
+    }
+    if (writes.length) {
+      projections.push({
+        name: `${snake(eventName)}_to_member_points`,
+        on: { event: eventName },
+        writes
+      });
+    }
+  };
+
+  for (const event of events) {
+    const lowered = event.name.toLowerCase();
+    if (lowered.includes("earned") && hasParams(event, ["user", "amount", "reason"])) {
+      addPointProjection(event.name, "$event.amount", "$ctx.sender", "earn_points");
+    } else if (lowered.includes("spent") && hasParams(event, ["user", "amount", "reason"])) {
+      addPointProjection(event.name, "-$event.amount", "$ctx.sender", "spend_points");
+    } else if (lowered.includes("adjusted") && hasParams(event, ["user", "delta", "reason"])) {
+      addPointProjection(event.name, "$event.delta", "$event.admin", "admin_adjust_points");
+    }
+  }
+  return projections;
+}
+
 function compile(sourceText, options = {}) {
   const protocol = parseProtocol(sourceText);
 
@@ -241,6 +302,7 @@ function compile(sourceText, options = {}) {
     name: `${snake(protocol.name)}_state`,
     columns: protocol.state.map((item) => ({ name: item.name, type: item.type }))
   };
+  const projections = inferProjections(protocol.tables, events);
 
   const manifest = {
     schema: "cardity.agent_manifest.v1",
@@ -253,7 +315,7 @@ function compile(sourceText, options = {}) {
     permissions,
     system: {
       api: { routes },
-      database: { tables: [stateTable, ...protocol.tables] },
+      database: { tables: [stateTable, ...protocol.tables], projections },
       ui: { resources: [protocol.name], actions: tools },
       workflows: events.map((event) => ({ name: `on_${event.name}`, trigger: { event: event.name }, actions: [] }))
     },
@@ -302,6 +364,7 @@ function generationGuide(requirement = "") {
       "Keyed collections, ledgers, users, balances, tickets, customers, and records belong in top-level table blocks.",
       "Methods define callable intent, params, return type, events, and scalar summary/audit state.",
       "Methods that write state or emit events will be marked requires_confirmation in the Agent OS manifest.",
+      "When events and tables imply business records, the manifest may include system.database.projections for event-to-table writes.",
       "Read-only query methods should avoid writes and emits so they become GET/query tools.",
       "After drafting source, call cardity_compile and fix any compiler or agent-safety errors."
     ],

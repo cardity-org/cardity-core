@@ -98,7 +98,7 @@ It describes the system implied by the protocol:
   "permissions": [],
   "system": {
     "api": { "routes": [] },
-    "database": { "tables": [] },
+    "database": { "tables": [], "projections": [] },
     "ui": { "resources": [], "actions": [] },
     "workflows": []
   },
@@ -110,6 +110,7 @@ An agent can read this manifest to generate:
 
 - API routes
 - database schema
+- event-to-table projections
 - UI actions
 - event workflows
 - tool definitions

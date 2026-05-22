@@ -107,6 +107,64 @@ or emit events are marked:
 
 Read-only methods can be treated as query tools by PMTSoul Agent.
 
+## Database Projection Contract
+
+PMTSoul Agent should prefer explicit table projections from:
+
+```json
+{
+  "system": {
+    "database": {
+      "tables": [],
+      "projections": []
+    }
+  }
+}
+```
+
+`projections` is the handoff from Cardity events to Agent OS business tables.
+It lets Cardity say what should be written after an event without requiring
+PMTSoul to guess from event names.
+
+Example for a membership points protocol:
+
+```json
+{
+  "name": "points_earned_to_member_points",
+  "on": { "event": "PointsEarned" },
+  "writes": [
+    {
+      "table": "member_point_balances",
+      "operation": "upsert_delta",
+      "key": { "user": "$event.user" },
+      "delta": { "balance": "$event.amount" }
+    },
+    {
+      "table": "member_point_ledger",
+      "operation": "insert",
+      "values": {
+        "user": "$event.user",
+        "delta": "$event.amount",
+        "reason": "$event.reason",
+        "actor": "$ctx.sender",
+        "operation": "earn_points"
+      }
+    }
+  ]
+}
+```
+
+Required PMTSoul behavior:
+
+| Requirement | Detail |
+|---|---|
+| Read `system.database.projections` | Treat it as the primary event-to-table write contract. |
+| Support `insert` | Insert a row using `values`. |
+| Support `upsert_delta` | Find row by `key`; insert if missing; otherwise add `delta` fields to existing numeric columns. |
+| Resolve expressions | Support `$event.<field>`, `-$event.<field>`, `$ctx.sender`, and literal strings/numbers. |
+| Keep confirmation policy | Apply projections only after the corresponding write operation has passed confirmation and committed. |
+| Keep fallback compatibility | If `projections` is absent, PMTSoul may keep its existing heuristic event mapping. |
+
 ## Adapter Strategy
 
 Start with MCP because it keeps the repo boundary clean. Once the manifest
