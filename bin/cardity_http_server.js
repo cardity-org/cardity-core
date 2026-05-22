@@ -96,7 +96,9 @@ function generationGuide(args = {}) {
       'Keyed collections, ledgers, users, balances, tickets, customers, and records belong in top-level table blocks.',
       'Methods define callable intent, params, return type, events, and scalar summary/audit state.',
       'Methods that write state or emit events will be marked requires_confirmation in the Agent OS manifest.',
+      'Generated actions include generic action semantics, planner hints, safety fields, dry-run/readback flags, and replay policy.',
       'When events and tables imply business records, the manifest may include system.database.projections for event-to-table writes.',
+      'External entries belong in system.external.navigation or system.external.services unless a concrete permissioned action contract exists.',
       'ERP read models should rely on upsert_snapshot projections, composite keys, tenant context, and confirmed readback when available.',
       'Read-only query methods should avoid writes and emits so they become GET/query tools.',
       'After drafting source, call cardity_compile and fix any compiler or agent-safety errors.'

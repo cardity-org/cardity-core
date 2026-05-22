@@ -87,6 +87,12 @@ context, and run metadata.
 | `$ctx.workspace_id` | Agent OS workspace scope. |
 | `$run.id` | Stable run/idempotency key. |
 
+`source_path` is an optional projection field for fan-out snapshots from a
+confirmed readback array, for example `"$readback.rankings"` or
+`"$readback.complaints"`. When present, `$source.<field>` resolves against each
+item in that array while idempotency still uses the parent event source id and
+write index.
+
 ## Event Payload Schema
 
 Every event in an Agent OS manifest must make idempotency source fields

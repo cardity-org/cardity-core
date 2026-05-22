@@ -56,6 +56,71 @@
         { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
         { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
       ]
+    },
+    {
+      "name": "DashboardSummaryRead",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "dashboard_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "StoreProfileRead",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "store_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "StoreRankingsTop30Read",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "ranking_scope", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "ComplaintListRead",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "list_scope", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "ComplaintDetailRead",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "complaint_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
     }
   ],
   "system": {
@@ -117,6 +182,88 @@
             { "name": "total_amount", "type": "int", "default": "0" },
             { "name": "source_run_id", "type": "string" }
           ]
+        },
+        {
+          "name": "merchant_store_dashboard",
+          "primary_key": ["merchant_id", "dashboard_id"],
+          "indexes": [
+            {
+              "name": "merchant_store_dashboard_workspace_idx",
+              "columns": ["merchant_id", "workspace_id"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "dashboard_id", "type": "string", "nullable": false },
+            { "name": "workspace_id", "type": "string" },
+            { "name": "total_sales", "type": "int", "default": "0" },
+            { "name": "total_orders", "type": "int", "default": "0" },
+            { "name": "pending_complaints", "type": "int", "default": "0" },
+            { "name": "ranking_snapshot_id", "type": "string" },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        },
+        {
+          "name": "merchant_store_profiles",
+          "primary_key": ["merchant_id", "store_id"],
+          "indexes": [
+            {
+              "name": "merchant_store_profiles_status_idx",
+              "columns": ["merchant_id", "status"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "store_id", "type": "string", "nullable": false },
+            { "name": "workspace_id", "type": "string" },
+            { "name": "store_name", "type": "string" },
+            { "name": "status", "type": "string", "default": "active" },
+            { "name": "contact_phone", "type": "string" },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        },
+        {
+          "name": "merchant_store_rankings",
+          "primary_key": ["merchant_id", "ranking_scope", "rank_position"],
+          "indexes": [
+            {
+              "name": "merchant_store_rankings_goods_idx",
+              "columns": ["merchant_id", "goods_id"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "ranking_scope", "type": "string", "nullable": false },
+            { "name": "rank_position", "type": "int", "nullable": false },
+            { "name": "goods_id", "type": "string" },
+            { "name": "score", "type": "int", "default": "0" },
+            { "name": "workspace_id", "type": "string" },
+            { "name": "source_run_id", "type": "string" }
+          ]
+        },
+        {
+          "name": "merchant_complaints",
+          "primary_key": ["merchant_id", "complaint_id"],
+          "indexes": [
+            {
+              "name": "merchant_complaints_status_idx",
+              "columns": ["merchant_id", "status"]
+            },
+            {
+              "name": "merchant_complaints_order_idx",
+              "columns": ["merchant_id", "order_id"]
+            }
+          ],
+          "columns": [
+            { "name": "merchant_id", "type": "string", "nullable": false },
+            { "name": "complaint_id", "type": "string", "nullable": false },
+            { "name": "order_id", "type": "string" },
+            { "name": "status", "type": "string", "default": "open" },
+            { "name": "category", "type": "string" },
+            { "name": "customer_message", "type": "string" },
+            { "name": "workspace_id", "type": "string" },
+            { "name": "source_run_id", "type": "string" }
+          ]
         }
       ],
       "read_models": [
@@ -134,6 +281,26 @@
           "name": "merchant_orders",
           "primary_key": ["merchant_id", "order_id"],
           "query_contracts": ["orders.list", "orders.detail"]
+        },
+        {
+          "name": "merchant_store_dashboard",
+          "primary_key": ["merchant_id", "dashboard_id"],
+          "query_contracts": ["dashboard.summary"]
+        },
+        {
+          "name": "merchant_store_profiles",
+          "primary_key": ["merchant_id", "store_id"],
+          "query_contracts": ["store.profile"]
+        },
+        {
+          "name": "merchant_store_rankings",
+          "primary_key": ["merchant_id", "ranking_scope", "rank_position"],
+          "query_contracts": ["rankings.top30"]
+        },
+        {
+          "name": "merchant_complaints",
+          "primary_key": ["merchant_id", "complaint_id"],
+          "query_contracts": ["complaints.list", "complaints.detail"]
         }
       ],
       "projections": [
@@ -234,6 +401,145 @@
               }
             }
           ]
+        },
+        {
+          "name": "dashboard_summary_snapshot",
+          "version": "1.1",
+          "source": "confirmed_readback",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
+          "on": { "event": "DashboardSummaryRead" },
+          "writes": [
+            {
+              "table": "merchant_store_dashboard",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "dashboard_id"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "total_sales": "$readback.total_sales",
+                "total_orders": "$readback.total_orders",
+                "pending_complaints": "$readback.pending_complaints",
+                "ranking_snapshot_id": "$readback.ranking_snapshot_id",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "store_profile_snapshot",
+          "version": "1.1",
+          "source": "confirmed_readback",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
+          "on": { "event": "StoreProfileRead" },
+          "writes": [
+            {
+              "table": "merchant_store_profiles",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "store_id"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "store_name": "$readback.store_name",
+                "status": "$readback.status",
+                "contact_phone": "$readback.contact_phone",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "rankings_top30_snapshot",
+          "version": "1.1",
+          "source": "confirmed_readback",
+          "source_path": "$readback.rankings",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
+          "on": { "event": "StoreRankingsTop30Read" },
+          "writes": [
+            {
+              "table": "merchant_store_rankings",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "ranking_scope", "rank_position"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "goods_id": "$source.goods_id",
+                "score": "$source.score",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "complaints_list_snapshot",
+          "version": "1.1",
+          "source": "confirmed_readback",
+          "source_path": "$readback.complaints",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
+          "on": { "event": "ComplaintListRead" },
+          "writes": [
+            {
+              "table": "merchant_complaints",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "complaint_id"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "order_id": "$source.order_id",
+                "status": "$source.status",
+                "category": "$source.category",
+                "customer_message": "$source.customer_message",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
+        },
+        {
+          "name": "complaint_detail_snapshot",
+          "version": "1.1",
+          "source": "confirmed_readback",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
+          "on": { "event": "ComplaintDetailRead" },
+          "writes": [
+            {
+              "table": "merchant_complaints",
+              "operation": "upsert_snapshot",
+              "key": ["merchant_id", "complaint_id"],
+              "values": {
+                "workspace_id": "$ctx.workspace_id",
+                "order_id": "$readback.order_id",
+                "status": "$readback.status",
+                "category": "$readback.category",
+                "customer_message": "$readback.customer_message",
+                "source_run_id": "$run.id"
+              }
+            }
+          ]
         }
       ],
       "queries": [
@@ -260,8 +566,151 @@
           "read_model": "merchant_orders",
           "operation": "list",
           "filters": ["merchant_id", "status"]
+        },
+        {
+          "name": "dashboard.summary",
+          "read_model": "merchant_store_dashboard",
+          "operation": "summary",
+          "filters": ["merchant_id", "dashboard_id"]
+        },
+        {
+          "name": "store.profile",
+          "read_model": "merchant_store_profiles",
+          "operation": "detail",
+          "filters": ["merchant_id", "store_id"]
+        },
+        {
+          "name": "rankings.top30",
+          "read_model": "merchant_store_rankings",
+          "operation": "list",
+          "filters": ["merchant_id", "ranking_scope"],
+          "limit": 30,
+          "order_by": [{ "column": "rank_position", "direction": "asc" }]
+        },
+        {
+          "name": "complaints.list",
+          "read_model": "merchant_complaints",
+          "operation": "list",
+          "filters": ["merchant_id", "status"]
+        },
+        {
+          "name": "complaints.detail",
+          "read_model": "merchant_complaints",
+          "operation": "detail",
+          "filters": ["merchant_id", "complaint_id"]
         }
       ]
+    },
+    "modules": [
+      {
+        "name": "merchant_dashboard",
+        "kind": "workspace_module",
+        "intent_names": ["merchant dashboard", "store dashboard", "merchant control center"]
+      }
+    ],
+    "ui": {
+      "actions": [
+        {
+          "name": "publish_product",
+          "kind": "command",
+          "intent_names": ["publish product", "product publishing", "make goods live"],
+          "intent_examples": ["Publish this product after merchant approval"],
+          "disambiguation_keys": ["merchant_id", "goods_id"],
+          "required_context": ["ctx.merchant_id", "ctx.workspace_id", "ctx.sender"],
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "merchant_id": { "type": "string" },
+              "goods_id": { "type": "string" }
+            },
+            "required": ["merchant_id", "goods_id"]
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "readback": { "type": "object" }
+            },
+            "required": ["status"]
+          },
+          "permission": null,
+          "confirm_required": true,
+          "dry_run_supported": true,
+          "readback_required": true,
+          "readback_query": "products.detail",
+          "idempotency_key": "$run.id",
+          "risk_level": "medium",
+          "side_effects": { "planned": true, "writes": ["merchant_products"], "external": [] },
+          "audit_event": "ProductSaved",
+          "replay_policy": { "mode": "idempotent_command", "idempotency_key": "$run.id" },
+          "execution_mode": "planned"
+        },
+        {
+          "name": "edit_store_profile",
+          "kind": "command",
+          "intent_names": ["edit store", "update store profile", "store editing"],
+          "intent_examples": ["Update the merchant store profile after explicit approval"],
+          "disambiguation_keys": ["merchant_id", "store_id"],
+          "required_context": ["ctx.merchant_id", "ctx.workspace_id", "ctx.sender"],
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "merchant_id": { "type": "string" },
+              "store_id": { "type": "string" },
+              "store_name": { "type": "string" }
+            },
+            "required": ["merchant_id", "store_id"]
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "readback": { "type": "object" }
+            },
+            "required": ["status"]
+          },
+          "permission": null,
+          "confirm_required": true,
+          "dry_run_supported": true,
+          "readback_required": true,
+          "readback_query": "store.profile",
+          "idempotency_key": "$run.id",
+          "risk_level": "medium",
+          "side_effects": { "planned": true, "writes": ["merchant_store_profiles"], "external": [] },
+          "audit_event": "StoreProfileRead",
+          "replay_policy": { "mode": "idempotent_command", "idempotency_key": "$run.id" },
+          "execution_mode": "planned"
+        }
+      ]
+    },
+    "external": {
+      "navigation": [
+        {
+          "name": "dk.verification",
+          "kind": "external_navigation",
+          "label": "DK Verification",
+          "intent_names": ["dk verification", "domain key verification"],
+          "ownership": "external",
+          "href": null
+        },
+        {
+          "name": "app.update_checks",
+          "kind": "external_navigation",
+          "label": "App Update Checks",
+          "intent_names": ["app update checks", "application update status"],
+          "ownership": "external",
+          "href": null
+        },
+        {
+          "name": "contact_us",
+          "kind": "external_navigation",
+          "label": "Contact Us",
+          "intent_names": ["contact us", "support entry"],
+          "ownership": "external",
+          "href": null
+        }
+      ],
+      "services": []
     }
   }
 }

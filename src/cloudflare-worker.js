@@ -382,15 +382,42 @@ function compile(sourceText, options = {}) {
     const mutates = effects.writes.length > 0 || effects.emits.length > 0;
     const route = { method: mutates ? "POST" : "GET", path: `/protocols/${protocol.name}/methods/${method.name}` };
     routes.push(route);
+    const inputSchema = {
+      type: "object",
+      properties: Object.fromEntries(method.params.map((param) => [param.name, { type: jsonSchemaType(param.type) }])),
+      required: method.params.map((param) => param.name)
+    };
+    const toolName = snake(`${protocol.name}_${method.name}`);
+    const replayPolicy = mutates
+      ? { mode: "idempotent_command", idempotency_key: "$run.id", on_replay: "return_prior_result" }
+      : { mode: "read_only" };
     const tool = {
-      name: snake(`${protocol.name}_${method.name}`),
+      name: toolName,
       description: `Invoke ${protocol.name}.${method.name}`,
       method: method.name,
-      input_schema: {
+      module: protocol.name,
+      kind: mutates ? "command" : "query",
+      intent_names: [method.name, toolName, title(method.name)],
+      intent_examples: [`Invoke ${protocol.name}.${method.name}`],
+      disambiguation_keys: method.params.map((param) => param.name),
+      required_context: mutates ? ["ctx.sender"] : [],
+      input_schema: inputSchema,
+      output_schema: {
         type: "object",
-        properties: Object.fromEntries(method.params.map((param) => [param.name, { type: jsonSchemaType(param.type) }])),
-        required: method.params.map((param) => param.name)
-      }
+        properties: { result: { type: jsonSchemaType(method.returns || "string") } },
+        required: ["result"]
+      },
+      returns_read_model: null,
+      permission: mutates ? method.name : null,
+      confirm_required: mutates,
+      dry_run_supported: mutates,
+      readback_required: mutates,
+      readback_query: mutates ? { strategy: "post_commit", route } : null,
+      idempotency_key: mutates ? "$run.id" : null,
+      risk_level: mutates ? "medium" : "low",
+      side_effects: effects,
+      audit_event: effects.emits[0] || null,
+      replay_policy: replayPolicy
     };
     tools.push(tool);
     if (mutates) permissions.push({ action: method.name, requires_confirmation: true, reason: "Method writes state or emits protocol events" });
@@ -460,8 +487,14 @@ function compile(sourceText, options = {}) {
     permissions,
     system: {
       api: { routes },
+      modules: [{
+        name: protocol.name,
+        kind: "protocol",
+        intent_names: [protocol.name, snake(protocol.name), title(protocol.name)]
+      }],
       database: { tables: [stateTable, ...normalizedTables], read_models: readModels, projections, queries },
       ui: { resources: [protocol.name], actions: tools },
+      external: { navigation: [], services: [] },
       workflows: events.map((event) => ({ name: `on_${event.name}`, trigger: { event: event.name }, actions: [] }))
     },
     agent: { tools, events }
@@ -509,7 +542,9 @@ function generationGuide(requirement = "") {
       "Keyed collections, ledgers, users, balances, tickets, customers, and records belong in top-level table blocks.",
       "Methods define callable intent, params, return type, events, and scalar summary/audit state.",
       "Methods that write state or emit events will be marked requires_confirmation in the Agent OS manifest.",
+      "Generated actions include generic action semantics, planner hints, safety fields, dry-run/readback flags, and replay policy.",
       "When events and tables imply business records, the manifest may include system.database.projections for event-to-table writes.",
+      "External entries belong in system.external.navigation or system.external.services unless a concrete permissioned action contract exists.",
       "ERP read models should rely on upsert_snapshot projections, composite keys, tenant context, and confirmed readback when available.",
       "Read-only query methods should avoid writes and emits so they become GET/query tools.",
       "After drafting source, call cardity_compile and fix any compiler or agent-safety errors."

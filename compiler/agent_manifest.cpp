@@ -120,11 +120,57 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
         routes.push_back(route);
 
         std::string tool_name = to_snake_case(protocol_name + "_" + method_name);
+        json input_schema = build_input_schema(params);
+        json disambiguation_keys = json::array();
+        for (const auto& param : params) {
+            std::string param_name = param.value("name", "");
+            if (!param_name.empty()) disambiguation_keys.push_back(param_name);
+        }
+        std::string return_type = "string";
+        if (method_def.contains("returns")) {
+            if (method_def["returns"].is_string()) {
+                return_type = method_def["returns"].get<std::string>();
+            } else if (method_def["returns"].is_object()) {
+                return_type = method_def["returns"].value("type", "string");
+            }
+        }
+        json output_schema = {
+            {"type", "object"},
+            {"properties", {{"result", {{"type", json_schema_type(return_type)}}}}},
+            {"required", json::array({"result"})}
+        };
+        json emits = effects.value("emits", json::array());
+        json replay_policy = {
+            {"mode", mutates ? "idempotent_command" : "read_only"}
+        };
+        if (mutates) {
+            replay_policy["idempotency_key"] = "$run.id";
+            replay_policy["on_replay"] = "return_prior_result";
+        }
+
         tools.push_back({
             {"name", tool_name},
             {"description", "Invoke " + protocol_name + "." + method_name},
             {"method", method_name},
-            {"input_schema", build_input_schema(params)}
+            {"module", protocol_name},
+            {"kind", mutates ? "command" : "query"},
+            {"intent_names", json::array({method_name, tool_name, titleize(method_name)})},
+            {"intent_examples", json::array({"Invoke " + protocol_name + "." + method_name})},
+            {"disambiguation_keys", disambiguation_keys},
+            {"required_context", mutates ? json::array({"ctx.sender"}) : json::array()},
+            {"input_schema", input_schema},
+            {"output_schema", output_schema},
+            {"returns_read_model", json(nullptr)},
+            {"permission", mutates ? json(method_name) : json(nullptr)},
+            {"confirm_required", mutates},
+            {"dry_run_supported", mutates},
+            {"readback_required", mutates},
+            {"readback_query", mutates ? json({{"strategy", "post_commit"}, {"route", route}}) : json(nullptr)},
+            {"idempotency_key", mutates ? json("$run.id") : json(nullptr)},
+            {"risk_level", mutates ? "medium" : "low"},
+            {"side_effects", effects},
+            {"audit_event", (!emits.empty() ? emits[0] : json(nullptr))},
+            {"replay_policy", replay_policy}
         });
 
         if (mutates) {
@@ -166,6 +212,13 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
     manifest["permissions"] = permissions;
     manifest["system"] = {
         {"api", {{"routes", routes}}},
+        {"modules", json::array({
+            {
+                {"name", protocol_name},
+                {"kind", "protocol"},
+                {"intent_names", json::array({protocol_name, to_snake_case(protocol_name), titleize(protocol_name)})}
+            }
+        })},
         {"database", {
             {"tables", tables},
             {"read_models", read_models},
@@ -175,6 +228,10 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
         {"ui", {
             {"resources", json::array({protocol_name})},
             {"actions", tools}
+        }},
+        {"external", {
+            {"navigation", json::array()},
+            {"services", json::array()}
         }},
         {"workflows", workflows}
     };

@@ -119,6 +119,40 @@ or emit events are marked:
 
 Read-only methods can be treated as query tools by PMTSoul Agent.
 
+## Generic Action Contract
+
+Cardity stays runtime-agnostic. Downstream Agent runtimes should consume
+actions from `system.ui.actions` as a generic planning and execution contract,
+not as PMTSoul-specific ERP instructions.
+
+Each action includes:
+
+| Field | Detail |
+|---|---|
+| `kind` | One of `query`, `command`, or `external_navigation`. |
+| `intent_names` | Names and aliases planners can match against user intent. |
+| `intent_examples` | Example user intents for planner grounding. |
+| `disambiguation_keys` | Input fields that identify the target object. |
+| `required_context` | Runtime context such as `ctx.sender`, `ctx.merchant_id`, or `ctx.workspace_id`. |
+| `input_schema` | JSON schema for action input. |
+| `output_schema` / `returns_read_model` | JSON schema or read model returned by the action. |
+| `permission` | Permission contract identifier, or `null` when no write permission has been granted. |
+| `confirm_required` | Whether the runtime must request confirmation before execution. |
+| `dry_run_supported` | Whether the runtime can plan without committing writes. |
+| `readback_required` | Whether a committed command must produce a confirmed readback payload. |
+| `readback_query` | Query contract or post-commit route used to fetch readback state. |
+| `idempotency_key` | Expression used to prevent duplicate execution, usually `$run.id`. |
+| `risk_level` | Planner-facing risk hint such as `low`, `medium`, or `high`. |
+| `side_effects` | Declared reads, writes, emits, or external effects. |
+| `audit_event` | Event name a runtime can use for auditing. |
+| `replay_policy` | Replay behavior for idempotent command execution. |
+
+Module-level planner hints are emitted under `system.modules[].intent_names`.
+External entries live under `system.external.navigation[]` and
+`system.external.services[]`. DK verification, app update checks, and contact-us
+entries should remain static/external navigation items until a runtime grants a
+concrete service/action permission contract.
+
 ## Database Projection Contract
 
 Projection contract v1.1 is the first stable Cardity <-> PMTSoul Agent OS

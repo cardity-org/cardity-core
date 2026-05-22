@@ -41,6 +41,48 @@ protocol MerchantERPSystem {
     source_run_id: string = "";
   }
 
+  table merchant_store_dashboard {
+    merchant_id: string;
+    dashboard_id: string;
+    total_sales: int = 0;
+    total_orders: int = 0;
+    pending_complaints: int = 0;
+    ranking_snapshot_id: string = "";
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  table merchant_store_profiles {
+    merchant_id: string;
+    store_id: string;
+    store_name: string = "";
+    status: string = "active";
+    contact_phone: string = "";
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  table merchant_store_rankings {
+    merchant_id: string;
+    ranking_scope: string;
+    rank_position: int = 0;
+    goods_id: string = "";
+    score: int = 0;
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
+  table merchant_complaints {
+    merchant_id: string;
+    complaint_id: string;
+    order_id: string = "";
+    status: string = "open";
+    category: string = "";
+    customer_message: string = "";
+    workspace_id: string = "";
+    source_run_id: string = "";
+  }
+
   event ProductSaved {
     merchant_id: string;
     goods_id: string;
@@ -61,6 +103,31 @@ protocol MerchantERPSystem {
   event OrderCreated {
     merchant_id: string;
     order_id: string;
+  }
+
+  event DashboardSummaryRead {
+    merchant_id: string;
+    dashboard_id: string;
+  }
+
+  event StoreProfileRead {
+    merchant_id: string;
+    store_id: string;
+  }
+
+  event StoreRankingsTop30Read {
+    merchant_id: string;
+    ranking_scope: string;
+  }
+
+  event ComplaintListRead {
+    merchant_id: string;
+    list_scope: string;
+  }
+
+  event ComplaintDetailRead {
+    merchant_id: string;
+    complaint_id: string;
   }
 
   method save_product(merchant_id: string, goods_id: string) {
@@ -100,6 +167,56 @@ protocol MerchantERPSystem {
     state.last_object_id = params.order_id;
     state.last_operation = "create_order";
     emit OrderCreated(params.merchant_id, params.order_id);
+  }
+  returns: string state.result;
+
+  method read_dashboard_summary(merchant_id: string, dashboard_id: string) {
+    state.result = "planned_read";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.dashboard_id;
+    state.last_operation = "read_dashboard_summary";
+    emit DashboardSummaryRead(params.merchant_id, params.dashboard_id);
+  }
+  returns: string state.result;
+
+  method read_store_profile(merchant_id: string, store_id: string) {
+    state.result = "planned_read";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.store_id;
+    state.last_operation = "read_store_profile";
+    emit StoreProfileRead(params.merchant_id, params.store_id);
+  }
+  returns: string state.result;
+
+  method read_rankings_top30(merchant_id: string, ranking_scope: string) {
+    state.result = "planned_read";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.ranking_scope;
+    state.last_operation = "read_rankings_top30";
+    emit StoreRankingsTop30Read(params.merchant_id, params.ranking_scope);
+  }
+  returns: string state.result;
+
+  method list_complaints(merchant_id: string, list_scope: string) {
+    state.result = "planned_read";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.list_scope;
+    state.last_operation = "list_complaints";
+    emit ComplaintListRead(params.merchant_id, params.list_scope);
+  }
+  returns: string state.result;
+
+  method get_complaint_detail(merchant_id: string, complaint_id: string) {
+    state.result = "planned_read";
+    state.last_actor = ctx.sender;
+    state.last_merchant_id = params.merchant_id;
+    state.last_object_id = params.complaint_id;
+    state.last_operation = "get_complaint_detail";
+    emit ComplaintDetailRead(params.merchant_id, params.complaint_id);
   }
   returns: string state.result;
 
