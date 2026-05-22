@@ -1,0 +1,26 @@
+protocol Counter {
+  version: "1.0.0";
+  owner: "doge1owner...";
+
+  state {
+    count: int = 0;
+    status: string = "idle";
+  }
+
+  event CountChanged {
+    count: int;
+    status: string;
+  }
+
+  method set_count(value: int) {
+    state.count = params.value;
+    if (state.count >= 10) { state.status = "large" }
+    emit CountChanged(state.count, state.status);
+  }
+  returns: string state.status;
+
+  method get_count() {
+    state.count = state.count;
+  }
+  returns: int state.count;
+}

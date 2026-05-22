@@ -1,4 +1,6 @@
 #include "event_system.h"
+#include "parser.h"
+#include "tokenizer.h"
 #include <iostream>
 #include <fstream>
 #include <regex>
@@ -85,6 +87,10 @@ void ABIGenerator::set_methods(const nlohmann::json& methods_json) {
     methods = methods_json;
 }
 
+void ABIGenerator::set_state(const nlohmann::json& state_json) {
+    state = state_json;
+}
+
 void ABIGenerator::set_events(const std::unordered_map<std::string, EventDefinition>& events_def) {
     events = events_def;
 }
@@ -94,6 +100,17 @@ nlohmann::json ABIGenerator::generate_abi() const {
     
     abi["protocol"] = protocol_name;
     abi["version"] = version;
+
+    nlohmann::json state_abi = nlohmann::json::object();
+    for (auto& [state_name, state_data] : state.items()) {
+        nlohmann::json state_item;
+        state_item["type"] = state_data.value("type", "string");
+        if (state_data.contains("default")) {
+            state_item["default"] = state_data["default"];
+        }
+        state_abi[state_name] = state_item;
+    }
+    abi["state"] = state_abi;
     
     // 处理方法
     nlohmann::json methods_abi;
@@ -104,11 +121,19 @@ nlohmann::json ABIGenerator::generate_abi() const {
         if (method_data.contains("params")) {
             nlohmann::json params_abi = nlohmann::json::array();
             auto params = method_data["params"];
+            nlohmann::json param_types = nlohmann::json::array();
+            if (method_data.contains("param_types") && method_data["param_types"].is_array()) {
+                param_types = method_data["param_types"];
+            }
             
             for (size_t i = 0; i < params.size(); ++i) {
                 nlohmann::json param_abi;
                 param_abi["name"] = params[i];
-                param_abi["type"] = "string"; // 默认类型，可以从状态定义推断
+                if (i < param_types.size() && param_types[i].is_string() && !param_types[i].get<std::string>().empty()) {
+                    param_abi["type"] = param_types[i];
+                } else {
+                    param_abi["type"] = "string";
+                }
                 params_abi.push_back(param_abi);
             }
             
@@ -139,7 +164,7 @@ nlohmann::json ABIGenerator::generate_abi() const {
     abi["methods"] = methods_abi;
     
     // 处理事件
-    nlohmann::json events_abi;
+    nlohmann::json events_abi = nlohmann::json::object();
     for (const auto& [event_name, event_def] : events) {
         nlohmann::json event_abi;
         nlohmann::json params_abi = nlohmann::json::array();
@@ -183,6 +208,11 @@ nlohmann::json ABIGenerator::generate_abi_from_car(const std::string& car_file) 
         if (car.contains("cpl")) {
             auto cpl = car["cpl"];
             
+            // 设置状态
+            if (cpl.contains("state")) {
+                generator.set_state(cpl["state"]);
+            }
+
             // 设置方法
             if (cpl.contains("methods")) {
                 generator.set_methods(cpl["methods"]);
@@ -221,75 +251,48 @@ nlohmann::json ABIGenerator::generate_abi_from_car(const std::string& car_file) 
 }
 
 nlohmann::json ABIGenerator::parse_programming_language_format(const std::string& content) {
-    std::string protocol_name = "unknown";
-    std::string version = "1.0.0";
-    
-    // 使用正则表达式解析编程语言格式
-    std::regex protocol_regex("protocol\\s+(\\w+)\\s*\\{");
-    std::regex version_regex("version:\\s*\"([^\"]+)\"");
-    std::regex method_regex("method\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{");
-    std::regex event_regex("event\\s+(\\w+)\\s*\\{");
-    
-    std::smatch matches;
-    
-    // 提取协议名
-    if (std::regex_search(content, matches, protocol_regex)) {
-        protocol_name = matches[1].str();
+    Tokenizer tokenizer(content);
+    Parser parser(tokenizer);
+    ProtocolAST ast = parser.parse_protocol();
+
+    ABIGenerator generator(ast.protocol_name, ast.version);
+
+    nlohmann::json state = nlohmann::json::object();
+    for (const auto& state_var : ast.state_variables) {
+        state[state_var.name] = {
+            {"type", state_var.type},
+            {"default", state_var.default_value}
+        };
     }
-    
-    // 提取版本
-    if (std::regex_search(content, matches, version_regex)) {
-        version = matches[1].str();
-    }
-    
-    ABIGenerator generator(protocol_name, version);
-    
-    // 解析方法
-    nlohmann::json methods;
-    std::string::const_iterator search_start(content.cbegin());
-    
-    while (std::regex_search(search_start, content.cend(), matches, method_regex)) {
-        std::string method_name = matches[1].str();
+    generator.set_state(state);
+
+    nlohmann::json methods = nlohmann::json::object();
+    for (const auto& method_ast : ast.methods) {
         nlohmann::json method;
-        method["name"] = method_name;
-        method["params"] = nlohmann::json::array();
-        method["returns"] = nullptr;
-        methods[method_name] = method;
-        search_start = matches.suffix().first;
-    }
-    
-    generator.set_methods(methods);
-    
-    // 解析事件（简化版本）
-    std::unordered_map<std::string, EventDefinition> events;
-    search_start = content.cbegin();
-    
-    while (std::regex_search(search_start, content.cend(), matches, event_regex)) {
-        std::string event_name = matches[1].str();
-        EventDefinition event_def(event_name);
-        
-        // 简单的事件参数解析
-        if (event_name == "TokenDeployed") {
-            event_def.add_param("tick", "string");
-            event_def.add_param("max_supply", "string");
-        } else if (event_name == "TokenMinted") {
-            event_def.add_param("tick", "string");
-            event_def.add_param("amount", "int");
-            event_def.add_param("total_supply", "int");
-        } else if (event_name == "TokenTransferred") {
-            event_def.add_param("tick", "string");
-            event_def.add_param("amount", "int");
-            event_def.add_param("to_address", "string");
-        } else if (event_name == "MessageUpdated") {
-            event_def.add_param("new_message", "string");
+        method["params"] = method_ast.params;
+        if (!method_ast.param_types.empty()) {
+            method["param_types"] = method_ast.param_types;
         }
-        
-        events[event_name] = event_def;
-        search_start = matches.suffix().first;
+        if (!method_ast.return_expr.empty() || !method_ast.return_type.empty()) {
+            nlohmann::json returns;
+            if (!method_ast.return_type.empty()) returns["type"] = method_ast.return_type;
+            if (!method_ast.return_expr.empty()) returns["expr"] = method_ast.return_expr;
+            method["returns"] = returns;
+        }
+        methods[method_ast.name] = method;
     }
-    
+    generator.set_methods(methods);
+
+    std::unordered_map<std::string, EventDefinition> events;
+    for (const auto& event_ast : ast.events) {
+        EventDefinition event_def(event_ast.name);
+        for (const auto& param_ast : event_ast.params) {
+            event_def.add_param(param_ast.name, param_ast.type);
+        }
+        events[event_ast.name] = event_def;
+    }
     generator.set_events(events);
-    
+
     return generator.generate_abi();
 }
 

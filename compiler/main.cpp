@@ -46,6 +46,19 @@ std::unique_ptr<Protocol> convert_ast(const ProtocolAST& new_ast) {
         state_var.default_value = var.default_value;
         protocol->state.variables.push_back(state_var);
     }
+
+    for (const auto& table_ast : new_ast.tables) {
+        Table table;
+        table.name = table_ast.name;
+        for (const auto& column_ast : table_ast.columns) {
+            TableColumn column;
+            column.name = column_ast.name;
+            column.type = column_ast.type;
+            column.default_value = column_ast.default_value;
+            table.columns.push_back(column);
+        }
+        protocol->tables.push_back(table);
+    }
     
     // 转换方法
     for (const auto& method : new_ast.methods) {

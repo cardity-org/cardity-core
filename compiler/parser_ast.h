@@ -13,6 +13,17 @@ struct ParserStateVariable {
     std::string default_value;
 };
 
+struct ParserTableColumn {
+    std::string name;
+    std::string type;
+    std::string default_value;
+};
+
+struct ParserTable {
+    std::string name;
+    std::vector<ParserTableColumn> columns;
+};
+
 struct ParserMethod {
     std::string name;
     std::vector<std::string> params;
@@ -23,6 +34,16 @@ struct ParserMethod {
     std::string return_type;   // optional type annotation (e.g. int/string/bool)
 };
 
+struct ParserEventParam {
+    std::string name;
+    std::string type;
+};
+
+struct ParserEvent {
+    std::string name;
+    std::vector<ParserEventParam> params;
+};
+
 struct ProtocolAST {
     std::string protocol_name;
     std::string version;
@@ -31,7 +52,9 @@ struct ProtocolAST {
     std::vector<std::string> imports; // module names (resolved later)
     std::vector<std::pair<std::string,std::string>> using_aliases; // {module, alias}
     std::vector<ParserStateVariable> state_variables;
+    std::vector<ParserTable> tables;
     std::vector<ParserMethod> methods;
+    std::vector<ParserEvent> events;
 };
 
 } // namespace cardity

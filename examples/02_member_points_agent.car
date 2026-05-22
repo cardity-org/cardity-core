@@ -1,0 +1,91 @@
+protocol MemberPointsSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    result: string = "ok";
+    total_points_issued: int = 0;
+    total_points_spent: int = 0;
+    last_actor: address = "";
+    last_user: address = "";
+    last_amount: int = 0;
+    last_delta: int = 0;
+    last_reason: string = "";
+    last_operation: string = "none";
+  }
+
+  table member_point_balances {
+    user: address;
+    balance: int = 0;
+  }
+
+  table member_point_ledger {
+    user: address;
+    delta: int;
+    reason: string;
+    actor: address;
+    operation: string;
+  }
+
+  event PointsEarned {
+    user: address;
+    amount: int;
+    reason: string;
+  }
+
+  event PointsSpent {
+    user: address;
+    amount: int;
+    reason: string;
+  }
+
+  event PointsAdjusted {
+    admin: address;
+    user: address;
+    delta: int;
+    reason: string;
+  }
+
+  method earn_points(user: address, amount: int, reason: string) {
+    state.result = "ok";
+    state.total_points_issued = state.total_points_issued + params.amount;
+    state.last_actor = ctx.sender;
+    state.last_user = params.user;
+    state.last_amount = params.amount;
+    state.last_delta = params.amount;
+    state.last_reason = params.reason;
+    state.last_operation = "earn_points";
+    emit PointsEarned(params.user, params.amount, params.reason);
+  }
+  returns: string state.result;
+
+  method spend_points(user: address, amount: int, reason: string) {
+    state.result = "ok";
+    state.total_points_spent = state.total_points_spent + params.amount;
+    state.last_actor = ctx.sender;
+    state.last_user = params.user;
+    state.last_amount = params.amount;
+    state.last_delta = 0 - params.amount;
+    state.last_reason = params.reason;
+    state.last_operation = "spend_points";
+    emit PointsSpent(params.user, params.amount, params.reason);
+  }
+  returns: string state.result;
+
+  method get_balance(user: address) {
+    state.result = state.result;
+  }
+  returns: string state.result;
+
+  method admin_adjust_points(user: address, delta: int, reason: string) {
+    state.result = "ok";
+    state.last_actor = ctx.sender;
+    state.last_user = params.user;
+    state.last_amount = params.delta;
+    state.last_delta = params.delta;
+    state.last_reason = params.reason;
+    state.last_operation = "admin_adjust_points";
+    emit PointsAdjusted(ctx.sender, params.user, params.delta, params.reason);
+  }
+  returns: string state.result;
+}

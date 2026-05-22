@@ -6,7 +6,7 @@ namespace cardity {
 
 json generate_car_json(const ProtocolAST& ast) {
     json j;
-    j["p"] = "cardinals";
+    j["p"] = "cardity";
     j["op"] = "deploy";
     j["protocol"] = ast.protocol_name;
     j["version"] = ast.version;
@@ -21,6 +21,28 @@ json generate_car_json(const ProtocolAST& ast) {
         };
     }
     cpl["state"] = state_json;
+
+    if (!ast.tables.empty()) {
+        json tables_json = json::array();
+        for (const auto& table : ast.tables) {
+            json columns = json::array();
+            for (const auto& column : table.columns) {
+                json column_json = {
+                    {"name", column.name},
+                    {"type", column.type}
+                };
+                if (!column.default_value.empty()) {
+                    column_json["default"] = column.default_value;
+                }
+                columns.push_back(column_json);
+            }
+            tables_json.push_back({
+                {"name", table.name},
+                {"columns", columns}
+            });
+        }
+        cpl["tables"] = tables_json;
+    }
 
     // methods
     json methods_json;

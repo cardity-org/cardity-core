@@ -89,6 +89,17 @@ program
     executeCommand('cardity_abi', args);
   });
 
+// Agent OS manifest command
+program
+  .command('manifest <file>')
+  .description('Generate an Agent OS manifest from a .car protocol')
+  .option('-o, --output <file>', 'Output file path')
+  .action((file, options) => {
+    const args = [file, '--format', 'agent-manifest'];
+    if (options.output) args.push('-o', options.output);
+    executeCommand('cardityc', args);
+  });
+
 // 部署命令
 program
   .command('deploy <file>')
@@ -317,7 +328,8 @@ program
     console.log(chalk.gray('  cardity init my-project          # Create new project'));
     console.log(chalk.gray('  cardity compile src/index.car    # Compile protocol'));
     console.log(chalk.gray('  cardity run dist/index.carc      # Run protocol'));
-    console.log(chalk.gray('  cardity abi src/index.car        # Generate ABI\n'));
+    console.log(chalk.gray('  cardity abi src/index.car        # Generate ABI'));
+    console.log(chalk.gray('  cardity manifest src/index.car   # Generate Agent OS manifest\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));
     console.log(chalk.gray('  cardity drc20 compile token.car  # Compile token'));

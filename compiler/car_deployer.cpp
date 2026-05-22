@@ -39,6 +39,9 @@ CarFile CarDeployer::create_deployment_package(const std::string& car_file_path)
     
     // 生成 ABI
     ABIGenerator abi_gen(car_file.protocol, car_file.version);
+    if (car_file.cpl.contains("state")) {
+        abi_gen.set_state(car_file.cpl["state"]);
+    }
     if (car_file.cpl.contains("methods")) {
         abi_gen.set_methods(car_file.cpl["methods"]);
     }
@@ -85,6 +88,9 @@ CarFile CarDeployer::create_deployment_package_from_json(const json& car_data) {
     
     // 生成 ABI
     ABIGenerator abi_gen(car_file.protocol, car_file.version);
+    if (car_file.cpl.contains("state")) {
+        abi_gen.set_state(car_file.cpl["state"]);
+    }
     if (car_file.cpl.contains("methods")) {
         abi_gen.set_methods(car_file.cpl["methods"]);
     }
@@ -120,7 +126,7 @@ CarFile CarDeployer::create_deployment_package_from_json(const json& car_data) {
 json CarDeployer::generate_deployment_json(const json& cpl_data) {
     json deployment;
     
-    deployment["p"] = "cardinals";
+    deployment["p"] = "cardity";
     deployment["op"] = "deploy";
     deployment["protocol"] = protocol_name;
     deployment["version"] = version;
@@ -132,6 +138,9 @@ json CarDeployer::generate_deployment_json(const json& cpl_data) {
     
     // 生成 ABI
     ABIGenerator abi_gen(protocol_name, version);
+    if (cpl_data.contains("state")) {
+        abi_gen.set_state(cpl_data["state"]);
+    }
     if (cpl_data.contains("methods")) {
         abi_gen.set_methods(cpl_data["methods"]);
     }

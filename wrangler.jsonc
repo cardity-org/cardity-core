@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cardity-core-api-proxy",
+  "main": "src/cloudflare-worker.js",
+  "compatibility_date": "2026-05-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "api.cardity.org/*",
+      "zone_id": "93722d37bff137d3a9b34d26638f54b6"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CARDITY_API_CONTAINER",
+        "class_name": "CardityApiContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CardityApiContainer"]
+    }
+  ],
+  "containers": [
+    {
+      "class_name": "CardityApiContainer",
+      "image": "./Dockerfile",
+      "instance_type": "basic",
+      "max_instances": 2
+    }
+  ]
+}

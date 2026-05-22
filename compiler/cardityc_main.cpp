@@ -13,6 +13,7 @@
 #include "car_generator.h"
 #include "carc_generator.h"
 #include "event_system.h"
+#include "agent_manifest.h"
 
 using namespace cardity;
 
@@ -31,7 +32,7 @@ void print_usage(const std::string& program_name) {
     std::cout << "  --inscription - Generate inscription format for deployment" << std::endl;
     std::cout << "  --wasm        - Generate WASM module" << std::endl;
     std::cout << "  --validate    - Validate protocol format only" << std::endl;
-    std::cout << "  --format <fmt> - Output format: carc (binary), json, car, or wasm" << std::endl;
+    std::cout << "  --format <fmt> - Output format: carc (binary), json, agent-manifest, car, or wasm" << std::endl;
     std::cout << "  --carc        - Generate .carc binary format (default)" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
@@ -40,6 +41,7 @@ void print_usage(const std::string& program_name) {
     std::cout << "  " << program_name << " protocol.car --inscription" << std::endl;
     std::cout << "  " << program_name << " protocol.car --validate" << std::endl;
     std::cout << "  " << program_name << " protocol.car --format json" << std::endl;
+    std::cout << "  " << program_name << " protocol.car --format agent-manifest" << std::endl;
     std::cout << "  " << program_name << " protocol.car --format carc" << std::endl;
 }
 
@@ -76,6 +78,19 @@ json parse_programming_language_format(const std::string& content) {
         var.default_value = state_var.default_value;
         protocol.state.variables.push_back(var);
     }
+
+    for (const auto& table_ast : ast.tables) {
+        Table table;
+        table.name = table_ast.name;
+        for (const auto& column_ast : table_ast.columns) {
+            TableColumn column;
+            column.name = column_ast.name;
+            column.type = column_ast.type;
+            column.default_value = column_ast.default_value;
+            table.columns.push_back(column);
+        }
+        protocol.tables.push_back(table);
+    }
     
     // 转换方法
     for (const auto& method_ast : ast.methods) {
@@ -88,6 +103,18 @@ json parse_programming_language_format(const std::string& content) {
         method.return_expr = method_ast.return_expr;
         method.return_type = method_ast.return_type;
         protocol.methods.push_back(method);
+    }
+
+    for (const auto& event_ast : ast.events) {
+        ProtocolEvent event;
+        event.name = event_ast.name;
+        for (const auto& param_ast : event_ast.params) {
+            ProtocolEventParam param;
+            param.name = param_ast.name;
+            param.type = param_ast.type;
+            event.params.push_back(param);
+        }
+        protocol.events.push_back(event);
     }
     
     // 使用 CarGenerator 将 Protocol 转换为 JSON
@@ -305,6 +332,8 @@ int main(int argc, char* argv[]) {
             output_file = base_name + ".carc";
         } else if (output_format == "json") {
             output_file = base_name + ".json";
+        } else if (output_format == "agent-manifest" || output_format == "manifest") {
+            output_file = base_name + ".agent.json";
         } else if (output_format == "car") {
             output_file = base_name + ".car";
         } else {
@@ -344,10 +373,25 @@ int main(int argc, char* argv[]) {
         nlohmann::json abi_json;
         try {
             ABIGenerator abi_gen(car_data.value("protocol", ""), car_data.value("version", ""));
+            if (car_data.contains("cpl") && car_data["cpl"].contains("state")) {
+                abi_gen.set_state(car_data["cpl"]["state"]);
+            }
             if (car_data.contains("cpl") && car_data["cpl"].contains("methods")) {
                 abi_gen.set_methods(car_data["cpl"]["methods"]);
             }
-            // 如有事件定义可在此补充
+            if (car_data.contains("cpl") && car_data["cpl"].contains("events")) {
+                std::unordered_map<std::string, EventDefinition> events;
+                for (auto& [name, event_json] : car_data["cpl"]["events"].items()) {
+                    EventDefinition event_def(name);
+                    if (event_json.contains("params")) {
+                        for (const auto& param_json : event_json["params"]) {
+                            event_def.add_param(param_json.value("name", ""), param_json.value("type", ""));
+                        }
+                    }
+                    events[name] = event_def;
+                }
+                abi_gen.set_events(events);
+            }
             abi_json = abi_gen.generate_abi();
         } catch (...) {
             // 忽略 ABI 生成失败
@@ -374,6 +418,18 @@ int main(int argc, char* argv[]) {
             size_t dot_pos = base.find_last_of('.');
             if (dot_pos != std::string::npos) base = base.substr(0, dot_pos);
             write_abi_file(base);
+            return 0;
+        }
+
+        if (output_format == "agent-manifest" || output_format == "manifest") {
+            if (abi_json.is_null()) {
+                throw std::runtime_error("Failed to generate ABI for agent manifest");
+            }
+            std::cout << "🧭 Outputting Agent OS manifest..." << std::endl;
+            json manifest = AgentManifestGenerator::generate(car_data, abi_json);
+            std::ofstream ofs(output_file);
+            ofs << manifest.dump(2) << std::endl;
+            std::cout << "✅ Agent manifest saved to: " << output_file << std::endl;
             return 0;
         }
         

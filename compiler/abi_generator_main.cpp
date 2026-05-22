@@ -22,9 +22,18 @@ int main(int argc, char* argv[]) {
 
     std::string car_file = argv[1];
     std::string output_file = "";
-    
-    if (argc > 2) {
-        output_file = argv[2];
+
+    for (int i = 2; i < argc; ++i) {
+        std::string arg = argv[i];
+        if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
+            output_file = argv[++i];
+        } else if (output_file.empty()) {
+            output_file = arg;
+        } else {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            print_usage(argv[0]);
+            return 1;
+        }
     }
     
     try {

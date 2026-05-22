@@ -4,8 +4,100 @@
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
+#include <functional>
 
 namespace cardity {
+
+static std::string trim_edges(const std::string& str) {
+    size_t start = 0;
+    while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start]))) {
+        start++;
+    }
+    size_t end = str.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(str[end - 1]))) {
+        end--;
+    }
+    return str.substr(start, end - start);
+}
+
+static bool starts_with_word(const std::string& str, const std::string& word) {
+    if (str.rfind(word, 0) != 0) return false;
+    if (str.size() == word.size()) return true;
+    unsigned char next = static_cast<unsigned char>(str[word.size()]);
+    return !std::isalnum(next) && next != '_';
+}
+
+static size_t find_matching_pair(const std::string& str, size_t open_pos, char open_ch, char close_ch) {
+    int depth = 0;
+    for (size_t i = open_pos; i < str.size(); ++i) {
+        if (str[i] == open_ch) {
+            depth++;
+        } else if (str[i] == close_ch) {
+            depth--;
+            if (depth == 0) return i;
+        }
+    }
+    return std::string::npos;
+}
+
+static bool parse_if_parts(const std::string& stmt, std::string& condition, std::string& body) {
+    std::string trimmed = trim_edges(stmt);
+    if (!starts_with_word(trimmed, "if")) return false;
+
+    size_t lparen = trimmed.find('(');
+    if (lparen == std::string::npos) return false;
+    size_t rparen = find_matching_pair(trimmed, lparen, '(', ')');
+    if (rparen == std::string::npos) return false;
+    size_t lbrace = trimmed.find('{', rparen);
+    if (lbrace == std::string::npos) return false;
+    size_t rbrace = find_matching_pair(trimmed, lbrace, '{', '}');
+    if (rbrace == std::string::npos) return false;
+
+    condition = trimmed.substr(lparen + 1, rparen - lparen - 1);
+    body = trimmed.substr(lbrace + 1, rbrace - lbrace - 1);
+    return true;
+}
+
+static std::vector<std::string> split_logic_statements(const std::string& logic) {
+    std::vector<std::string> statements;
+    size_t i = 0;
+
+    while (i < logic.size()) {
+        while (i < logic.size() &&
+               (std::isspace(static_cast<unsigned char>(logic[i])) || logic[i] == ';')) {
+            i++;
+        }
+        if (i >= logic.size()) break;
+
+        std::string rest = trim_edges(logic.substr(i));
+        if (starts_with_word(rest, "if")) {
+            size_t absolute_start = logic.find(rest, i);
+            size_t lbrace = logic.find('{', absolute_start);
+            if (lbrace == std::string::npos) {
+                statements.push_back(trim_edges(logic.substr(i)));
+                break;
+            }
+            size_t rbrace = find_matching_pair(logic, lbrace, '{', '}');
+            if (rbrace == std::string::npos) {
+                statements.push_back(trim_edges(logic.substr(i)));
+                break;
+            }
+            statements.push_back(trim_edges(logic.substr(absolute_start, rbrace - absolute_start + 1)));
+            i = rbrace + 1;
+            continue;
+        }
+
+        size_t semicolon = logic.find(';', i);
+        if (semicolon == std::string::npos) {
+            statements.push_back(trim_edges(logic.substr(i)));
+            break;
+        }
+        statements.push_back(trim_edges(logic.substr(i, semicolon - i)));
+        i = semicolon + 1;
+    }
+
+    return statements;
+}
 
 Runtime::Runtime() {
     // 构造函数，初始化事件管理器
@@ -54,60 +146,43 @@ std::string Runtime::invoke_method(const json& car, State& state,
         param_names = method["params"].get<std::vector<std::string>>();
     }
 
-    // 处理逻辑字段：state.xxx = yyy 或 if 条件语句
+    auto execute_logic = [&](const std::string& logic) {
+        std::function<void(const std::string&)> execute_stmt;
+        execute_stmt = [&](const std::string& raw_stmt) {
+            std::string stmt = trim_edges(raw_stmt);
+            if (stmt.empty()) return;
+
+            std::string condition;
+            std::string body;
+            if (parse_if_parts(stmt, condition, body)) {
+                if (ExpressionEvaluator::evaluate_condition(condition, state, args, method, context)) {
+                    for (const auto& nested : split_logic_statements(body)) {
+                        execute_stmt(nested);
+                    }
+                }
+                return;
+            }
+
+            if (starts_with_word(stmt, "emit")) {
+                parse_emit_statement(stmt, state, args, param_names);
+                return;
+            }
+
+            ExpressionEvaluator::parse_assignment(stmt, state, args, method, context);
+        };
+
+        for (const auto& stmt : split_logic_statements(logic)) {
+            execute_stmt(stmt);
+        }
+    };
+
+    // 处理逻辑字段：state.xxx = yyy、emit 或 if 条件语句
     if (method.contains("logic")) {
         if (method["logic"].is_string()) {
-            // 可能包含多条以分号分隔的简单语句
-            std::string logic = method["logic"];
-            // 跳过空白逻辑字符串
-            std::string no_space = logic;
-            no_space.erase(std::remove_if(no_space.begin(), no_space.end(), ::isspace), no_space.end());
-            if (!no_space.empty()) {
-            // 如果是 if 开头，按 if 语句处理
-            std::string trimmed = logic;
-            trimmed.erase(std::remove_if(trimmed.begin(), trimmed.end(), ::isspace), trimmed.end());
-            bool is_if = logic.find("if") != std::string::npos && logic.find("(") != std::string::npos && logic.find(")") != std::string::npos && logic.find("{") != std::string::npos;
-            if (is_if) {
-                (void)ExpressionEvaluator::execute_if_statement(logic, state, args, method, context);
-            } else if (logic.find("emit ") == 0) {
-                parse_emit_statement(logic, state, args, param_names);
-            } else if (logic.find(';') != std::string::npos) {
-                // 按分号分割逐条执行
-                size_t start = 0;
-                while (true) {
-                    size_t pos = logic.find(';', start);
-                    std::string stmt = (pos == std::string::npos) ? logic.substr(start) : logic.substr(start, pos - start);
-                    // trim spaces
-                    stmt.erase(stmt.begin(), std::find_if(stmt.begin(), stmt.end(), [](int ch){ return !std::isspace(ch); }));
-                    stmt.erase(std::find_if(stmt.rbegin(), stmt.rend(), [](int ch){ return !std::isspace(ch); }).base(), stmt.end());
-                    if (!stmt.empty()) {
-                        ExpressionEvaluator::parse_assignment(stmt, state, args, method, context);
-                    }
-                    if (pos == std::string::npos) break;
-                    start = pos + 1;
-                }
-            } else {
-                // 单条赋值
-                ExpressionEvaluator::parse_assignment(logic, state, args, method, context);
-            }
-            }
+            execute_logic(method["logic"].get<std::string>());
         } else if (method["logic"].is_array()) {
-            // 多个逻辑语句
-            auto logic_array = method["logic"];
-            for (const auto& logic_item : logic_array) {
-                std::string logic = logic_item;
-                
-                // 尝试解析 if 语句
-                (void)ExpressionEvaluator::execute_if_statement(logic, state, args, method, context);
-                
-                // 尝试解析 emit 语句
-                if (logic.find("emit ") == 0) {
-                    parse_emit_statement(logic, state, args, param_names);
-                    continue;
-                }
-                
-                // 如果不是 if 或 emit，当作普通赋值处理
-                ExpressionEvaluator::parse_assignment(logic, state, args, method, context);
+            for (const auto& logic_item : method["logic"]) {
+                execute_logic(logic_item.get<std::string>());
             }
         }
     }
@@ -199,6 +274,10 @@ void Runtime::parse_assignment(const std::string& logic, State& state,
 
 std::string Runtime::parse_return(const std::string& returns, const State& state) {
     std::string ret = trim(returns);
+
+    if (ExpressionEvaluator::is_string_literal(ret)) {
+        return ExpressionEvaluator::extract_string_literal(ret);
+    }
     
 
     
@@ -292,6 +371,7 @@ void Runtime::parse_emit_statement(const std::string& emit_stmt, const State& st
             tok.erase(tok.begin(), std::find_if(tok.begin(), tok.end(), [](int ch){ return !std::isspace(ch); }));
             tok.erase(std::find_if(tok.rbegin(), tok.rend(), [](int ch){ return !std::isspace(ch); }).base(), tok.end());
             if (!tok.empty()) {
+                tok = ExpressionEvaluator::trim(tok);
                 if (tok.rfind("params.", 0) == 0) {
                     std::string param_name = tok.substr(7);
                     auto it = std::find(param_names.begin(), param_names.end(), param_name);

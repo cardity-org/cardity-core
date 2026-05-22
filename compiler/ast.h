@@ -32,6 +32,17 @@ struct StateBlock : public ASTNode {
     std::vector<StateVariable> variables;
 };
 
+struct TableColumn : public ASTNode {
+    std::string name;
+    std::string type;
+    std::string default_value;
+};
+
+struct Table : public ASTNode {
+    std::string name;
+    std::vector<TableColumn> columns;
+};
+
 // ----------------------
 // 方法定义
 struct Method : public ASTNode {
@@ -44,6 +55,16 @@ struct Method : public ASTNode {
     std::string return_type;   // 返回类型（可选）
 };
 
+struct ProtocolEventParam : public ASTNode {
+    std::string name;
+    std::string type;
+};
+
+struct ProtocolEvent : public ASTNode {
+    std::string name;
+    std::vector<ProtocolEventParam> params;
+};
+
 // ----------------------
 // 程序结构（协议根部）
 struct Protocol : public ASTNode {
@@ -53,7 +74,9 @@ struct Protocol : public ASTNode {
     std::vector<std::string> imports; // module names
     std::vector<std::pair<std::string,std::string>> using_aliases; // {module, alias}
     StateBlock state;
+    std::vector<Table> tables;
     std::vector<Method> methods;
+    std::vector<ProtocolEvent> events;
 };
 
 } // namespace cardity

@@ -76,12 +76,16 @@ private:
     std::string version;
     std::unordered_map<std::string, EventDefinition> events;
     nlohmann::json methods;
+    nlohmann::json state;
 
 public:
     ABIGenerator(const std::string& protocol, const std::string& ver);
     
     // 设置方法定义
     void set_methods(const nlohmann::json& methods_json);
+
+    // 设置状态定义
+    void set_state(const nlohmann::json& state_json);
     
     // 设置事件定义
     void set_events(const std::unordered_map<std::string, EventDefinition>& events_def);

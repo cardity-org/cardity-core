@@ -6,6 +6,13 @@
 
 namespace cardity {
 
+static std::string token_text(const Token& token) {
+    if (token.type == TokenType::STRING) {
+        return "\"" + token.value + "\"";
+    }
+    return token.value;
+}
+
 Parser::Parser(Tokenizer& lex) : lexer(lex) {
     current = lexer.next_token();
 }
@@ -36,12 +43,12 @@ ProtocolAST Parser::parse_protocol() {
             parse_import_or_using(ast);
         } else if (match("state")) {
             ast.state_variables = parse_state_block();
+        } else if (match("table")) {
+            ast.tables.push_back(parse_table());
         } else if (match("method")) {
             ast.methods.push_back(parse_method());
         } else if (match("event")) {
-            // 跳过整个 event 块
-            std::cout << "Warning: Skipping event block" << std::endl;
-            skip_event_block();
+            ast.events.push_back(parse_event());
         } else if (current.value.empty() || current.value == " ") {
             // 跳过空字符串或空格
             advance();
@@ -62,7 +69,9 @@ void Parser::parse_import_or_using(ProtocolAST& ast) {
         std::string module = expect_identifier();
         // 支持可选的 from 子句
         if (match("from")) {
-            expect("\""); // 简化：consume opening quote if tokenizer kept it separate
+            if (current.type == TokenType::STRING) {
+                advance();
+            }
         }
         // 允许有可选路径字符串；忽略实际路径，先记录模块名
         // 容错：直到分号
@@ -138,12 +147,8 @@ std::string Parser::expect_number() {
 std::vector<ParserStateVariable> Parser::parse_state_block() {
     std::vector<ParserStateVariable> vars;
     expect("{");
-    
-    std::cout << "DEBUG: Starting state block parsing" << std::endl;
-    
+
     while (current.value != "}" && !is_at_end()) {
-        std::cout << "DEBUG: Current token: '" << current.value << "' at " << get_current_position() << std::endl;
-        
         std::string name = expect_identifier();
         expect(":");
         
@@ -176,15 +181,11 @@ std::vector<ParserStateVariable> Parser::parse_state_block() {
                 error("Expected value after '='");
             }
         }
-        
+
         expect(";");
         vars.push_back({name, type, def});
-        
-        std::cout << "DEBUG: Added state variable: " << name << ":" << type << std::endl;
     }
-    
-    std::cout << "DEBUG: State block parsing finished, current token: '" << current.value << "'" << std::endl;
-    
+
     if (current.value == "}") {
         advance(); // 消费结束的 }
     } else {
@@ -192,6 +193,54 @@ std::vector<ParserStateVariable> Parser::parse_state_block() {
     }
     
     return vars;
+}
+
+ParserTableColumn Parser::parse_table_column() {
+    ParserTableColumn column;
+    column.name = expect_identifier();
+    expect(":");
+
+    if (current.type == TokenType::IDENTIFIER ||
+        current.type == TokenType::KEYWORD_STRING ||
+        current.type == TokenType::KEYWORD_INT ||
+        current.type == TokenType::KEYWORD_BOOL ||
+        current.type == TokenType::KEYWORD_ADDRESS ||
+        current.type == TokenType::KEYWORD_MAP) {
+        column.type = current.value;
+        advance();
+    } else {
+        error("Expected table column type, got: " + current.value);
+    }
+
+    if (match("=")) {
+        if (current.type == TokenType::STRING) {
+            column.default_value = expect_string();
+        } else if (current.type == TokenType::NUMBER) {
+            column.default_value = expect_number();
+        } else if (current.type == TokenType::KEYWORD_TRUE ||
+                   current.type == TokenType::KEYWORD_FALSE) {
+            column.default_value = current.value;
+            advance();
+        } else {
+            error("Expected table column default value after '='");
+        }
+    }
+
+    expect(";");
+    return column;
+}
+
+ParserTable Parser::parse_table() {
+    ParserTable table;
+    table.name = expect_identifier();
+    expect("{");
+
+    while (current.value != "}" && !is_at_end()) {
+        table.columns.push_back(parse_table_column());
+    }
+
+    expect("}");
+    return table;
 }
 
 std::vector<ParserMethod> Parser::parse_methods_block() {
@@ -237,7 +286,7 @@ ParserMethod Parser::parse_method() {
         }
         std::ostringstream oss;
         while (!is_at_end() && current.value != ";") {
-            oss << current.value;
+            oss << token_text(current);
             if (current.type != TokenType::SEMICOLON) oss << " ";
             advance();
         }
@@ -309,7 +358,7 @@ std::string Parser::parse_method_body() {
         }
         
         if (brace_count > 0) {
-            logic += current.value + " ";
+            logic += token_text(current) + " ";
         }
         
         advance();
@@ -323,21 +372,54 @@ std::string Parser::parse_method_body() {
     return logic;
 }
 
-void Parser::skip_event_block() {
-    // 跳过 event 名称
-    expect_identifier();
-    expect("{");
-    
-    // 跳过 event 块的内容，直到遇到结束的 }
-    int brace_count = 1;
-    while (brace_count > 0 && !is_at_end()) {
-        if (current.value == "{") {
-            brace_count++;
-        } else if (current.value == "}") {
-            brace_count--;
+ParserEvent Parser::parse_event() {
+    ParserEvent event;
+    event.name = expect_identifier();
+
+    auto read_type = [&]() -> std::string {
+        if (current.type == TokenType::IDENTIFIER ||
+            current.type == TokenType::KEYWORD_STRING ||
+            current.type == TokenType::KEYWORD_INT ||
+            current.type == TokenType::KEYWORD_BOOL ||
+            current.type == TokenType::KEYWORD_ADDRESS ||
+            current.type == TokenType::KEYWORD_MAP) {
+            std::string type = current.value;
+            advance();
+            return type;
         }
-        advance();
+        error("Expected event parameter type, got: " + current.value);
+        return "";
+    };
+
+    if (match("(")) {
+        if (current.value != ")") {
+            while (true) {
+                ParserEventParam param;
+                param.name = expect_identifier();
+                expect(":");
+                param.type = read_type();
+                event.params.push_back(param);
+
+                if (match(",")) continue;
+                break;
+            }
+        }
+        expect(")");
+        expect(";");
+        return event;
     }
+
+    expect("{");
+    while (current.value != "}" && !is_at_end()) {
+        ParserEventParam param;
+        param.name = expect_identifier();
+        expect(":");
+        param.type = read_type();
+        expect(";");
+        event.params.push_back(param);
+    }
+    expect("}");
+    return event;
 }
 
 void Parser::error(const std::string& msg) {

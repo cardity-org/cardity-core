@@ -1,13 +1,17 @@
 {
   "name": "cardity",
   "version": "1.0.1",
-  "description": "Cardity - A modern programming language for blockchain protocol development on Dogecoin",
+  "description": "Cardity Core - an agent protocol compiler for ABI, MCP, and Agent OS manifests",
   "main": "dist/index.js",
   "bin": {
     "cardity": "./bin/cardity.js",
+    "cardity_agent": "./bin/cardity_agent.js",
+    "cardity_http_server": "./bin/cardity_http_server.js",
+    "cardity_mcp_server": "./bin/cardity_mcp_server.js",
     "cardityc": "./bin/cardityc.js",
     "cardity_runtime": "./bin/cardity_runtime.js",
     "cardity_abi": "./bin/cardity_abi.js",
+    "cardity_manifest": "./bin/cardity_manifest.js",
     "cardity_deploy": "./bin/cardity_deploy.js",
     "cardity_drc20": "./bin/cardity_drc20.js",
     "cardity_sdk": "./bin/cardity_sdk.js",
@@ -17,28 +21,28 @@
     "cardity_inscribe_full": "./bin/cardity_inscribe_full.js"
   },
   "scripts": {
+    "build": "mkdir -p build && cd build && cmake .. && make",
+    "install": "npm run build",
+    "postinstall": "node scripts/postinstall.js",
+    "test": "bash scripts/smoke_test.sh",
+    "serve": "node bin/cardity_http_server.js",
+    "deploy:cloudflare": "wrangler deploy",
+    "prepublishOnly": "npm run build",
     "ophex": "node bin/cardity_ophex.js",
     "encode:invoke": "node bin/cardity_encode_invoke.js",
     "split:parts": "node bin/cardity_split_parts.js",
     "check:imports": "node bin/cardity_check_imports.js"
   },
-  "scripts": {
-    "build": "mkdir -p build && cd build && cmake .. && make",
-    "install": "npm run build",
-    "postinstall": "node scripts/postinstall.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "npm run build"
-  },
   "keywords": [
     "cardity",
-    "blockchain",
-    "dogecoin",
-    "drc20",
+    "agent-protocol",
+    "agent-os",
+    "mcp",
     "protocol",
     "compiler",
     "programming-language",
-    "utxo",
-    "inscription"
+    "system-generation",
+    "abi"
   ],
   "author": "Cardity Team",
   "license": "MIT",
@@ -54,13 +58,15 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
-    "commander": "^11.0.0",
     "chalk": "^5.3.0",
+    "commander": "^11.0.0",
     "fs-extra": "^11.1.1"
   },
   "devDependencies": {
+    "@cloudflare/containers": "^0.3.4",
+    "@types/fs-extra": "^11.0.0",
     "@types/node": "^20.0.0",
-    "@types/fs-extra": "^11.0.0"
+    "wrangler": "^4.93.1"
   },
   "files": [
     "bin/",
@@ -80,4 +86,4 @@
     "x64",
     "arm64"
   ]
-} 
+}

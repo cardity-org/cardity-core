@@ -34,15 +34,15 @@ private:
     
     // 解析方法
     std::vector<ParserStateVariable> parse_state_block();
+    ParserTable parse_table();
+    ParserTableColumn parse_table_column();
     std::vector<ParserMethod> parse_methods_block();
     ParserMethod parse_method();
     std::vector<std::string> parse_method_params(std::vector<std::string>& out_types);
     std::string parse_method_body();
+    ParserEvent parse_event();
     void parse_import_or_using(ProtocolAST& ast);
-    
-    // 跳过 event 块
-    void skip_event_block();
-    
+
     // 错误处理
     void error(const std::string& msg);
     void advance();

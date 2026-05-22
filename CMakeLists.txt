@@ -8,6 +8,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 编译选项
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
 
+# Homebrew installs package config files under per-formula prefixes on macOS.
+# Add the common Apple Silicon locations so `npm run build` works without
+# requiring callers to pass CMAKE_PREFIX_PATH manually.
+if(APPLE)
+    list(APPEND CMAKE_PREFIX_PATH
+        /opt/homebrew/opt/nlohmann-json
+        /opt/homebrew/opt/openssl@3
+        /opt/homebrew/opt/libarchive
+        /usr/local/opt/nlohmann-json
+        /usr/local/opt/openssl@3
+        /usr/local/opt/libarchive
+    )
+endif()
+
 # 查找必要的包
 find_package(nlohmann_json REQUIRED)
 find_package(CURL REQUIRED)
@@ -29,6 +43,7 @@ else()
     # 尝试手动查找
     find_path(LibArchive_INCLUDE_DIR archive.h
         PATHS
+        /opt/homebrew/opt/libarchive/include
         /usr/local/opt/libarchive/include
         /usr/include
         /usr/local/include
@@ -37,6 +52,7 @@ else()
     find_library(LibArchive_LIBRARY
         NAMES archive
         PATHS
+        /opt/homebrew/opt/libarchive/lib
         /usr/local/opt/libarchive/lib
         /usr/lib
         /usr/local/lib
@@ -53,6 +69,10 @@ endif()
 
 # 包含目录
 include_directories(compiler)
+include_directories(${LibArchive_INCLUDE_DIRS})
+if(LibArchive_LIBRARY_DIRS)
+    link_directories(${LibArchive_LIBRARY_DIRS})
+endif()
 
 # 源文件
 set(SOURCES
@@ -79,6 +99,7 @@ set(HEADERS
     compiler/expression.h
     compiler/type_system.h
     compiler/event_system.h
+    compiler/agent_manifest.h
     compiler/car_deployer.h
 )
 
@@ -107,13 +128,26 @@ set(PACKAGE_HEADERS
 # add_executable(parser_test compiler/parser_test.cpp compiler/tokenizer.cpp compiler/parser.cpp)
 
 # 创建运行时执行器
-add_executable(cardity_runtime compiler/runtime_main.cpp compiler/runtime.cpp compiler/expression.cpp compiler/type_system.cpp compiler/event_system.cpp)
+add_executable(cardity_runtime
+    compiler/runtime_main.cpp
+    compiler/runtime.cpp
+    compiler/expression.cpp
+    compiler/type_system.cpp
+    compiler/event_system.cpp
+    compiler/parser.cpp
+    compiler/tokenizer.cpp
+)
 
 # 链接库
 target_link_libraries(cardity_runtime nlohmann_json::nlohmann_json)
 
 # 创建 ABI 生成器
-add_executable(cardity_abi compiler/abi_generator_main.cpp compiler/event_system.cpp)
+add_executable(cardity_abi
+    compiler/abi_generator_main.cpp
+    compiler/event_system.cpp
+    compiler/parser.cpp
+    compiler/tokenizer.cpp
+)
 
 # 链接库
 target_link_libraries(cardity_abi nlohmann_json::nlohmann_json)
@@ -129,6 +163,7 @@ add_executable(cardityc
     compiler/carc_generator.cpp
     compiler/drc20_standard.cpp
     compiler/drc20_compiler.cpp
+    compiler/agent_manifest.cpp
 )
 
 # 创建 Dogecoin 部署工具

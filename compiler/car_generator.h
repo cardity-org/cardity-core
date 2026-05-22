@@ -19,9 +19,15 @@ public:
 private:
     // 编译状态块
     static json compile_state(const StateBlock& state);
+
+    // 编译 Agent OS 数据表声明
+    static json compile_tables(const std::vector<Table>& tables);
     
     // 编译方法
     static json compile_methods(const std::vector<Method>& methods);
+
+    // 编译事件
+    static json compile_events(const std::vector<ProtocolEvent>& events);
 };
 
 } // namespace cardity

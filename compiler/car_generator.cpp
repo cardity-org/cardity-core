@@ -5,7 +5,7 @@ namespace cardity {
 
 json CarGenerator::compile_to_car(const Protocol& protocol) {
     json car;
-    car["p"] = "cardinals";
+    car["p"] = "cardity";
     car["op"] = "deploy";
     car["protocol"] = protocol.name;
     car["version"] = protocol.metadata.version;
@@ -28,8 +28,16 @@ json CarGenerator::compile_to_car(const Protocol& protocol) {
     // 编译 state
     cpl["state"] = compile_state(protocol.state);
 
+    if (!protocol.tables.empty()) {
+        cpl["tables"] = compile_tables(protocol.tables);
+    }
+
     // 编译 methods
     cpl["methods"] = compile_methods(protocol.methods);
+
+    if (!protocol.events.empty()) {
+        cpl["events"] = compile_events(protocol.events);
+    }
 
     car["cpl"] = cpl;
     return car;
@@ -44,6 +52,28 @@ json CarGenerator::compile_state(const StateBlock& state) {
         };
     }
     return state_json;
+}
+
+json CarGenerator::compile_tables(const std::vector<Table>& tables) {
+    json tables_json = json::array();
+    for (const auto& table : tables) {
+        json columns = json::array();
+        for (const auto& column : table.columns) {
+            json column_json = {
+                {"name", column.name},
+                {"type", column.type}
+            };
+            if (!column.default_value.empty()) {
+                column_json["default"] = column.default_value;
+            }
+            columns.push_back(column_json);
+        }
+        tables_json.push_back({
+            {"name", table.name},
+            {"columns", columns}
+        });
+    }
+    return tables_json;
 }
 
 json CarGenerator::compile_methods(const std::vector<Method>& methods) {
@@ -70,6 +100,21 @@ json CarGenerator::compile_methods(const std::vector<Method>& methods) {
         methods_json[method.name] = m;
     }
     return methods_json;
+}
+
+json CarGenerator::compile_events(const std::vector<ProtocolEvent>& events) {
+    json events_json;
+    for (const auto& event : events) {
+        json params = json::array();
+        for (const auto& param : event.params) {
+            params.push_back({
+                {"name", param.name},
+                {"type", param.type}
+            });
+        }
+        events_json[event.name] = {{"params", params}};
+    }
+    return events_json;
 }
 
 std::string CarGenerator::to_string(const json& car_json) {
