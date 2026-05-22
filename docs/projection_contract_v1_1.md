@@ -76,6 +76,9 @@ context, and run metadata.
 |---|---|
 | `$event.<field>` | Field from the emitted Cardity event. |
 | `-$event.<field>` | Negative numeric event field. |
+| `$event.id` | Runtime-provided stable event source id. Must appear in `events[].runtime_fields` or `events[].params`. |
+| `$event.write_index` | Runtime-provided deterministic write index. Must appear in `events[].runtime_fields` or `events[].params`. |
+| `$event.source_run_id` | Runtime-provided run id for the event source. |
 | `$readback.<field>` | Field from the confirmed post-write readback payload. |
 | `-$readback.<field>` | Negative numeric readback field. |
 | `$source.<field>` | Field from the projection source, usually event or readback. |
@@ -83,6 +86,36 @@ context, and run metadata.
 | `$ctx.merchant_id` | Merchant scope. |
 | `$ctx.workspace_id` | Agent OS workspace scope. |
 | `$run.id` | Stable run/idempotency key. |
+
+## Event Payload Schema
+
+Every event in an Agent OS manifest must make idempotency source fields
+explicit. Business event arguments are listed in `events[].params`. Runtime
+event metadata is listed in `events[].runtime_fields` and is part of the event
+payload visible to projection consumers.
+
+```json
+{
+  "name": "ProductSaved",
+  "params": [
+    { "name": "merchant_id", "type": "string" },
+    { "name": "goods_id", "type": "string" }
+  ],
+  "runtime_fields": [
+    { "name": "id", "type": "string", "required": true, "source": "runtime" },
+    { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+    { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+    { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+  ]
+}
+```
+
+If a projection uses `$event.id`, `$event.write_index`, or any other
+`$event.*` idempotency expression, that field must be declared in either
+`events[].runtime_fields` or `events[].params`. If a runtime cannot provide the
+named payload fields, it may fall back to its internal `event_id` /
+`idempotency_key`, but that should be treated as a degraded replay guard rather
+than a fully Cardity-specified source id.
 
 ## Confirmed Readback Projection
 
@@ -92,9 +125,15 @@ post-write readback result rather than the original event payload.
 ```json
 {
   "name": "product_saved_snapshot",
-  "version": "1",
+  "version": "1.1",
   "source": "confirmed_readback",
-  "source_id": "$run.id",
+  "source_id": "$event.id",
+  "idempotency": {
+    "source_id": "$event.id",
+    "source_run_id": "$event.source_run_id",
+    "projection_version": "$projection.version",
+    "write_index": "$event.write_index"
+  },
   "on": { "event": "ProductSaved" },
   "writes": [
     {

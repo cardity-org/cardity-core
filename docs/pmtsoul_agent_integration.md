@@ -184,6 +184,7 @@ Required PMTSoul behavior:
 | Resolve expressions | Support `$event.<field>`, `-$event.<field>`, `$readback.<field>`, `-$readback.<field>`, `$source.<field>`, `$ctx.sender`, `$ctx.merchant_id`, `$ctx.workspace_id`, `$run.id`, and literal strings/numbers. |
 | Support readback source | `source: "confirmed_readback"` means projection values should be read from the post-write readback payload after commit. |
 | Preserve idempotency | Use `source_id`, `projection.name`, `projection.version`, and write index to prevent duplicate replay writes. |
+| Validate event source fields | If a projection references `$event.id`, `$event.write_index`, or any other `$event.*` idempotency field, require that field in `events[].runtime_fields` or `events[].params`. |
 | Keep confirmation policy | Apply projections only after the corresponding write operation has passed confirmation and committed. |
 | Keep fallback compatibility | If `projections` is absent, PMTSoul may keep its existing heuristic event mapping. |
 

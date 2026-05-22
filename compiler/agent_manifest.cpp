@@ -53,6 +53,36 @@ json AgentManifestGenerator::generate(const json& car_json, const json& abi_json
         json item;
         item["name"] = event_name;
         item["params"] = event_def.value("params", json::array());
+        item["runtime_fields"] = json::array({
+            {
+                {"name", "id"},
+                {"type", "string"},
+                {"required", true},
+                {"source", "runtime"},
+                {"description", "Stable event source id for projection idempotency"}
+            },
+            {
+                {"name", "write_index"},
+                {"type", "int"},
+                {"required", true},
+                {"source", "runtime"},
+                {"description", "Deterministic write position within the committed event payload"}
+            },
+            {
+                {"name", "source_run_id"},
+                {"type", "string"},
+                {"required", true},
+                {"source", "runtime"},
+                {"description", "Agent/run id that produced the event"}
+            },
+            {
+                {"name", "idempotency_key"},
+                {"type", "string"},
+                {"required", true},
+                {"source", "runtime"},
+                {"description", "Runtime replay guard key for consumers that cannot use source_id directly"}
+            }
+        });
         item["stream"] = "cardity." + protocol_name + "." + event_name;
         manifest["events"].push_back(item);
     }
@@ -296,6 +326,14 @@ json AgentManifestGenerator::infer_projections(const json& tables, const json& e
     auto add_point_projection = [&](const std::string& event_name, const std::string& delta_expr, const json& actor_expr, const std::string& operation_name) {
         json projection;
         projection["name"] = to_snake_case(event_name) + "_to_member_points";
+        projection["version"] = "1.1";
+        projection["source_id"] = "$event.id";
+        projection["idempotency"] = {
+            {"source_id", "$event.id"},
+            {"source_run_id", "$event.source_run_id"},
+            {"projection_version", "$projection.version"},
+            {"write_index", "$event.write_index"}
+        };
         projection["on"] = {{"event", event_name}};
         projection["writes"] = json::array();
         if (!balance_table.empty()) {

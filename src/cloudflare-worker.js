@@ -274,6 +274,14 @@ function inferProjections(tables, events) {
     if (writes.length) {
       projections.push({
         name: `${snake(eventName)}_to_member_points`,
+        version: "1.1",
+        source_id: "$event.id",
+        idempotency: {
+          source_id: "$event.id",
+          source_run_id: "$event.source_run_id",
+          projection_version: "$projection.version",
+          write_index: "$event.write_index"
+        },
         on: { event: eventName },
         writes
       });
@@ -360,6 +368,36 @@ function compile(sourceText, options = {}) {
   const events = protocol.events.map((event) => ({
     name: event.name,
     params: event.params,
+    runtime_fields: [
+      {
+        name: "id",
+        type: "string",
+        required: true,
+        source: "runtime",
+        description: "Stable event source id for projection idempotency"
+      },
+      {
+        name: "write_index",
+        type: "int",
+        required: true,
+        source: "runtime",
+        description: "Deterministic write position within the committed event payload"
+      },
+      {
+        name: "source_run_id",
+        type: "string",
+        required: true,
+        source: "runtime",
+        description: "Agent/run id that produced the event"
+      },
+      {
+        name: "idempotency_key",
+        type: "string",
+        required: true,
+        source: "runtime",
+        description: "Runtime replay guard key for consumers that cannot use source_id directly"
+      }
+    ],
     stream: `cardity.${protocol.name}.${event.name}`
   }));
 

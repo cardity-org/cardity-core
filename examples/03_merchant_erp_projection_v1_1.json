@@ -2,6 +2,62 @@
   "schema": "cardity.projection_contract_example.v1",
   "contract": "cardity.projection_contract.v1.1",
   "protocol": "MerchantERPSystem",
+  "events": [
+    {
+      "name": "ProductSaved",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "goods_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "ProductArchived",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "goods_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "InventoryAdjusted",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "goods_id", "type": "string" },
+        { "name": "sku_id", "type": "string" },
+        { "name": "delta", "type": "int" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    },
+    {
+      "name": "OrderCreated",
+      "params": [
+        { "name": "merchant_id", "type": "string" },
+        { "name": "order_id", "type": "string" }
+      ],
+      "runtime_fields": [
+        { "name": "id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "write_index", "type": "int", "required": true, "source": "runtime" },
+        { "name": "source_run_id", "type": "string", "required": true, "source": "runtime" },
+        { "name": "idempotency_key", "type": "string", "required": true, "source": "runtime" }
+      ]
+    }
+  ],
   "system": {
     "database": {
       "tables": [
@@ -83,9 +139,15 @@
       "projections": [
         {
           "name": "product_saved_snapshot",
-          "version": "1",
+          "version": "1.1",
           "source": "confirmed_readback",
-          "source_id": "$run.id",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
           "on": { "event": "ProductSaved" },
           "writes": [
             {
@@ -105,8 +167,14 @@
         },
         {
           "name": "product_archived_soft_delete",
-          "version": "1",
-          "source_id": "$run.id",
+          "version": "1.1",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
           "on": { "event": "ProductArchived" },
           "writes": [
             {
@@ -123,8 +191,14 @@
         },
         {
           "name": "inventory_adjusted_delta",
-          "version": "1",
-          "source_id": "$run.id",
+          "version": "1.1",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
           "on": { "event": "InventoryAdjusted" },
           "writes": [
             {
@@ -137,9 +211,15 @@
         },
         {
           "name": "order_created_snapshot",
-          "version": "1",
+          "version": "1.1",
           "source": "confirmed_readback",
-          "source_id": "$run.id",
+          "source_id": "$event.id",
+          "idempotency": {
+            "source_id": "$event.id",
+            "source_run_id": "$event.source_run_id",
+            "projection_version": "$projection.version",
+            "write_index": "$event.write_index"
+          },
           "on": { "event": "OrderCreated" },
           "writes": [
             {
