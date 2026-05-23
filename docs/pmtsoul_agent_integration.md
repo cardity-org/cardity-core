@@ -63,6 +63,7 @@ npm run build
 | `cardity_diff` | Compare old/new protocol or manifest contracts for breaking changes. |
 | `cardity_conformance` | Produce a compatibility report for manifest/action/projection/runtime-adapter consumption. |
 | `cardity_validate_runtime_adapter` | Validate PMTSoul's runtime adapter compatibility declaration. |
+| `cardity_schema_registry` | Return stable Cardity schema URLs or schema documents. |
 
 Example `cardity_compile` arguments:
 
@@ -277,6 +278,17 @@ The adapter declaration is how PMTSoul says: which Cardity manifest/action/
 projection contract versions it supports, whether conformance blocks workspace
 generation, how dry-run/readback/audit/replay are handled, and whether
 production writes are disabled or permissioned.
+
+PMTSoul should also store the Schema Registry URLs in generated workspace
+metadata so future validation can resolve the same Cardity contract documents:
+
+```text
+https://api.cardity.org/schemas
+https://api.cardity.org/schemas/agent_manifest_v1.schema.json
+https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
+https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
+https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
+```
 
 ## Reference ERP Example
 

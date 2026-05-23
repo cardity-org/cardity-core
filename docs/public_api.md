@@ -47,6 +47,8 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 
 | Endpoint | Purpose |
 |---|---|
+| `GET /schemas` | Return the Cardity schema registry. |
+| `GET /schemas/<file>` | Return a registered schema document. |
 | `GET /playground` | Browser playground for `.car` editing, manifest generation, graph visualization, review, and conformance. |
 | `GET /health` | Health check. |
 | `POST /v1/compile` | Compile Cardity source into protocol JSON, ABI, CARC, and Agent OS manifest. |
@@ -128,6 +130,7 @@ The `/mcp` endpoint supports:
 - `tools/call` with `cardity_diff`
 - `tools/call` with `cardity_conformance`
 - `tools/call` with `cardity_validate_runtime_adapter`
+- `tools/call` with `cardity_schema_registry`
 
 `cardity_generation_guide` should be the first call for agents that generate a
 protocol from natural language. It tells the model to keep `state` scalar and to

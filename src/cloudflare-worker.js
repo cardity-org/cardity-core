@@ -9,6 +9,18 @@ function json(payload, status = 200) {
   });
 }
 
+function jsonDocument(payload, status = 200, headers = {}) {
+  return Response.json(payload, {
+    status,
+    headers: {
+      "access-control-allow-origin": "*",
+      "content-type": "application/schema+json; charset=utf-8",
+      "cache-control": "public, max-age=300",
+      ...headers
+    }
+  });
+}
+
 function html(body, status = 200) {
   return new Response(body, {
     status,
@@ -17,6 +29,31 @@ function html(body, status = 200) {
       "cache-control": "public, max-age=300"
     }
   });
+}
+
+const SCHEMA_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/schemas";
+const SCHEMA_FILE_RE = /^[A-Za-z0-9_]+(?:\.schema)?\.json$/;
+
+async function fetchSchemaFile(file) {
+  if (!SCHEMA_FILE_RE.test(file)) {
+    return json({ ok: false, error: { message: "Invalid schema file." } }, 400);
+  }
+  const response = await fetch(`${SCHEMA_REGISTRY_SOURCE}/${file}`, {
+    headers: { accept: "application/json" },
+    cf: { cacheTtl: 300, cacheEverything: true }
+  });
+  if (!response.ok) {
+    return json({ ok: false, error: { message: `Schema not found: ${file}` } }, 404);
+  }
+  const payload = await response.json();
+  return jsonDocument(payload, 200, {
+    "x-cardity-schema-file": file,
+    "x-cardity-schema-source": `${SCHEMA_REGISTRY_SOURCE}/${file}`
+  });
+}
+
+async function fetchSchemaRegistry() {
+  return fetchSchemaFile("registry.json");
 }
 
 function extractBlock(source, startIndex) {
@@ -1625,6 +1662,11 @@ function mcpTools() {
         inputSchema: { type: "object", properties: { runtime_adapter: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: ["runtime_adapter"] }
       },
       {
+        name: "cardity_schema_registry",
+        description: "Return the Cardity schema registry or one schema document by name/file.",
+        inputSchema: { type: "object", properties: { name: { type: "string" } }, required: [] }
+      },
+      {
         name: "cardity_visualize_manifest",
         description: "Visualize Cardity source text or an Agent OS manifest as a layered Mermaid contract graph.",
         inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json", "mermaid"], default: "markdown" } }, required: [] }
@@ -1676,6 +1718,13 @@ async function handleMcp(body) {
       const report = validateRuntimeAdapter(args.runtime_adapter || {});
       const output = args.format === "json" ? report : renderRuntimeAdapterMarkdown(report);
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.runtime_adapter_validation_tool_result.v1", ok: report.ok, format: args.format || "markdown", report, output }, null, 2) }] } };
+    }
+    if (params.name === "cardity_schema_registry") {
+      const name = args.name || args.schema || args.file || "registry.json";
+      const file = name === "registry" ? "registry.json" : name;
+      const response = await fetchSchemaFile(file.endsWith(".json") ? file : `${file}.schema.json`);
+      const payload = await response.json();
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
     }
     if (params.name === "cardity_visualize_manifest") {
       const visualization = buildVisualization(manifestFromInput(args));
@@ -1760,6 +1809,12 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/edge-health") {
       return json({ ok: true, service: "cardity-core-edge", container: "cardity-core-api", compiler: "edge-agent-safe-v1" });
+    }
+    if ((url.pathname === "/schemas" || url.pathname === "/schemas/registry.json") && request.method === "GET") {
+      return fetchSchemaRegistry();
+    }
+    if (url.pathname.startsWith("/schemas/") && request.method === "GET") {
+      return fetchSchemaFile(url.pathname.slice("/schemas/".length));
     }
     if ((url.pathname === "/playground" || url.pathname === "/playground/") && (request.method === "GET" || request.method === "HEAD")) {
       return html(playgroundHtml());

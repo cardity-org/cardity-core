@@ -1,0 +1,99 @@
+{
+  "schema": "cardity.schema_registry.v1",
+  "version": "2026-05-24",
+  "base_url": "https://api.cardity.org/schemas",
+  "canonical_base_url": "https://cardity.org/schemas",
+  "source_repository": "https://github.com/cardity-org/cardity-core/tree/master/schemas",
+  "schemas": [
+    {
+      "name": "agent_manifest_v1",
+      "contract": "cardity.agent_manifest.v1",
+      "version": "v1",
+      "file": "agent_manifest_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/agent_manifest_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/agent_manifest_v1.schema.json",
+      "title": "Cardity Agent OS Manifest v1",
+      "status": "stable"
+    },
+    {
+      "name": "agent_action_contract_v1",
+      "contract": "agent_action_contract_v1",
+      "version": "v1",
+      "file": "agent_action_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/agent_action_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/agent_action_contract_v1.schema.json",
+      "title": "Cardity Agent Action Contract v1",
+      "status": "stable"
+    },
+    {
+      "name": "projection_contract_v1_1",
+      "contract": "projection_contract_v1_1",
+      "version": "v1.1",
+      "file": "projection_contract_v1_1.schema.json",
+      "schema_id": "https://cardity.org/schemas/projection_contract_v1_1.schema.json",
+      "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json",
+      "title": "Cardity Projection Contract v1.1",
+      "status": "stable"
+    },
+    {
+      "name": "runtime_adapter_contract_v1",
+      "contract": "cardity.runtime_adapter_contract.v1",
+      "version": "v1",
+      "file": "runtime_adapter_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json",
+      "title": "Cardity Runtime Adapter Contract v1",
+      "status": "stable"
+    },
+    {
+      "name": "conformance_report_v1",
+      "contract": "cardity.conformance_report.v1",
+      "version": "v1",
+      "file": "conformance_report_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/conformance_report_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/conformance_report_v1.schema.json",
+      "title": "Cardity Conformance Report v1",
+      "status": "stable"
+    },
+    {
+      "name": "security_review_v1",
+      "contract": "cardity.security_review.v1",
+      "version": "v1",
+      "file": "security_review_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/security_review_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/security_review_v1.schema.json",
+      "title": "Cardity Security Review v1",
+      "status": "stable"
+    },
+    {
+      "name": "protocol_diff_v1",
+      "contract": "cardity.protocol_diff.v1",
+      "version": "v1",
+      "file": "protocol_diff_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/protocol_diff_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/protocol_diff_v1.schema.json",
+      "title": "Cardity Protocol Diff v1",
+      "status": "stable"
+    },
+    {
+      "name": "manifest_visualization_v1",
+      "contract": "cardity.manifest_visualization.v1",
+      "version": "v1",
+      "file": "manifest_visualization_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/manifest_visualization_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/manifest_visualization_v1.schema.json",
+      "title": "Cardity Manifest Visualization v1",
+      "status": "stable"
+    },
+    {
+      "name": "diagnostics_v1",
+      "contract": "cardity.diagnostics.v1",
+      "version": "v1",
+      "file": "diagnostics_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/diagnostics_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/diagnostics_v1.schema.json",
+      "title": "Cardity Diagnostics v1",
+      "status": "stable"
+    }
+  ]
+}

@@ -231,7 +231,8 @@ Cardity's current baseline for downstream Agent runtimes is:
 | Runtime adapter contract v1 | Machine-readable compatibility declaration for downstream Agent runtimes. |
 
 Machine-readable schemas live in [schemas](schemas). Local conformance guidance
-lives in [docs/conformance.md](docs/conformance.md).
+lives in [docs/conformance.md](docs/conformance.md). Hosted schema registry
+URLs are documented in [docs/schema_registry.md](docs/schema_registry.md).
 
 For future maintenance, deployment, MCP, release, and adjacent-project lookup,
 use [docs/system_architecture_ops_map.md](docs/system_architecture_ops_map.md)
@@ -323,6 +324,17 @@ cardity adapter examples/runtime_adapter_pmtsoul_agent_os.json --json
 `cardity adapter` validates `cardity.runtime_adapter_contract.v1`, including
 supported contract versions, runtime capabilities, conformance status, and
 production write policy.
+
+Read the schema registry:
+
+```bash
+cardity schemas
+cardity schemas projection_contract_v1_1
+curl https://api.cardity.org/schemas
+```
+
+The hosted registry exposes the same schema files that local CLI, MCP, and CI
+checks consume.
 
 ## Local Development
 
@@ -433,6 +445,7 @@ api.cardity.org/*
 - [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
 - [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
+- [Schema registry](docs/schema_registry.md)
 - [Contract conformance](docs/conformance.md)
 - [Next-stage roadmap](docs/next_stage_roadmap.md)
 - [Public API](docs/public_api.md)

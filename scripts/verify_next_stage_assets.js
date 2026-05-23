@@ -29,6 +29,10 @@ for (const schemaPath of [
   if (!schema.title) fail(`${schemaPath}: missing title`);
 }
 
+const registry = readJson("schemas/registry.json");
+if (registry.schema !== "cardity.schema_registry.v1") fail("schema registry has wrong schema");
+if (registry.schemas.length < 9) fail("schema registry missing contract entries");
+
 const diagnostics = readJson("schemas/diagnostics_v1.schema.json");
 for (const field of ["error_code", "severity", "message", "repair_hint"]) {
   if (!diagnostics.$defs.diagnostic.required.includes(field)) {

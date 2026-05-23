@@ -11,6 +11,7 @@ const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
 const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
+const { schemaRegistryResult } = require('./cardity_schema_registry');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -172,6 +173,17 @@ const TOOLS = [
         runtime_adapter: { type: 'object', description: 'Inline runtime adapter contract JSON.' },
         runtime_adapter_file: { type: 'string', description: 'Path to a runtime adapter contract JSON file.' },
         format: { enum: ['markdown', 'json'], default: 'markdown' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_schema_registry',
+    description: 'Return the Cardity schema registry or one schema document by name, contract, or file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Optional schema name, contract id, or schema file.' }
       },
       required: []
     }
@@ -441,6 +453,10 @@ function adapter(args) {
   };
 }
 
+function schemas(args) {
+  return schemaRegistryResult(args.name || args.schema || args.file);
+}
+
 function visualize(args) {
   const manifestPayload = manifestFromArgs(args);
   const visualization = buildVisualization(manifestPayload);
@@ -520,6 +536,8 @@ async function handle(request) {
           success(request.id, toolResult(conformance(args)));
         } else if (params.name === 'cardity_validate_runtime_adapter') {
           success(request.id, toolResult(adapter(args)));
+        } else if (params.name === 'cardity_schema_registry') {
+          success(request.id, toolResult(schemas(args)));
         } else if (params.name === 'cardity_visualize_manifest') {
           success(request.id, toolResult(visualize(args)));
         } else {

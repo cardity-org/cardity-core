@@ -26,6 +26,12 @@ Cardity release.
 | Conformance report v1 | `schemas/conformance_report_v1.schema.json` |
 | Manifest visualization v1 | `schemas/manifest_visualization_v1.schema.json` |
 
+Hosted registry:
+
+```text
+https://api.cardity.org/schemas
+```
+
 ## Reference Examples
 
 | Example | Purpose |

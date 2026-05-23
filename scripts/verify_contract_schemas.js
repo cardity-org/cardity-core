@@ -32,11 +32,25 @@ const schemas = [
   "schemas/manifest_visualization_v1.schema.json",
 ];
 
+const registry = readJson("schemas/registry.json");
+if (registry.schema !== "cardity.schema_registry.v1") fail("schema registry has wrong schema");
+if (!registry.base_url?.startsWith("https://api.cardity.org/schemas")) fail("schema registry missing API base_url");
+if (!Array.isArray(registry.schemas) || registry.schemas.length !== schemas.length) {
+  fail(`schema registry expected ${schemas.length} schema entries`);
+}
+
 for (const schemaPath of schemas) {
   const schema = readJson(schemaPath);
   if (!schema.$schema) fail(`${schemaPath}: missing $schema`);
   if (!schema.$id?.startsWith("https://cardity.org/schemas/")) fail(`${schemaPath}: missing cardity.org $id`);
   if (!schema.title) fail(`${schemaPath}: missing title`);
+
+  const file = schemaPath.replace("schemas/", "");
+  const entry = registry.schemas.find((item) => item.file === file);
+  if (!entry) fail(`schema registry missing ${file}`);
+  if (entry.schema_id !== schema.$id) fail(`schema registry ${file} schema_id mismatch`);
+  if (entry.title !== schema.title) fail(`schema registry ${file} title mismatch`);
+  if (entry.url !== `${registry.base_url}/${file}`) fail(`schema registry ${file} URL mismatch`);
 }
 
 const actionSchema = readJson("schemas/agent_action_contract_v1.schema.json");
