@@ -52,6 +52,7 @@ node scripts/verify_projection_contract.js examples/03_merchant_erp_projection_v
 node scripts/verify_agent_manifest_contract.js examples/03_merchant_erp_projection_v1_1.json
 node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
+node bin/cardity.js explain examples/01_counter.car --diagram
 ```
 
 ## Runtime Boundary

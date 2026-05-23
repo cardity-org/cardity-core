@@ -16,6 +16,8 @@ MEMBER_MANIFEST_OUT=/tmp/cardity_member_points.agent.json
 MEMBER_AGENT_DIR=/tmp/cardity_member_points_agent_artifacts
 BAD_AGENT_OUT=/tmp/cardity_bad_agent_result.json
 INIT_OUT=/tmp/cardity_init_template_project
+EXPLAIN_OUT=/tmp/cardity_counter_explain.md
+EXPLAIN_JSON_OUT=/tmp/cardity_counter_explain.json
 
 cd "$ROOT"
 
@@ -43,6 +45,8 @@ rm -rf "$INIT_OUT"
 node bin/cardity.js init "$INIT_OUT" --template member_points >/dev/null
 test -f "$INIT_OUT/src/protocol.car"
 test -f "$INIT_OUT/cardity.json"
+node bin/cardity.js explain examples/01_counter.car --diagram > "$EXPLAIN_OUT"
+node bin/cardity.js explain "$MANIFEST_OUT" --json > "$EXPLAIN_JSON_OUT"
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
@@ -114,6 +118,18 @@ fi
 if ! grep -q '"schema": "cardity.agent_compile_result.v1"' "$AGENT_OUT"; then
   echo "Expected agent compile result schema"
   cat "$AGENT_OUT"
+  exit 1
+fi
+
+if ! grep -q '# Counter Manifest' "$EXPLAIN_OUT" || ! grep -q 'graph LR' "$EXPLAIN_OUT"; then
+  echo "Expected cardity explain to render Markdown with a Mermaid graph"
+  cat "$EXPLAIN_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.explain_result.v1"' "$EXPLAIN_JSON_OUT"; then
+  echo "Expected cardity explain --json to render explain result schema"
+  cat "$EXPLAIN_JSON_OUT"
   exit 1
 fi
 

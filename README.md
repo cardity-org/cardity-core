@@ -249,6 +249,17 @@ cardity init my-points --template member_points
 cardity init --list-templates
 ```
 
+Explain a protocol or manifest:
+
+```bash
+cardity explain examples/01_counter.car --diagram
+cardity explain dist/protocol.agent.json --json
+```
+
+`cardity explain` turns the Agent OS manifest into a compact Markdown or JSON
+summary covering methods, actions, permissions, API routes, database contracts,
+events, workflows, and an optional Mermaid contract graph.
+
 ## Local Development
 
 Requirements:

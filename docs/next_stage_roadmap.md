@@ -38,7 +38,7 @@ Goal: make Cardity understandable in minutes.
 | Playground | `.car` editor, compile action, artifact tabs, diagnostics panel. |
 | Manifest Visualizer | Protocol, system generation, and agent execution graph. |
 | Template Library | Official templates for member points, support tickets, refunds, and agent tools. |
-| Explain | `cardity explain` for `.car` and manifest JSON. |
+| Explain | `cardity explain` for `.car` and manifest JSON. Initial CLI version is available. |
 
 First implementation should keep natural-language generation optional. The
 playground can start with templates and direct `.car` editing.
@@ -95,7 +95,8 @@ The first implementation batch is intentionally small:
 - diagnostics v1 schema;
 - runtime adapter contract v1 schema;
 - local verification for those assets;
-- `cardity init --template`.
+- `cardity init --template`;
+- `cardity explain` Markdown/JSON summaries with optional Mermaid graph.
 
 This creates a firm foundation for Playground, Repair Loop, and Conformance
 Suite work without moving Cardity into runtime execution.
