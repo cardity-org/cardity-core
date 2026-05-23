@@ -3,21 +3,21 @@
   "version": "0.1.0-alpha.1",
   "description": "Cardity Core - an agent protocol compiler for ABI, MCP, and Agent OS manifests",
   "bin": {
-    "cardity": "./bin/cardity.js",
-    "cardity_agent": "./bin/cardity_agent.js",
-    "cardity_http_server": "./bin/cardity_http_server.js",
-    "cardity_mcp_server": "./bin/cardity_mcp_server.js",
-    "cardityc": "./bin/cardityc.js",
-    "cardity_runtime": "./bin/cardity_runtime.js",
-    "cardity_abi": "./bin/cardity_abi.js",
-    "cardity_manifest": "./bin/cardity_manifest.js",
-    "cardity_deploy": "./bin/cardity_deploy.js",
-    "cardity_drc20": "./bin/cardity_drc20.js",
-    "cardity_sdk": "./bin/cardity_sdk.js",
-    "cardity_package": "./bin/cardity_package.js",
-    "cardity_inscribe_plan": "./bin/cardity_inscribe_plan.js",
-    "cardity_inscribe": "./bin/cardity_inscribe.js",
-    "cardity_inscribe_full": "./bin/cardity_inscribe_full.js"
+    "cardity": "bin/cardity.js",
+    "cardity_agent": "bin/cardity_agent.js",
+    "cardity_http_server": "bin/cardity_http_server.js",
+    "cardity_mcp_server": "bin/cardity_mcp_server.js",
+    "cardityc": "bin/cardityc.js",
+    "cardity_runtime": "bin/cardity_runtime.js",
+    "cardity_abi": "bin/cardity_abi.js",
+    "cardity_manifest": "bin/cardity_manifest.js",
+    "cardity_deploy": "bin/cardity_deploy.js",
+    "cardity_drc20": "bin/cardity_drc20.js",
+    "cardity_sdk": "bin/cardity_sdk.js",
+    "cardity_package": "bin/cardity_package.js",
+    "cardity_inscribe_plan": "bin/cardity_inscribe_plan.js",
+    "cardity_inscribe": "bin/cardity_inscribe.js",
+    "cardity_inscribe_full": "bin/cardity_inscribe_full.js"
   },
   "scripts": {
     "build": "mkdir -p build && cd build && cmake .. && make",
@@ -47,7 +47,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cardity-org/cardity-core.git"
+    "url": "git+https://github.com/cardity-org/cardity-core.git"
   },
   "bugs": {
     "url": "https://github.com/cardity-org/cardity-core/issues"
