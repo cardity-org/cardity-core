@@ -29,6 +29,7 @@ const schemas = [
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
+  "schemas/manifest_visualization_v1.schema.json",
 ];
 
 for (const schemaPath of schemas) {
@@ -105,6 +106,11 @@ for (const status of ["pass", "fail", "warn"]) {
   if (!enumValues(conformanceSchema, "/properties/checks/items/properties/status").includes(status)) {
     fail(`conformance report schema missing status ${status}`);
   }
+}
+
+const visualizationSchema = readJson("schemas/manifest_visualization_v1.schema.json");
+for (const field of ["schema", "protocol", "summary", "nodes", "edges"]) {
+  if (!visualizationSchema.required.includes(field)) fail(`manifest visualization schema missing required ${field}`);
 }
 
 console.log(`Contract schemas verified for ${schemas.length} file(s)`);

@@ -23,6 +23,7 @@ Cardity release.
 | Security review v1 | `schemas/security_review_v1.schema.json` |
 | Protocol diff v1 | `schemas/protocol_diff_v1.schema.json` |
 | Conformance report v1 | `schemas/conformance_report_v1.schema.json` |
+| Manifest visualization v1 | `schemas/manifest_visualization_v1.schema.json` |
 
 ## Reference Examples
 
@@ -49,6 +50,7 @@ The smoke test verifies:
 - projection contract v1.1 event/runtime field references;
 - generic agent-action contract fields;
 - conformance report generation;
+- manifest visualization generation;
 - machine-readable schema files parse and contain required contract anchors.
 
 Direct contract checks:
@@ -59,6 +61,7 @@ node scripts/verify_agent_manifest_contract.js examples/03_merchant_erp_projecti
 node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
+node bin/cardity.js visualize examples/02_member_points_agent.car
 node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 node bin/cardity.js conformance examples/02_member_points_agent.car

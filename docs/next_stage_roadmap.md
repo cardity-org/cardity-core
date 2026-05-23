@@ -36,7 +36,7 @@ Goal: make Cardity understandable in minutes.
 | Workstream | Deliverable |
 |---|---|
 | Playground | `.car` editor, compile action, artifact tabs, diagnostics panel. |
-| Manifest Visualizer | Protocol, system generation, and agent execution graph. |
+| Manifest Visualizer | Protocol, system generation, and agent execution graph. Initial CLI/MCP/API version is available. |
 | Template Library | Official templates for member points, support tickets, refunds, and agent tools. |
 | Explain | `cardity explain` for `.car` and manifest JSON. Initial CLI version is available. |
 
@@ -97,6 +97,7 @@ The first implementation batch is intentionally small:
 - local verification for those assets;
 - `cardity init --template`;
 - `cardity explain` Markdown/JSON summaries with optional Mermaid graph;
+- `cardity visualize` layered manifest graph for Playground and docs;
 - `cardity review` security reports for action/projection safety;
 - `cardity diff` breaking-change reports for manifest contract evolution.
 

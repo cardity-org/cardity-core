@@ -18,6 +18,8 @@ BAD_AGENT_OUT=/tmp/cardity_bad_agent_result.json
 INIT_OUT=/tmp/cardity_init_template_project
 EXPLAIN_OUT=/tmp/cardity_counter_explain.md
 EXPLAIN_JSON_OUT=/tmp/cardity_counter_explain.json
+VISUALIZE_OUT=/tmp/cardity_member_points_visualize.md
+VISUALIZE_JSON_OUT=/tmp/cardity_member_points_visualize.json
 REVIEW_OUT=/tmp/cardity_member_points_review.md
 REVIEW_JSON_OUT=/tmp/cardity_member_points_review.json
 DIFF_NEW_MANIFEST_OUT=/tmp/cardity_member_points_changed.agent.json
@@ -54,6 +56,8 @@ test -f "$INIT_OUT/src/protocol.car"
 test -f "$INIT_OUT/cardity.json"
 node bin/cardity.js explain examples/01_counter.car --diagram > "$EXPLAIN_OUT"
 node bin/cardity.js explain "$MANIFEST_OUT" --json > "$EXPLAIN_JSON_OUT"
+node bin/cardity.js visualize examples/02_member_points_agent.car > "$VISUALIZE_OUT"
+node bin/cardity.js visualize "$MEMBER_MANIFEST_OUT" --json > "$VISUALIZE_JSON_OUT"
 node bin/cardity.js review examples/02_member_points_agent.car > "$REVIEW_OUT"
 node bin/cardity.js review "$MEMBER_MANIFEST_OUT" --json > "$REVIEW_JSON_OUT"
 node -e 'const fs=require("fs"); const f=process.argv[1]; const out=process.argv[2]; const m=JSON.parse(fs.readFileSync(f,"utf8")); m.methods=m.methods.filter(x=>x.name!=="spend_points"); m.system.ui.actions=m.system.ui.actions.filter(x=>x.method!=="spend_points"); fs.writeFileSync(out, JSON.stringify(m,null,2));' "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT"
@@ -71,6 +75,7 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"cardity_review_security","arguments":{"file":"examples/02_member_points_agent.car","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"cardity_diff","arguments":{"old_file":"examples/01_counter.car","new_file":"examples/01_counter.car","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"cardity_conformance","arguments":{"file":"examples/02_member_points_agent.car","runtime_adapter_file":"examples/runtime_adapter_cardity_mock.json","format":"json"}}}' \
+  '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"cardity_visualize_manifest","arguments":{"file":"examples/02_member_points_agent.car","format":"mermaid"}}}' \
   | node bin/cardity_mcp_server.js > "$MCP_OUT"
 
 if node bin/cardity_agent.js compile --source-text 'protocol Bad { version: "1.0.0"; owner: "agent-os"; state { result: string = "ok"; } method get_balance(user: address) { state.balances[params.user] = state.balances[params.user]; } returns: string state.result; }' --out-dir /tmp/cardity_bad_agent_artifacts > "$BAD_AGENT_OUT" 2>&1; then
@@ -148,6 +153,18 @@ fi
 if ! grep -q '"schema": "cardity.explain_result.v1"' "$EXPLAIN_JSON_OUT"; then
   echo "Expected cardity explain --json to render explain result schema"
   cat "$EXPLAIN_JSON_OUT"
+  exit 1
+fi
+
+if ! grep -q '# MemberPointsSystem Manifest Visualizer' "$VISUALIZE_OUT" || ! grep -q 'Business Protocol Layer' "$VISUALIZE_OUT"; then
+  echo "Expected cardity visualize to render layered Markdown graph"
+  cat "$VISUALIZE_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.manifest_visualization.v1"' "$VISUALIZE_JSON_OUT"; then
+  echo "Expected cardity visualize --json to render visualization schema"
+  cat "$VISUALIZE_JSON_OUT"
   exit 1
 fi
 
@@ -243,6 +260,12 @@ fi
 
 if ! grep -q '"name":"cardity_conformance"' "$MCP_OUT" || ! grep -q 'cardity.conformance_tool_result.v1' "$MCP_OUT"; then
   echo "Expected MCP server to expose and call cardity_conformance"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_visualize_manifest"' "$MCP_OUT" || ! grep -q 'cardity.visualization_tool_result.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_visualize_manifest"
   cat "$MCP_OUT"
   exit 1
 fi

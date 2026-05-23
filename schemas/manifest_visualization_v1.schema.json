@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/manifest_visualization_v1.schema.json",
+  "title": "Cardity Manifest Visualization v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "protocol", "summary", "nodes", "edges"],
+  "properties": {
+    "schema": { "const": "cardity.manifest_visualization.v1" },
+    "protocol": { "type": "object" },
+    "summary": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 0 },
+        "edges": { "type": "integer", "minimum": 0 },
+        "methods": { "type": "integer", "minimum": 0 },
+        "events": { "type": "integer", "minimum": 0 },
+        "tables": { "type": "integer", "minimum": 0 },
+        "read_models": { "type": "integer", "minimum": 0 },
+        "actions": { "type": "integer", "minimum": 0 },
+        "tools": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "kind"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "meta": { "type": "object" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" }
+        }
+      }
+    }
+  }
+}

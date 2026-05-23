@@ -53,6 +53,7 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 | `POST /v1/manifest` | Return only the Agent OS manifest. |
 | `POST /v1/abi` | Return only ABI. |
 | `POST /v1/explain` | Explain a source/manifest contract as Markdown plus JSON summary. |
+| `POST /v1/visualize` | Render a source/manifest contract as a layered Mermaid graph plus JSON graph. |
 | `POST /v1/review` | Review action/projection safety. |
 | `POST /v1/diff` | Compare two sources/manifests for breaking contract changes. |
 | `POST /v1/conformance` | Run manifest/action/projection/runtime compatibility checks. |
@@ -120,6 +121,7 @@ The `/mcp` endpoint supports:
 - `tools/call` with `cardity_compile`
 - `tools/call` with `cardity_manifest`
 - `tools/call` with `cardity_explain_manifest`
+- `tools/call` with `cardity_visualize_manifest`
 - `tools/call` with `cardity_review_security`
 - `tools/call` with `cardity_diff`
 - `tools/call` with `cardity_conformance`

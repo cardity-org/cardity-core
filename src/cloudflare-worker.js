@@ -826,6 +826,134 @@ function renderConformanceMarkdown(report) {
   ].join("\n") + "\n";
 }
 
+function buildVisualization(manifest) {
+  const system = manifest.system || {};
+  const database = system.database || {};
+  const api = system.api || {};
+  const ui = system.ui || {};
+  const agent = manifest.agent || {};
+  const protocol = protocolName(manifest.protocol);
+  const nodes = [
+    { id: "business", label: "Business Protocol Layer", kind: "layer" },
+    { id: "system", label: "System Generation Layer", kind: "layer" },
+    { id: "agent", label: "Agent Execution Layer", kind: "layer" },
+    { id: "protocol", label: `${protocol} Protocol`, kind: "protocol", meta: manifest.protocol || {} }
+  ];
+  const edges = [
+    { from: "business", to: "system", label: "compiled into" },
+    { from: "system", to: "agent", label: "consumed by" },
+    { from: "business", to: "protocol", label: "" }
+  ];
+  const addNode = (prefix, item, kind, meta = {}) => {
+    const id = `${prefix}_${String(item.name || item.action || "item").replace(/[^A-Za-z0-9_]/g, "_")}`;
+    nodes.push({ id, label: item.name || item.action || id, kind, meta });
+    return id;
+  };
+  const addEdge = (from, to, label = "") => edges.push({ from, to, label });
+
+  for (const method of asArray(manifest.methods)) addEdge("protocol", addNode("method", method, "method", method.effects || {}), "method");
+  for (const event of asArray(manifest.events)) addEdge("protocol", addNode("event", event, "event", { params: itemNames(event.params), runtime_fields: itemNames(event.runtime_fields) }), "event");
+  for (const table of asArray(database.tables)) addEdge("system", addNode("table", table, "table", { columns: itemNames(table.columns), primary_key: asArray(table.primary_key) }), "database");
+  for (const model of asArray(database.read_models)) addEdge("system", addNode("read_model", model, "read_model", { columns: itemNames(model.columns), primary_key: asArray(model.primary_key) }), "read model");
+  for (const route of asArray(api.routes)) {
+    const id = `route_${String(`${route.method || "ROUTE"}_${route.path || ""}`).replace(/[^A-Za-z0-9_]/g, "_")}`;
+    nodes.push({ id, label: `${route.method || "ROUTE"} ${route.path || "-"}`, kind: "api_route", meta: route });
+    addEdge("system", id, "api");
+  }
+  for (const projection of asArray(database.projections)) {
+    const id = addNode("projection", projection, "projection", { version: projection.version || null, idempotency: projection.idempotency || null });
+    addEdge("system", id, "projection");
+    if (projection.on?.event) addEdge(`event_${String(projection.on.event).replace(/[^A-Za-z0-9_]/g, "_")}`, id, "triggers");
+  }
+  for (const workflow of asArray(system.workflows)) {
+    const id = addNode("workflow", workflow, "workflow", workflow.trigger || {});
+    addEdge("system", id, "workflow");
+    if (workflow.trigger?.event) addEdge(`event_${String(workflow.trigger.event).replace(/[^A-Za-z0-9_]/g, "_")}`, id, "starts");
+  }
+  for (const action of asArray(ui.actions)) {
+    const id = addNode("action", action, "action", { kind: action.kind || null, risk_level: action.risk_level || null, confirm_required: Boolean(action.confirm_required) });
+    addEdge("agent", id, "action");
+    if (action.method) addEdge(`method_${String(action.method).replace(/[^A-Za-z0-9_]/g, "_")}`, id, "exposed as");
+  }
+  for (const tool of asArray(agent.tools)) {
+    const id = addNode("tool", tool, "tool", { kind: tool.kind || null, method: tool.method || null });
+    addEdge("agent", id, "tool");
+    if (tool.method) addEdge(`method_${String(tool.method).replace(/[^A-Za-z0-9_]/g, "_")}`, id, "registered as");
+  }
+  for (const permission of asArray(manifest.permissions)) {
+    const id = addNode("permission", permission, "permission", { requires_confirmation: Boolean(permission.requires_confirmation), reason: permission.reason || "" });
+    addEdge("agent", id, "permission");
+    for (const action of asArray(ui.actions).filter((item) => item.permission === permission.action || item.method === permission.action)) {
+      addEdge(`action_${String(action.name || "").replace(/[^A-Za-z0-9_]/g, "_")}`, id, "requires");
+    }
+  }
+
+  return {
+    schema: "cardity.manifest_visualization.v1",
+    protocol: manifest.protocol || {},
+    summary: {
+      nodes: nodes.length,
+      edges: edges.length,
+      methods: asArray(manifest.methods).length,
+      events: asArray(manifest.events).length,
+      tables: asArray(database.tables).length,
+      read_models: asArray(database.read_models).length,
+      actions: asArray(ui.actions).length,
+      tools: asArray(agent.tools).length
+    },
+    nodes,
+    edges
+  };
+}
+
+function escapeGraphLabel(value) {
+  return String(value ?? "-").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function renderVisualizationMermaid(visualization) {
+  const byKind = (kind) => visualization.nodes.filter((node) => node.kind === kind);
+  const lines = [
+    "```mermaid",
+    "graph LR",
+    '  subgraph B["Business Protocol Layer"]',
+    '    business["Business Contract"]',
+    `    protocol["${escapeGraphLabel(protocolName(visualization.protocol))}"]`
+  ];
+  for (const node of [...byKind("method"), ...byKind("event")]) lines.push(`    ${node.id}["${escapeGraphLabel(node.label)}"]`);
+  lines.push("  end", '  subgraph S["System Generation Layer"]', '    system["Generated System Contract"]');
+  for (const node of visualization.nodes.filter((node) => ["table", "read_model", "api_route", "projection", "workflow"].includes(node.kind))) lines.push(`    ${node.id}["${escapeGraphLabel(node.label)}"]`);
+  lines.push("  end", '  subgraph A["Agent Execution Layer"]', '    agent["Agent Runtime Contract"]');
+  for (const node of visualization.nodes.filter((node) => ["action", "tool", "permission"].includes(node.kind))) lines.push(`    ${node.id}["${escapeGraphLabel(node.label)}"]`);
+  lines.push("  end");
+  for (const item of visualization.edges) {
+    const label = item.label ? `|${escapeGraphLabel(item.label)}|` : "";
+    lines.push(`  ${item.from} -->${label} ${item.to}`);
+  }
+  lines.push("```");
+  return lines.join("\n");
+}
+
+function renderVisualizationMarkdown(visualization) {
+  return [
+    `# ${protocolName(visualization.protocol)} Manifest Visualizer`,
+    "",
+    markdownTable(["Metric", "Count"], [
+      ["nodes", visualization.summary.nodes],
+      ["edges", visualization.summary.edges],
+      ["methods", visualization.summary.methods],
+      ["events", visualization.summary.events],
+      ["tables", visualization.summary.tables],
+      ["read models", visualization.summary.read_models],
+      ["actions", visualization.summary.actions],
+      ["tools", visualization.summary.tools]
+    ]),
+    "",
+    "## Contract Graph",
+    "",
+    renderVisualizationMermaid(visualization)
+  ].join("\n") + "\n";
+}
+
 function renderReviewMarkdown(review) {
   if (!review.findings.length) return `# ${protocolName(review.protocol)} Security Review\n\nStatus: pass\n\nNo findings.\n`;
   return [
@@ -956,6 +1084,11 @@ function mcpTools() {
         name: "cardity_conformance",
         description: "Run Cardity conformance checks for a manifest and optional runtime adapter declaration.",
         inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, runtime_adapter: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
+      },
+      {
+        name: "cardity_visualize_manifest",
+        description: "Visualize Cardity source text or an Agent OS manifest as a layered Mermaid contract graph.",
+        inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json", "mermaid"], default: "markdown" } }, required: [] }
       }
     ]
   };
@@ -1000,6 +1133,11 @@ async function handleMcp(body) {
       const output = args.format === "json" ? report : renderConformanceMarkdown(report);
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.conformance_tool_result.v1", ok: report.ok, format: args.format || "markdown", report, output }, null, 2) }] } };
     }
+    if (params.name === "cardity_visualize_manifest") {
+      const visualization = buildVisualization(manifestFromInput(args));
+      const output = args.format === "json" ? visualization : args.format === "mermaid" ? renderVisualizationMermaid(visualization) : renderVisualizationMarkdown(visualization);
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.visualization_tool_result.v1", ok: true, format: args.format || "markdown", visualization, output }, null, 2) }] } };
+    }
     return { jsonrpc: "2.0", id: body.id, error: { code: -32602, message: `Unknown tool: ${params.name}` } };
   }
   return { jsonrpc: "2.0", id: body.id || null, error: { code: -32601, message: `Method not found: ${body.method}` } };
@@ -1035,6 +1173,10 @@ async function edgeApi(request) {
   if (url.pathname === "/v1/conformance") {
     const report = runConformance(manifestFromInput(body), { runtimeAdapter: body.runtime_adapter || null });
     return json({ schema: "cardity.conformance_tool_result.v1", ok: report.ok, report, output: body.format === "json" ? report : renderConformanceMarkdown(report) });
+  }
+  if (url.pathname === "/v1/visualize") {
+    const visualization = buildVisualization(manifestFromInput(body));
+    return json({ schema: "cardity.visualization_tool_result.v1", ok: true, visualization, output: body.format === "json" ? visualization : body.format === "mermaid" ? renderVisualizationMermaid(visualization) : renderVisualizationMarkdown(visualization) });
   }
   if (url.pathname === "/v1/abi") {
     const payload = compile(body.source_text, { include_abi: true, include_manifest: false });

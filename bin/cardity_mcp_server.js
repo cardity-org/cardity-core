@@ -9,6 +9,7 @@ const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain'
 const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
+const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -157,6 +158,20 @@ const TOOLS = [
         runtime_adapter: { type: 'object', description: 'Inline runtime adapter contract JSON.' },
         runtime_adapter_file: { type: 'string', description: 'Path to a runtime adapter contract JSON file.' },
         format: { enum: ['markdown', 'json'], default: 'markdown' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_visualize_manifest',
+    description: 'Visualize a Cardity .car protocol or Agent OS manifest as a layered Mermaid contract graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
+        source_text: { type: 'string', description: 'Protocol source text.' },
+        manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
+        format: { enum: ['markdown', 'json', 'mermaid'], default: 'markdown' }
       },
       required: []
     }
@@ -398,6 +413,23 @@ function conformance(args) {
   };
 }
 
+function visualize(args) {
+  const manifestPayload = manifestFromArgs(args);
+  const visualization = buildVisualization(manifestPayload);
+  const output = args.format === 'json'
+    ? visualization
+    : args.format === 'mermaid'
+      ? renderMermaid(visualization)
+      : renderVisualizationMarkdown(visualization);
+  return {
+    schema: 'cardity.visualization_tool_result.v1',
+    ok: true,
+    format: args.format || 'markdown',
+    visualization,
+    output
+  };
+}
+
 function toolResult(payload) {
   return {
     content: [
@@ -458,6 +490,8 @@ async function handle(request) {
           success(request.id, toolResult(diff(args)));
         } else if (params.name === 'cardity_conformance') {
           success(request.id, toolResult(conformance(args)));
+        } else if (params.name === 'cardity_visualize_manifest') {
+          success(request.id, toolResult(visualize(args)));
         } else {
           failure(request.id, -32602, `Unknown tool: ${params.name}`);
         }

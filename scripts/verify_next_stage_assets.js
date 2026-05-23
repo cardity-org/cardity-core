@@ -22,6 +22,7 @@ for (const schemaPath of [
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
+  "schemas/manifest_visualization_v1.schema.json",
 ]) {
   const schema = readJson(schemaPath);
   if (!schema.$id?.startsWith("https://cardity.org/schemas/")) fail(`${schemaPath}: missing public $id`);
@@ -65,6 +66,11 @@ for (const field of ["schema", "target", "ok", "summary", "checks"]) {
   if (!conformance.required.includes(field)) fail(`conformance report schema missing required ${field}`);
 }
 
+const visualization = readJson("schemas/manifest_visualization_v1.schema.json");
+for (const field of ["schema", "protocol", "summary", "nodes", "edges"]) {
+  if (!visualization.required.includes(field)) fail(`manifest visualization schema missing required ${field}`);
+}
+
 for (const prompt of [
   "prompts/cardity_protocol_author.md",
   "prompts/cardity_diagnostics_repair.md",
@@ -91,4 +97,4 @@ for (const name of templateNames) {
   if (!exists(`templates/${name}/README.md`)) fail(`${name}: README missing`);
 }
 
-console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 5 schema(s)`);
+console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 6 schema(s)`);

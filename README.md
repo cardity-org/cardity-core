@@ -264,6 +264,18 @@ cardity explain dist/protocol.agent.json --json
 summary covering methods, actions, permissions, API routes, database contracts,
 events, workflows, and an optional Mermaid contract graph.
 
+Visualize a manifest as a layered contract graph:
+
+```bash
+cardity visualize examples/02_member_points_agent.car
+cardity visualize dist/protocol.agent.json --mermaid
+cardity visualize dist/protocol.agent.json --json
+```
+
+`cardity visualize` renders the manifest as three layers: business protocol,
+system generation, and agent execution. The JSON output exposes graph nodes and
+edges for Playground, docs, and downstream runtime tooling.
+
 Review action and projection safety:
 
 ```bash

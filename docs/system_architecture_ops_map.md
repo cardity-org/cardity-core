@@ -84,6 +84,7 @@ Runtime, low-code platform, production write executor, or PMTSoul-specific DSL.
 | Compile for agents | `node bin/cardity_agent.js compile examples/01_counter.car --out-dir dist --include-manifest` |
 | Generate manifest | `node bin/cardity.js manifest examples/01_counter.car` |
 | Explain manifest | `node bin/cardity.js explain examples/01_counter.car --diagram` |
+| Visualize manifest | `node bin/cardity.js visualize examples/02_member_points_agent.car` |
 | Security review | `node bin/cardity.js review examples/02_member_points_agent.car` |
 | Protocol diff | `node bin/cardity.js diff examples/01_counter.car examples/01_counter.car` |
 | Conformance report | `node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json` |
@@ -105,6 +106,7 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 | `POST /v1/manifest` | Return Agent OS manifest only. |
 | `POST /v1/abi` | Return ABI only. |
 | `POST /v1/explain` | Explain source/manifest contract. |
+| `POST /v1/visualize` | Layered manifest graph. |
 | `POST /v1/review` | Security review for action/projection safety. |
 | `POST /v1/diff` | Contract diff for old/new source or manifest. |
 | `POST /v1/conformance` | Manifest/action/projection/runtime compatibility report. |
@@ -118,6 +120,7 @@ Hosted MCP tools:
 | `cardity_compile` | Compile source text into artifacts. |
 | `cardity_manifest` | Return manifest from source text. |
 | `cardity_explain_manifest` | Explain source or manifest. |
+| `cardity_visualize_manifest` | Render a layered manifest graph. |
 | `cardity_review_security` | Review action/projection safety. |
 | `cardity_diff` | Compare old/new source or manifest contracts. |
 | `cardity_conformance` | Run manifest/action/projection/runtime compatibility checks. |
@@ -192,6 +195,7 @@ npm test
 node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
+node bin/cardity.js visualize examples/02_member_points_agent.car
 node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json
