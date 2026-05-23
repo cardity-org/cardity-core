@@ -51,6 +51,8 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 | `GET /schemas/<file>` | Return a registered schema document. |
 | `GET /runtimes` | Return the Cardity-compatible runtime registry. |
 | `GET /runtimes/<id>` | Return one compatible runtime entry. |
+| `GET /runtimes/<id>/badge.json` | Return one runtime compatibility badge payload. |
+| `GET /runtimes/<id>/badge.svg` | Return one runtime compatibility badge SVG. |
 | `GET /playground` | Browser playground for `.car` editing, manifest generation, graph visualization, review, and conformance. |
 | `GET /health` | Health check. |
 | `POST /v1/compile` | Compile Cardity source into protocol JSON, ABI, CARC, and Agent OS manifest. |

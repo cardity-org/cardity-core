@@ -334,6 +334,7 @@ cardity runtimes
 cardity runtimes pmtsoul-agent-os
 curl https://api.cardity.org/schemas
 curl https://api.cardity.org/runtimes
+curl https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg
 ```
 
 The hosted registry exposes the same schema files that local CLI, MCP, and CI

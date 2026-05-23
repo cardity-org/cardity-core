@@ -301,6 +301,12 @@ The entry records PMTSoul's current boundary: conformance gate enabled,
 Cardity metadata persisted, dry-run executor enabled, and production writes kept
 `dry_run_only`.
 
+PMTSoul can embed the Cardity compatibility badge:
+
+```markdown
+[![Cardity-compatible](https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg)](https://api.cardity.org/runtimes/pmtsoul-agent-os)
+```
+
 ## Reference ERP Example
 
 - Protocol: `examples/03_merchant_erp_agent.car`

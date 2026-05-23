@@ -105,6 +105,8 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 | `GET /schemas/<file>` | Registered schema document. |
 | `GET /runtimes` | Runtime compatibility registry. |
 | `GET /runtimes/<id>` | Runtime compatibility entry. |
+| `GET /runtimes/<id>/badge.json` | Runtime compatibility badge payload. |
+| `GET /runtimes/<id>/badge.svg` | Runtime compatibility badge image. |
 | `GET /playground` | Browser playground for source, manifest, graph, review, and conformance output. |
 | `GET /edge-health` | Worker edge health. |
 | `GET /health` | Container health through fallback path. |

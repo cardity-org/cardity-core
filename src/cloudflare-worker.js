@@ -31,6 +31,17 @@ function html(body, status = 200) {
   });
 }
 
+function svg(body, status = 200) {
+  return new Response(body, {
+    status,
+    headers: {
+      "access-control-allow-origin": "*",
+      "content-type": "image/svg+xml; charset=utf-8",
+      "cache-control": "public, max-age=300"
+    }
+  });
+}
+
 const SCHEMA_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/schemas";
 const RUNTIME_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/registry";
 const SCHEMA_FILE_RE = /^[A-Za-z0-9_]+(?:\.schema)?\.json$/;
@@ -86,6 +97,91 @@ async function fetchRuntimeEntry(id) {
     "content-type": "application/json; charset=utf-8",
     "x-cardity-runtime-id": runtime.id
   });
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function badgeText(runtime) {
+  const conformance = runtime.conformance?.status || "untested";
+  const policy = runtime.production_write_policy?.mode || "unknown";
+  return {
+    label: "Cardity-compatible",
+    message: conformance === "passed" ? policy : conformance,
+    color: conformance === "passed" ? "#159947" : conformance === "partial" ? "#d97706" : "#6b7280"
+  };
+}
+
+function renderBadgeSvg(runtime) {
+  const { label, message, color } = badgeText(runtime);
+  const leftWidth = Math.max(122, label.length * 7 + 20);
+  const rightWidth = Math.max(86, message.length * 7 + 20);
+  const width = leftWidth + rightWidth;
+  const leftTextX = leftWidth / 2;
+  const rightTextX = leftWidth + rightWidth / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${escapeXml(label)}: ${escapeXml(message)}">
+  <title>${escapeXml(label)}: ${escapeXml(message)}</title>
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r"><rect width="${width}" height="20" rx="3" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${leftWidth}" height="20" fill="#111827"/>
+    <rect x="${leftWidth}" width="${rightWidth}" height="20" fill="${color}"/>
+    <rect width="${width}" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11">
+    <text x="${leftTextX}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(label)}</text>
+    <text x="${leftTextX}" y="14">${escapeXml(label)}</text>
+    <text x="${rightTextX}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(message)}</text>
+    <text x="${rightTextX}" y="14">${escapeXml(message)}</text>
+  </g>
+</svg>`;
+}
+
+async function runtimeById(id) {
+  if (!RUNTIME_ID_RE.test(id)) return { error: json({ ok: false, error: { message: "Invalid runtime id." } }, 400) };
+  const registry = await runtimeRegistryPayload();
+  const runtime = asArray(registry.runtimes).find((item) => item.id === id || item.name === id);
+  if (!runtime) return { error: json({ ok: false, error: { message: `Runtime not found: ${id}` } }, 404) };
+  return { runtime };
+}
+
+async function fetchRuntimeBadgeJson(id) {
+  const { runtime, error } = await runtimeById(id);
+  if (error) return error;
+  const text = badgeText(runtime);
+  return jsonDocument({
+    schema: "cardity.runtime_compatibility_badge.v1",
+    runtime: {
+      id: runtime.id,
+      name: runtime.name,
+      status: runtime.status,
+      conformance_status: runtime.conformance?.status || "untested",
+      production_write_policy: runtime.production_write_policy?.mode || "unknown"
+    },
+    badge: {
+      label: text.label,
+      message: text.message,
+      color: text.color,
+      svg_url: `${runtime.base_url || "https://api.cardity.org/runtimes"}/${runtime.id}/badge.svg`
+    }
+  }, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-runtime-id": runtime.id
+  });
+}
+
+async function fetchRuntimeBadgeSvg(id) {
+  const { runtime, error } = await runtimeById(id);
+  if (error) return error;
+  return svg(renderBadgeSvg(runtime), 200);
 }
 
 function extractBlock(source, startIndex) {
@@ -1860,6 +1956,14 @@ export default {
     }
     if ((url.pathname === "/runtimes" || url.pathname === "/runtimes/registry.json") && request.method === "GET") {
       return fetchRuntimeRegistry();
+    }
+    {
+      const badgeMatch = url.pathname.match(/^\/runtimes\/([^/]+)\/badge\.(json|svg)$/);
+      if (badgeMatch && request.method === "GET") {
+        return badgeMatch[2] === "svg"
+          ? fetchRuntimeBadgeSvg(badgeMatch[1])
+          : fetchRuntimeBadgeJson(badgeMatch[1]);
+      }
     }
     if (url.pathname.startsWith("/runtimes/") && request.method === "GET") {
       return fetchRuntimeEntry(url.pathname.slice("/runtimes/".length).replace(/\.json$/, ""));

@@ -16,6 +16,8 @@ It is not an execution registry. It is a compatibility declaration surface:
 ```text
 https://api.cardity.org/runtimes
 https://api.cardity.org/runtimes/pmtsoul-agent-os
+https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.json
+https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg
 ```
 
 Local source of truth:
@@ -67,3 +69,29 @@ Current boundary:
 
 Production writes should stay disabled unless a future explicit
 deployment/write permission contract is added.
+
+## Badge
+
+PMTSoul can embed the compatibility badge in Markdown:
+
+```markdown
+[![Cardity-compatible](https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg)](https://api.cardity.org/runtimes/pmtsoul-agent-os)
+```
+
+The current badge message is:
+
+```text
+Cardity-compatible | dry_run_only
+```
+
+Badge JSON:
+
+```bash
+curl https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.json
+```
+
+Badge SVG:
+
+```bash
+curl https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg
+```

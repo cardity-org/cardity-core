@@ -69,6 +69,7 @@ node bin/cardity.js conformance examples/02_member_points_agent.car > "$CONFORMA
 node bin/cardity.js conformance "$MEMBER_MANIFEST_OUT" --runtime-adapter examples/runtime_adapter_cardity_mock.json --json > "$CONFORMANCE_JSON_OUT"
 node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
+node --check src/cloudflare-worker.js >/tmp/cardity_worker_check_smoke.txt
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
