@@ -2,7 +2,6 @@
   "name": "cardity",
   "version": "0.1.0-alpha.1",
   "description": "Cardity Core - an agent protocol compiler for ABI, MCP, and Agent OS manifests",
-  "main": "dist/index.js",
   "bin": {
     "cardity": "./bin/cardity.js",
     "cardity_agent": "./bin/cardity_agent.js",
@@ -70,10 +69,19 @@
   },
   "files": [
     "bin/",
-    "dist/",
+    "compiler/",
+    "schemas/",
     "scripts/",
     "examples/",
     "docs/",
+    "CMakeLists.txt",
+    "cardity_cli.cpp",
+    "package_builder.cpp",
+    "package_config.cpp",
+    "package_manager.cpp",
+    "package_manager.h",
+    "registry_client.cpp",
+    "registry_client.h",
     "README.md",
     "LICENSE"
   ],
