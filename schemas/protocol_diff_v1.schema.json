@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/protocol_diff_v1.schema.json",
+  "title": "Cardity Protocol Diff v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "old_protocol", "new_protocol", "compatible", "summary", "changes"],
+  "properties": {
+    "schema": { "const": "cardity.protocol_diff.v1" },
+    "old_protocol": { "type": ["object", "string"] },
+    "new_protocol": { "type": ["object", "string"] },
+    "compatible": { "type": "boolean" },
+    "summary": {
+      "type": "object",
+      "required": ["total", "breaking", "warnings", "info"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "breaking": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "code", "location", "message", "advice"],
+        "properties": {
+          "severity": { "enum": ["breaking", "warning", "info"] },
+          "code": { "type": "string", "minLength": 1 },
+          "location": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "advice": { "type": "string", "minLength": 1 },
+          "before": {},
+          "after": {}
+        }
+      }
+    }
+  }
+}

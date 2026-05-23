@@ -7,6 +7,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const { spawnSync } = require('child_process');
 const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
+const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 
 function templatesPath() {
   return path.join(__dirname, '..', 'templates');
@@ -451,6 +452,32 @@ program
     }
   });
 
+program
+  .command('diff <oldFile> <newFile>')
+  .description('Compare two .car protocols or Agent OS manifests for contract changes')
+  .option('--json', 'Output machine-readable diff JSON')
+  .option('-o, --output <file>', 'Write diff to a file')
+  .action((oldFile, newFile, options) => {
+    try {
+      const oldManifest = loadManifestFromFile(oldFile);
+      const newManifest = loadManifestFromFile(newFile);
+      const diff = diffManifest(oldManifest, newManifest);
+      const output = options.json
+        ? `${JSON.stringify(diff, null, 2)}\n`
+        : renderDiffMarkdown(diff);
+
+      if (options.output) {
+        fs.ensureDirSync(path.dirname(path.resolve(options.output)));
+        fs.writeFileSync(options.output, output, 'utf8');
+      } else {
+        process.stdout.write(output);
+      }
+    } catch (error) {
+      console.error(chalk.red(`❌ Error diffing protocols: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
 // 部署命令
 program
   .command('deploy <file>')
@@ -664,6 +691,7 @@ program
     console.log(chalk.gray('  cardity manifest src/index.car   # Generate Agent OS manifest\n'));
     console.log(chalk.gray('  cardity explain src/index.car    # Explain manifest/action/database contract\n'));
     console.log(chalk.gray('  cardity review src/index.car     # Review action/projection safety\n'));
+    console.log(chalk.gray('  cardity diff old.car new.car     # Compare protocol contract changes\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));
     console.log(chalk.gray('  cardity drc20 compile token.car  # Compile token'));

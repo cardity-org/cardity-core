@@ -27,6 +27,7 @@ const schemas = [
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
+  "schemas/protocol_diff_v1.schema.json",
 ];
 
 for (const schemaPath of schemas) {
@@ -82,6 +83,16 @@ for (const field of ["schema", "protocol", "ok", "summary", "findings"]) {
 for (const severity of ["error", "warning", "info"]) {
   if (!enumValues(securityReviewSchema, "/properties/findings/items/properties/severity").includes(severity)) {
     fail(`security review schema missing severity ${severity}`);
+  }
+}
+
+const protocolDiffSchema = readJson("schemas/protocol_diff_v1.schema.json");
+for (const field of ["schema", "old_protocol", "new_protocol", "compatible", "summary", "changes"]) {
+  if (!protocolDiffSchema.required.includes(field)) fail(`protocol diff schema missing required ${field}`);
+}
+for (const severity of ["breaking", "warning", "info"]) {
+  if (!enumValues(protocolDiffSchema, "/properties/changes/items/properties/severity").includes(severity)) {
+    fail(`protocol diff schema missing severity ${severity}`);
   }
 }
 

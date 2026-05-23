@@ -20,6 +20,9 @@ EXPLAIN_OUT=/tmp/cardity_counter_explain.md
 EXPLAIN_JSON_OUT=/tmp/cardity_counter_explain.json
 REVIEW_OUT=/tmp/cardity_member_points_review.md
 REVIEW_JSON_OUT=/tmp/cardity_member_points_review.json
+DIFF_NEW_MANIFEST_OUT=/tmp/cardity_member_points_changed.agent.json
+DIFF_OUT=/tmp/cardity_member_points_diff.md
+DIFF_JSON_OUT=/tmp/cardity_member_points_diff.json
 
 cd "$ROOT"
 
@@ -51,6 +54,9 @@ node bin/cardity.js explain examples/01_counter.car --diagram > "$EXPLAIN_OUT"
 node bin/cardity.js explain "$MANIFEST_OUT" --json > "$EXPLAIN_JSON_OUT"
 node bin/cardity.js review examples/02_member_points_agent.car > "$REVIEW_OUT"
 node bin/cardity.js review "$MEMBER_MANIFEST_OUT" --json > "$REVIEW_JSON_OUT"
+node -e 'const fs=require("fs"); const f=process.argv[1]; const out=process.argv[2]; const m=JSON.parse(fs.readFileSync(f,"utf8")); m.methods=m.methods.filter(x=>x.name!=="spend_points"); m.system.ui.actions=m.system.ui.actions.filter(x=>x.method!=="spend_points"); fs.writeFileSync(out, JSON.stringify(m,null,2));' "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT"
+node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" > "$DIFF_OUT"
+node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" --json > "$DIFF_JSON_OUT"
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
@@ -146,6 +152,18 @@ fi
 if ! grep -q '"schema": "cardity.security_review.v1"' "$REVIEW_JSON_OUT"; then
   echo "Expected cardity review --json to render security review result schema"
   cat "$REVIEW_JSON_OUT"
+  exit 1
+fi
+
+if ! grep -q '# MemberPointsSystem Diff' "$DIFF_OUT" || ! grep -q 'METHOD_REMOVED' "$DIFF_OUT"; then
+  echo "Expected cardity diff to render Markdown with removed method"
+  cat "$DIFF_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.protocol_diff.v1"' "$DIFF_JSON_OUT" || ! grep -q '"compatible": false' "$DIFF_JSON_OUT"; then
+  echo "Expected cardity diff --json to render incompatible protocol diff"
+  cat "$DIFF_JSON_OUT"
   exit 1
 fi
 

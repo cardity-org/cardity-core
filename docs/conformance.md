@@ -20,6 +20,7 @@ Cardity release.
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 | Security review v1 | `schemas/security_review_v1.schema.json` |
+| Protocol diff v1 | `schemas/protocol_diff_v1.schema.json` |
 
 ## Reference Examples
 
@@ -55,6 +56,7 @@ node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js review examples/02_member_points_agent.car
+node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 ```
 
 ## Runtime Boundary

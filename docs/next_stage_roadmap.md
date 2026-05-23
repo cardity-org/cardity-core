@@ -70,7 +70,7 @@ Goal: manage protocol change over time.
 
 | Workstream | Deliverable |
 |---|---|
-| Protocol Diff | `.car` and manifest diff with breaking-change classification. |
+| Protocol Diff | `.car` and manifest diff with breaking-change classification. Initial CLI version is available. |
 | Migration Report | Human-readable migration advice. |
 | Schema Registry | Stable schema URLs and changelog. |
 | Package Format | `.carditypkg` layout for protocol distribution. |
@@ -97,7 +97,8 @@ The first implementation batch is intentionally small:
 - local verification for those assets;
 - `cardity init --template`;
 - `cardity explain` Markdown/JSON summaries with optional Mermaid graph;
-- `cardity review` security reports for action/projection safety.
+- `cardity review` security reports for action/projection safety;
+- `cardity diff` breaking-change reports for manifest contract evolution.
 
 This creates a firm foundation for Playground, Repair Loop, and Conformance
 Suite work without moving Cardity into runtime execution.

@@ -272,6 +272,17 @@ contracts: confirmation, permissions, dry-run/readback, idempotency, replay
 policy, event runtime fields, read-model keys, query targets, and external
 service boundaries.
 
+Compare protocol contract changes:
+
+```bash
+cardity diff old.agent.json new.agent.json
+cardity diff old.car new.car --json
+```
+
+`cardity diff` compares Agent OS manifest contracts and reports breaking,
+warning, and informational changes across methods, events, actions,
+permissions, API routes, read models, projections, and query contracts.
+
 ## Local Development
 
 Requirements:
