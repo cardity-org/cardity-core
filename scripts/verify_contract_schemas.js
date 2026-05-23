@@ -30,6 +30,7 @@ const schemas = [
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
   "schemas/manifest_visualization_v1.schema.json",
+  "schemas/explain_result_v1.schema.json",
   "schemas/package_v1.schema.json",
   "schemas/ecosystem_registry_v1.schema.json",
 ];
@@ -127,6 +128,14 @@ for (const status of ["pass", "fail", "warn"]) {
 const visualizationSchema = readJson("schemas/manifest_visualization_v1.schema.json");
 for (const field of ["schema", "protocol", "summary", "nodes", "edges"]) {
   if (!visualizationSchema.required.includes(field)) fail(`manifest visualization schema missing required ${field}`);
+}
+
+const explainSchema = readJson("schemas/explain_result_v1.schema.json");
+for (const field of ["schema", "protocol", "counts", "methods", "actions", "database", "permissions", "events", "external"]) {
+  if (!explainSchema.required.includes(field)) fail(`explain result schema missing required ${field}`);
+}
+if (explainSchema.properties.schema.const !== "cardity.explain_result.v1") {
+  fail("explain result schema has wrong schema const");
 }
 
 const packageSchema = readJson("schemas/package_v1.schema.json");

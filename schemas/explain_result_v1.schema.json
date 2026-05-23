@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/explain_result_v1.schema.json",
+  "title": "Cardity Explain Result v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "protocol", "counts", "methods", "actions", "database", "permissions", "events", "external"],
+  "properties": {
+    "schema": { "const": "cardity.explain_result.v1" },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "owner": { "type": "string" }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 },
+      "required": ["state", "tables", "read_models", "methods", "events", "routes", "actions", "workflows", "tools"],
+      "properties": {
+        "state": { "type": "integer", "minimum": 0 },
+        "tables": { "type": "integer", "minimum": 0 },
+        "read_models": { "type": "integer", "minimum": 0 },
+        "methods": { "type": "integer", "minimum": 0 },
+        "events": { "type": "integer", "minimum": 0 },
+        "routes": { "type": "integer", "minimum": 0 },
+        "actions": { "type": "integer", "minimum": 0 },
+        "workflows": { "type": "integer", "minimum": 0 },
+        "tools": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "route", "returns", "reads", "writes", "emits"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "route": { "type": "string" },
+          "returns": { "type": "string" },
+          "reads": { "type": "array", "items": { "type": "string" } },
+          "writes": { "type": "array", "items": { "type": "string" } },
+          "emits": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "name",
+          "kind",
+          "permission",
+          "confirm_required",
+          "dry_run_supported",
+          "readback_required",
+          "risk_level",
+          "input_fields",
+          "output_fields"
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string" },
+          "permission": { "type": "string" },
+          "confirm_required": { "type": "boolean" },
+          "dry_run_supported": { "type": "boolean" },
+          "readback_required": { "type": "boolean" },
+          "risk_level": { "type": "string" },
+          "input_fields": { "type": "array", "items": { "type": "string" } },
+          "output_fields": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["tables", "read_models", "projections", "queries"],
+      "properties": {
+        "tables": { "type": "array", "items": { "type": "string" } },
+        "read_models": { "type": "array", "items": { "type": "string" } },
+        "projections": { "type": "array", "items": { "type": "string" } },
+        "queries": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["action", "requires_confirmation", "reason"],
+        "properties": {
+          "action": { "type": "string" },
+          "requires_confirmation": { "type": "boolean" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "params", "runtime_fields", "stream"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "params": { "type": "array", "items": { "type": "string" } },
+          "runtime_fields": { "type": "array", "items": { "type": "string" } },
+          "stream": { "type": "string" }
+        }
+      }
+    },
+    "external": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["navigation", "services"],
+      "properties": {
+        "navigation": { "type": "array", "items": { "type": "string" } },
+        "services": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

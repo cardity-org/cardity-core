@@ -36,6 +36,7 @@ schemas/registry.json
 | Security review v1 | `https://api.cardity.org/schemas/security_review_v1.schema.json` |
 | Protocol diff v1 | `https://api.cardity.org/schemas/protocol_diff_v1.schema.json` |
 | Manifest visualization v1 | `https://api.cardity.org/schemas/manifest_visualization_v1.schema.json` |
+| Explain result v1 | `https://api.cardity.org/schemas/explain_result_v1.schema.json` |
 | Diagnostics v1 | `https://api.cardity.org/schemas/diagnostics_v1.schema.json` |
 | Package v1 | `https://api.cardity.org/schemas/package_v1.schema.json` |
 | Ecosystem registry v1 | `https://api.cardity.org/schemas/ecosystem_registry_v1.schema.json` |

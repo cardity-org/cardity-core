@@ -86,6 +86,16 @@
       "status": "stable"
     },
     {
+      "name": "explain_result_v1",
+      "contract": "cardity.explain_result.v1",
+      "version": "v1",
+      "file": "explain_result_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/explain_result_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/explain_result_v1.schema.json",
+      "title": "Cardity Explain Result v1",
+      "status": "stable"
+    },
+    {
       "name": "diagnostics_v1",
       "contract": "cardity.diagnostics.v1",
       "version": "v1",
