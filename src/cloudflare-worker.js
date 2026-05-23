@@ -9,6 +9,16 @@ function json(payload, status = 200) {
   });
 }
 
+function html(body, status = 200) {
+  return new Response(body, {
+    status,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=300"
+    }
+  });
+}
+
 function extractBlock(source, startIndex) {
   const open = source.indexOf("{", startIndex);
   if (open < 0) return null;
@@ -1031,6 +1041,465 @@ function manifestFromInput(input, prefix = "") {
   return compile(sourceText, { include_abi: false, include_manifest: true, include_protocol: false, carc: false }).manifest;
 }
 
+function playgroundHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cardity Playground</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f4;
+      --ink: #151714;
+      --muted: #5f665e;
+      --line: #d9ded5;
+      --panel: #ffffff;
+      --panel-2: #eef4f0;
+      --blue: #1a66d9;
+      --green: #0b7a53;
+      --red: #b42318;
+      --amber: #9a6700;
+      --shadow: 0 18px 50px rgba(24, 32, 26, 0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      background: var(--ink);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    h1 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 760; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    nav { display: flex; gap: 8px; align-items: center; }
+    a, button { font: inherit; }
+    a { color: var(--blue); text-decoration: none; }
+    .link { color: var(--muted); font-size: 13px; padding: 8px 10px; }
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(360px, 0.42fr) minmax(0, 0.58fr);
+      min-height: calc(100vh - 68px);
+    }
+    .editor, .result { min-width: 0; padding: 18px; }
+    .editor { border-right: 1px solid var(--line); }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .label { font-size: 12px; color: var(--muted); font-weight: 720; text-transform: uppercase; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 7px;
+      min-height: 36px;
+      padding: 0 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 680;
+    }
+    button.primary { border-color: var(--ink); background: var(--ink); color: #fff; }
+    button:disabled { opacity: .55; cursor: wait; }
+    textarea {
+      width: 100%;
+      height: calc(100vh - 168px);
+      min-height: 520px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #10130f;
+      color: #f7f8f5;
+      padding: 16px;
+      outline: none;
+      box-shadow: var(--shadow);
+      font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      tab-size: 2;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .status strong { font-size: 13px; }
+    .status span { color: var(--muted); font-size: 13px; }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+    .tab {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      min-height: 42px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .pane { display: none; }
+    .pane.active { display: block; }
+    .graph {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .lane {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .lane h2 {
+      margin: 0;
+      padding: 13px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+    .node-list { padding: 10px; display: grid; gap: 8px; }
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: #fff;
+    }
+    .node strong { display: block; font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+    .node span { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--panel);
+    }
+    .metric strong { display: block; font-size: 22px; line-height: 1; }
+    .metric span { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
+    pre {
+      margin: 0;
+      max-height: calc(100vh - 194px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #10130f;
+      color: #f7f8f5;
+      padding: 14px;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .findings { display: grid; gap: 10px; }
+    .finding {
+      border: 1px solid var(--line);
+      border-left-width: 4px;
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }
+    .finding.error { border-left-color: var(--red); }
+    .finding.warning { border-left-color: var(--amber); }
+    .finding.info { border-left-color: var(--blue); }
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      padding: 18px;
+      background: rgba(255,255,255,.55);
+    }
+    @media (max-width: 980px) {
+      header { align-items: flex-start; flex-direction: column; padding: 14px 16px; }
+      nav { width: 100%; overflow-x: auto; }
+      .shell { grid-template-columns: 1fr; }
+      .editor { border-right: 0; border-bottom: 1px solid var(--line); }
+      textarea { height: 420px; min-height: 420px; }
+      .graph { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">C</div>
+      <div>
+        <h1>Cardity Playground</h1>
+        <div class="subtitle">Compile .car into manifest, graph, review, and conformance output.</div>
+      </div>
+    </div>
+    <nav>
+      <a class="link" href="/">API</a>
+      <a class="link" href="https://cardity.org">Website</a>
+      <a class="link" href="https://github.com/cardity-org/cardity-core">GitHub</a>
+    </nav>
+  </header>
+  <main class="shell">
+    <section class="editor">
+      <div class="toolbar">
+        <div class="label">Protocol Source</div>
+        <div class="actions">
+          <button id="reset">Reset</button>
+          <button id="copy">Copy</button>
+          <button class="primary" id="run">Compile</button>
+        </div>
+      </div>
+      <textarea id="source" spellcheck="false"></textarea>
+    </section>
+    <section class="result">
+      <div class="status">
+        <div>
+          <strong id="statusTitle">Ready</strong>
+          <span id="statusText">Run the example protocol to generate Cardity artifacts.</span>
+        </div>
+        <span id="timing">idle</span>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="graph">Graph</button>
+        <button class="tab" data-tab="manifest">Manifest</button>
+        <button class="tab" data-tab="review">Review</button>
+        <button class="tab" data-tab="conformance">Conformance</button>
+      </div>
+      <div class="pane active" id="graph"><div class="empty">No graph yet.</div></div>
+      <div class="pane" id="manifest"><pre>{}</pre></div>
+      <div class="pane" id="review"><div class="empty">No review yet.</div></div>
+      <div class="pane" id="conformance"><pre>{}</pre></div>
+    </section>
+  </main>
+  <script>
+    const sampleSource = 'protocol MemberPointsSystem {\\n' +
+      '  version: "1.0.0";\\n' +
+      '  owner: "agent-os";\\n\\n' +
+      '  state {\\n' +
+      '    total_points_issued: int = 0;\\n' +
+      '    total_points_spent: int = 0;\\n' +
+      '    last_actor: address = "";\\n' +
+      '    last_user: address = "";\\n' +
+      '    last_amount: int = 0;\\n' +
+      '    last_delta: int = 0;\\n' +
+      '    last_reason: string = "";\\n' +
+      '    last_operation: string = "none";\\n' +
+      '    result: string = "ok";\\n' +
+      '  }\\n\\n' +
+      '  table member_point_balances {\\n' +
+      '    user: address;\\n' +
+      '    balance: int = 0;\\n' +
+      '  }\\n\\n' +
+      '  table member_point_ledger {\\n' +
+      '    user: address;\\n' +
+      '    delta: int = 0;\\n' +
+      '    reason: string = "";\\n' +
+      '    actor: address = "";\\n' +
+      '    operation: string = "";\\n' +
+      '  }\\n\\n' +
+      '  event PointsEarned { user: address; amount: int; reason: string; }\\n' +
+      '  event PointsSpent { user: address; amount: int; reason: string; }\\n' +
+      '  event PointsAdjusted { admin: address; user: address; delta: int; reason: string; }\\n\\n' +
+      '  method earn_points(user: address, amount: int, reason: string) {\\n' +
+      '    state.result = "ok";\\n' +
+      '    if (params.amount <= 0) { state.result = "InvalidAmount" }\\n' +
+      '    if (state.result == "ok") { state.total_points_issued = state.total_points_issued + params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_actor = ctx.sender }\\n' +
+      '    if (state.result == "ok") { state.last_user = params.user }\\n' +
+      '    if (state.result == "ok") { state.last_amount = params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_delta = params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_reason = params.reason }\\n' +
+      '    if (state.result == "ok") { state.last_operation = "earn_points" }\\n' +
+      '    if (state.result == "ok") { emit PointsEarned(params.user, params.amount, params.reason) }\\n' +
+      '  }\\n' +
+      '  returns: string state.result;\\n\\n' +
+      '  method spend_points(user: address, amount: int, reason: string) {\\n' +
+      '    state.result = "ok";\\n' +
+      '    if (params.amount <= 0) { state.result = "InvalidAmount" }\\n' +
+      '    if (state.result == "ok") { state.total_points_spent = state.total_points_spent + params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_actor = ctx.sender }\\n' +
+      '    if (state.result == "ok") { state.last_user = params.user }\\n' +
+      '    if (state.result == "ok") { state.last_amount = params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_delta = 0 - params.amount }\\n' +
+      '    if (state.result == "ok") { state.last_reason = params.reason }\\n' +
+      '    if (state.result == "ok") { state.last_operation = "spend_points" }\\n' +
+      '    if (state.result == "ok") { emit PointsSpent(params.user, params.amount, params.reason) }\\n' +
+      '  }\\n' +
+      '  returns: string state.result;\\n\\n' +
+      '  method get_balance(user: address) { state.result = state.result; }\\n' +
+      '  returns: string state.result;\\n\\n' +
+      '  method admin_adjust_points(user: address, delta: int, reason: string) {\\n' +
+      '    state.result = "ok";\\n' +
+      '    if (state.result == "ok") { state.last_actor = ctx.sender }\\n' +
+      '    if (state.result == "ok") { state.last_user = params.user }\\n' +
+      '    if (state.result == "ok") { state.last_amount = params.delta }\\n' +
+      '    if (state.result == "ok") { state.last_delta = params.delta }\\n' +
+      '    if (state.result == "ok") { state.last_reason = params.reason }\\n' +
+      '    if (state.result == "ok") { state.last_operation = "admin_adjust_points" }\\n' +
+      '    if (state.result == "ok") { emit PointsAdjusted(ctx.sender, params.user, params.delta, params.reason) }\\n' +
+      '  }\\n' +
+      '  returns: string state.result;\\n' +
+      '}\\n';
+
+    const source = document.getElementById('source');
+    const runButton = document.getElementById('run');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusText = document.getElementById('statusText');
+    const timing = document.getElementById('timing');
+    source.value = sampleSource;
+
+    document.querySelectorAll('.tab').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((item) => item.classList.remove('active'));
+        document.querySelectorAll('.pane').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        document.getElementById(button.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.getElementById('reset').addEventListener('click', () => { source.value = sampleSource; });
+    document.getElementById('copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(source.value);
+      statusTitle.textContent = 'Copied';
+      statusText.textContent = 'Protocol source copied to clipboard.';
+    });
+    runButton.addEventListener('click', run);
+
+    async function post(path, payload) {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await response.json();
+      if (!response.ok || json.ok === false) {
+        throw new Error(json.error && json.error.message ? json.error.message : 'Request failed');
+      }
+      return json;
+    }
+
+    async function run() {
+      const started = performance.now();
+      runButton.disabled = true;
+      statusTitle.textContent = 'Compiling';
+      statusText.textContent = 'Generating manifest, graph, review, and conformance report.';
+      timing.textContent = 'running';
+      try {
+        const source_text = source.value;
+        const manifestPayload = await post('/v1/manifest', { source_text });
+        const manifest = manifestPayload.manifest;
+        const [visualize, review, conformance] = await Promise.all([
+          post('/v1/visualize', { manifest, format: 'json' }),
+          post('/v1/review', { manifest, format: 'json' }),
+          post('/v1/conformance', { manifest, format: 'json' })
+        ]);
+        renderGraph(visualize.visualization);
+        setJson('manifest', manifest);
+        renderReview(review.review);
+        setJson('conformance', conformance.report);
+        statusTitle.textContent = 'Generated';
+        statusText.textContent = manifest.protocol.name + ' produced ' + visualize.visualization.summary.nodes + ' graph nodes.';
+        timing.textContent = Math.round(performance.now() - started) + ' ms';
+      } catch (error) {
+        statusTitle.textContent = 'Error';
+        statusText.textContent = error.message;
+        timing.textContent = 'failed';
+      } finally {
+        runButton.disabled = false;
+      }
+    }
+
+    function setJson(id, payload) {
+      document.getElementById(id).innerHTML = '<pre>' + escapeHtml(JSON.stringify(payload, null, 2)) + '</pre>';
+    }
+
+    function renderGraph(visualization) {
+      const groups = [
+        ['Business Protocol Layer', ['protocol', 'method', 'event']],
+        ['System Generation Layer', ['table', 'read_model', 'api_route', 'projection', 'workflow']],
+        ['Agent Execution Layer', ['action', 'tool', 'permission']]
+      ];
+      const html = '<div class="summary-grid">' +
+        metric('Nodes', visualization.summary.nodes) +
+        metric('Edges', visualization.summary.edges) +
+        metric('Actions', visualization.summary.actions) +
+        metric('Read Models', visualization.summary.read_models) +
+        '</div><div class="graph">' +
+        groups.map(([title, kinds]) => {
+          const nodes = visualization.nodes.filter((node) => kinds.includes(node.kind));
+          return '<section class="lane"><h2>' + escapeHtml(title) + '</h2><div class="node-list">' +
+            nodes.map((node) => '<div class="node"><strong>' + escapeHtml(node.label) + '</strong><span>' + escapeHtml(node.kind) + '</span></div>').join('') +
+            '</div></section>';
+        }).join('') +
+        '</div>';
+      document.getElementById('graph').innerHTML = html;
+    }
+
+    function renderReview(review) {
+      const findings = review.findings || [];
+      if (!findings.length) {
+        document.getElementById('review').innerHTML = '<div class="empty">Security review passed with no findings.</div>';
+        return;
+      }
+      document.getElementById('review').innerHTML = '<div class="findings">' + findings.map((finding) =>
+        '<div class="finding ' + escapeHtml(finding.severity) + '"><strong>' + escapeHtml(finding.code) + '</strong><p>' +
+        escapeHtml(finding.message) + '</p><span>' + escapeHtml(finding.location) + '</span></div>'
+      ).join('') + '</div>';
+    }
+
+    function metric(label, value) {
+      return '<div class="metric"><strong>' + escapeHtml(value) + '</strong><span>' + escapeHtml(label) + '</span></div>';
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    run();
+  </script>
+</body>
+</html>`;
+}
+
 async function readBody(request) {
   if (request.method === "GET" || request.method === "HEAD") return {};
   const text = await request.text();
@@ -1212,6 +1681,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/edge-health") {
       return json({ ok: true, service: "cardity-core-edge", container: "cardity-core-api", compiler: "edge-agent-safe-v1" });
+    }
+    if ((url.pathname === "/playground" || url.pathname === "/playground/") && (request.method === "GET" || request.method === "HEAD")) {
+      return html(playgroundHtml());
     }
 
     try {

@@ -98,6 +98,7 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 
 | Endpoint | Purpose |
 |---|---|
+| `GET /playground` | Browser playground for source, manifest, graph, review, and conformance output. |
 | `GET /edge-health` | Worker edge health. |
 | `GET /health` | Container health through fallback path. |
 | `POST /v1/generation-guide` | Agent-safe authoring rules. |

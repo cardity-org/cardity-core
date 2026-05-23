@@ -35,7 +35,7 @@ Goal: make Cardity understandable in minutes.
 
 | Workstream | Deliverable |
 |---|---|
-| Playground | `.car` editor, compile action, artifact tabs, diagnostics panel. |
+| Playground | `.car` editor, compile action, artifact tabs, diagnostics panel. Initial hosted Worker version is available at `/playground`. |
 | Manifest Visualizer | Protocol, system generation, and agent execution graph. Initial CLI/MCP/API version is available. |
 | Template Library | Official templates for member points, support tickets, refunds, and agent tools. |
 | Explain | `cardity explain` for `.car` and manifest JSON. Initial CLI version is available. |

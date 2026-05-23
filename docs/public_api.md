@@ -47,6 +47,7 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 
 | Endpoint | Purpose |
 |---|---|
+| `GET /playground` | Browser playground for `.car` editing, manifest generation, graph visualization, review, and conformance. |
 | `GET /health` | Health check. |
 | `POST /v1/compile` | Compile Cardity source into protocol JSON, ABI, CARC, and Agent OS manifest. |
 | `POST /v1/validate` | Validate source and return protocol summary. |

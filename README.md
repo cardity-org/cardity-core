@@ -36,6 +36,7 @@ Useful endpoints:
 
 | Endpoint | Purpose |
 |---|---|
+| `GET /playground` | Browser playground for `.car` to manifest, graph, review, and conformance. |
 | `GET /edge-health` | Edge Worker health check. |
 | `GET /health` | Container API health check. |
 | `POST /v1/compile` | Compile source into protocol JSON, ABI, and Agent OS manifest. |

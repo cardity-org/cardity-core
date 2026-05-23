@@ -50,6 +50,8 @@ node scripts/verify_agent_manifest_contract.js \
   examples/03_merchant_erp_projection_v1_1.json >/dev/null
 node scripts/verify_contract_schemas.js >/dev/null
 node scripts/verify_next_stage_assets.js >/dev/null
+grep -q 'Cardity Playground' src/cloudflare-worker.js
+grep -q 'url.pathname === "/playground"' src/cloudflare-worker.js
 rm -rf "$INIT_OUT"
 node bin/cardity.js init "$INIT_OUT" --template member_points >/dev/null
 test -f "$INIT_OUT/src/protocol.car"
