@@ -1,0 +1,63 @@
+protocol OrderRefundSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    result: string = "ok";
+    total_refund_requests: int = 0;
+    total_refunds_approved: int = 0;
+  }
+
+  table refund_requests {
+    merchant_id: string;
+    order_id: string;
+    refund_id: string;
+    amount: int = 0;
+    status: string = "requested";
+    reason: string = "";
+  }
+
+  event RefundRequested {
+    merchant_id: string;
+    order_id: string;
+    refund_id: string;
+    amount: int;
+    reason: string;
+  }
+
+  event RefundApproved {
+    merchant_id: string;
+    order_id: string;
+    refund_id: string;
+    amount: int;
+  }
+
+  event RefundRejected {
+    merchant_id: string;
+    order_id: string;
+    refund_id: string;
+    reason: string;
+  }
+
+  method request_refund(merchant_id: string, order_id: string, refund_id: string, amount: int, reason: string) {
+    state.result = "ok";
+    if (params.amount <= 0) { state.result = "InvalidAmount" }
+    if (state.result == "ok") { state.total_refund_requests = state.total_refund_requests + 1 }
+    if (state.result == "ok") { emit RefundRequested(params.merchant_id, params.order_id, params.refund_id, params.amount, params.reason) }
+  }
+  returns: string state.result;
+
+  method approve_refund(merchant_id: string, order_id: string, refund_id: string, amount: int) {
+    state.result = "ok";
+    if (params.amount <= 0) { state.result = "InvalidAmount" }
+    if (state.result == "ok") { state.total_refunds_approved = state.total_refunds_approved + params.amount }
+    if (state.result == "ok") { emit RefundApproved(params.merchant_id, params.order_id, params.refund_id, params.amount) }
+  }
+  returns: string state.result;
+
+  method reject_refund(merchant_id: string, order_id: string, refund_id: string, reason: string) {
+    state.result = "ok";
+    emit RefundRejected(params.merchant_id, params.order_id, params.refund_id, params.reason);
+  }
+  returns: string state.result;
+}

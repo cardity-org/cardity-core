@@ -1,0 +1,7 @@
+{
+  "name": "member_points",
+  "title": "Member Points",
+  "description": "Membership points system with earn, spend, balance query, ledger, and admin adjustment actions.",
+  "entry": "protocol.car",
+  "tags": ["agent-business", "points", "ledger", "projection"]
+}

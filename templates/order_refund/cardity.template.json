@@ -1,0 +1,7 @@
+{
+  "name": "order_refund",
+  "title": "Order Refund",
+  "description": "Refund request protocol with dry-run friendly review, approval, rejection, and readback-ready events.",
+  "entry": "protocol.car",
+  "tags": ["agent-business", "refund", "permission", "readback"]
+}

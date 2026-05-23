@@ -1,0 +1,35 @@
+protocol AgentToolPermissionSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    result: string = "ok";
+    last_action: string = "none";
+  }
+
+  table tool_permissions {
+    workspace_id: string;
+    tool_name: string;
+    permission: string = "read";
+    risk_level: string = "low";
+  }
+
+  event ToolPermissionChanged {
+    workspace_id: string;
+    tool_name: string;
+    permission: string;
+    risk_level: string;
+  }
+
+  method get_tool_permission(workspace_id: string, tool_name: string) {
+    state.result = "ok";
+  }
+  returns: string state.result;
+
+  method update_tool_permission(workspace_id: string, tool_name: string, permission: string, risk_level: string) {
+    state.result = "ok";
+    state.last_action = "update_tool_permission";
+    emit ToolPermissionChanged(params.workspace_id, params.tool_name, params.permission, params.risk_level);
+  }
+  returns: string state.result;
+}

@@ -231,6 +231,24 @@ Cardity's current baseline for downstream Agent runtimes is:
 Machine-readable schemas live in [schemas](schemas). Local conformance guidance
 lives in [docs/conformance.md](docs/conformance.md).
 
+## Next-Stage Assets
+
+Cardity's next stage is focused on the protocol-contract layer, not a full
+Agent Runtime. The first shipped assets are:
+
+- official templates in [templates](templates);
+- LLM authoring and review prompts in [prompts](prompts);
+- diagnostics v1 schema for repair loops;
+- runtime adapter contract v1 schema for compatibility declarations;
+- local verification through `node scripts/verify_next_stage_assets.js`.
+
+Create a template project:
+
+```bash
+cardity init my-points --template member_points
+cardity init --list-templates
+```
+
 ## Local Development
 
 Requirements:
@@ -340,6 +358,7 @@ api.cardity.org/*
 - [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
 - [Contract conformance](docs/conformance.md)
+- [Next-stage roadmap](docs/next_stage_roadmap.md)
 - [Public API](docs/public_api.md)
 - [PMTSoul Agent integration](docs/pmtsoul_agent_integration.md)
 - [Release plan](docs/release_plan.md)

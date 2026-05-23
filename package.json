@@ -70,8 +70,10 @@
   "files": [
     "bin/",
     "compiler/",
+    "prompts/",
     "schemas/",
     "scripts/",
+    "templates/",
     "examples/",
     "docs/",
     "CMakeLists.txt",

@@ -17,6 +17,8 @@ Cardity release.
 | Agent OS manifest v1 | `schemas/agent_manifest_v1.schema.json` |
 | Agent action contract v1 | `schemas/agent_action_contract_v1.schema.json` |
 | Projection contract v1.1 | `schemas/projection_contract_v1_1.schema.json` |
+| Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
+| Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 
 ## Reference Examples
 
@@ -49,6 +51,7 @@ Direct contract checks:
 node scripts/verify_projection_contract.js examples/03_merchant_erp_projection_v1_1.json
 node scripts/verify_agent_manifest_contract.js examples/03_merchant_erp_projection_v1_1.json
 node scripts/verify_contract_schemas.js
+node scripts/verify_next_stage_assets.js
 ```
 
 ## Runtime Boundary

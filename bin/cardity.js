@@ -5,6 +5,63 @@ const chalk = require('chalk').default;
 const path = require('path');
 const fs = require('fs-extra');
 
+function templatesPath() {
+  return path.join(__dirname, '..', 'templates');
+}
+
+function listTemplates() {
+  const root = templatesPath();
+  if (!fs.existsSync(root)) return [];
+  return fs.readdirSync(root)
+    .filter((name) => fs.statSync(path.join(root, name)).isDirectory())
+    .map((name) => {
+      const metadataPath = path.join(root, name, 'cardity.template.json');
+      const metadata = fs.existsSync(metadataPath)
+        ? fs.readJsonSync(metadataPath)
+        : { name, title: name, description: '' };
+      return { ...metadata, dir: path.join(root, name) };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function findTemplate(name) {
+  return listTemplates().find((template) => template.name === name);
+}
+
+function writeTemplateProject(projectPath, template) {
+  fs.mkdirSync(projectPath, { recursive: true });
+  fs.mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+
+  const entry = template.entry || 'protocol.car';
+  const sourcePath = path.join(template.dir, entry);
+  if (!fs.existsSync(sourcePath)) {
+    throw new Error(`Template ${template.name} is missing ${entry}`);
+  }
+
+  fs.copyFileSync(sourcePath, path.join(projectPath, 'src', 'protocol.car'));
+  const readmePath = path.join(template.dir, 'README.md');
+  if (fs.existsSync(readmePath)) {
+    fs.copyFileSync(readmePath, path.join(projectPath, 'README.md'));
+  }
+
+  const cardityConfig = {
+    name: path.basename(projectPath),
+    version: "1.0.0",
+    description: template.description || "A Cardity protocol project",
+    template: template.name,
+    main: "src/protocol.car",
+    scripts: {
+      compile: "cardity_agent compile src/protocol.car --out-dir dist --include-manifest --include-protocol --include-abi",
+      manifest: "cardity manifest src/protocol.car -o dist/protocol.agent.json"
+    }
+  };
+
+  fs.writeFileSync(
+    path.join(projectPath, 'cardity.json'),
+    JSON.stringify(cardityConfig, null, 2)
+  );
+}
+
 // 获取可执行文件路径
 function getExecutablePath(name) {
   const platform = process.platform;
@@ -219,9 +276,25 @@ program
 program
   .command('init [name]')
   .description('Initialize a new Cardity project')
-  .action((name) => {
+  .option('-t, --template <name>', 'Template name')
+  .option('--list-templates', 'List available templates')
+  .action((name, options) => {
+    if (options.listTemplates) {
+      const templates = listTemplates();
+      if (templates.length === 0) {
+        console.log(chalk.yellow('No templates found.'));
+        return;
+      }
+      console.log(chalk.blue.bold('Available Cardity templates:\n'));
+      for (const template of templates) {
+        console.log(chalk.green(`  ${template.name}`));
+        if (template.description) console.log(chalk.gray(`    ${template.description}`));
+      }
+      return;
+    }
+
     const projectName = name || 'cardity-project';
-    const projectPath = path.join(process.cwd(), projectName);
+    const projectPath = path.resolve(process.cwd(), projectName);
     
     if (fs.existsSync(projectPath)) {
       console.error(chalk.red(`❌ Error: Directory ${projectName} already exists`));
@@ -229,86 +302,51 @@ program
     }
     
     try {
-      fs.mkdirSync(projectPath, { recursive: true });
-      fs.mkdirSync(path.join(projectPath, 'src'), { recursive: true });
-      
-      // 创建 cardity.json
-      const cardityConfig = {
-        name: projectName,
-        version: "1.0.0",
-        description: "A Cardity protocol project",
-        main: "src/index.car",
-        scripts: {
-          build: "cardity compile src/index.car",
-          run: "cardity run dist/index.carc"
-        }
-      };
-      
-      fs.writeFileSync(
-        path.join(projectPath, 'cardity.json'),
-        JSON.stringify(cardityConfig, null, 2)
-      );
-      
-      // 创建示例文件
-      const exampleContent = `protocol HelloWorld {
-  version: "1.0.0";
-  
-  method greet(name: string): string {
-    return "Hello, " + name + "!";
-  }
-  
-  event Greeted(name: string, message: string);
-}`;
-      
-      fs.writeFileSync(
-        path.join(projectPath, 'src', 'index.car'),
-        exampleContent
-      );
-      
-      // 创建 README
-      const readmeContent = `# ${projectName}
+      const templateName = options.template || 'member_points';
+      const template = findTemplate(templateName);
+      if (!template) {
+        console.error(chalk.red(`❌ Unknown template: ${templateName}`));
+        console.error(chalk.yellow('Run "cardity init --list-templates" to see available templates.'));
+        process.exit(1);
+      }
+
+      writeTemplateProject(projectPath, template);
+
+      if (!fs.existsSync(path.join(projectPath, 'README.md'))) {
+        const readmeContent = `# ${projectName}
 
 A Cardity protocol project.
 
 ## Usage
 
 \`\`\`bash
-# Build the protocol
-npm run build
-
-# Run the protocol
-npm run run
+cardity_agent compile src/protocol.car \\
+  --out-dir dist \\
+  --include-manifest \\
+  --include-protocol \\
+  --include-abi
 \`\`\`
 
 ## Development
 
 \`\`\`bash
-# Compile
-cardity compile src/index.car
-
-# Generate ABI
-cardity abi src/index.car
-
-# Run
-cardity run dist/index.carc
+cardity manifest src/protocol.car -o dist/protocol.agent.json
 \`\`\`
 `;
+        fs.writeFileSync(path.join(projectPath, 'README.md'), readmeContent);
+      }
       
-      fs.writeFileSync(
-        path.join(projectPath, 'README.md'),
-        readmeContent
-      );
-      
-      console.log(chalk.green(`✅ Created Cardity project: ${projectName}`));
+      console.log(chalk.green(`✅ Created Cardity project: ${path.basename(projectPath)}`));
+      console.log(chalk.blue(`📦 Template: ${template.name}`));
       console.log(chalk.blue(`📁 Project structure:`));
-      console.log(chalk.gray(`   ${projectName}/`));
+      console.log(chalk.gray(`   ${path.basename(projectPath)}/`));
       console.log(chalk.gray(`   ├── cardity.json`));
       console.log(chalk.gray(`   ├── README.md`));
       console.log(chalk.gray(`   └── src/`));
-      console.log(chalk.gray(`       └── index.car`));
+      console.log(chalk.gray(`       └── protocol.car`));
       console.log(chalk.yellow(`\n🚀 Next steps:`));
       console.log(chalk.gray(`   cd ${projectName}`));
-      console.log(chalk.gray(`   cardity compile src/index.car`));
+      console.log(chalk.gray(`   cardity_agent compile src/protocol.car --out-dir dist --include-manifest`));
       
     } catch (error) {
       console.error(chalk.red(`❌ Error creating project: ${error.message}`));

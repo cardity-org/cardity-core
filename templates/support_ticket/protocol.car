@@ -1,0 +1,70 @@
+protocol SupportTicketSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    result: string = "ok";
+    open_ticket_count: int = 0;
+  }
+
+  table support_tickets {
+    workspace_id: string;
+    ticket_id: string;
+    customer_id: string;
+    subject: string = "";
+    status: string = "open";
+    assignee: address = "";
+  }
+
+  table support_ticket_messages {
+    workspace_id: string;
+    ticket_id: string;
+    message_id: string;
+    author: address;
+    body: string = "";
+  }
+
+  event TicketCreated {
+    workspace_id: string;
+    ticket_id: string;
+    customer_id: string;
+    subject: string;
+  }
+
+  event TicketAssigned {
+    workspace_id: string;
+    ticket_id: string;
+    assignee: address;
+  }
+
+  event TicketClosed {
+    workspace_id: string;
+    ticket_id: string;
+    reason: string;
+  }
+
+  method create_ticket(workspace_id: string, ticket_id: string, customer_id: string, subject: string) {
+    state.result = "ok";
+    state.open_ticket_count = state.open_ticket_count + 1;
+    emit TicketCreated(params.workspace_id, params.ticket_id, params.customer_id, params.subject);
+  }
+  returns: string state.result;
+
+  method assign_ticket(workspace_id: string, ticket_id: string, assignee: address) {
+    state.result = "ok";
+    emit TicketAssigned(params.workspace_id, params.ticket_id, params.assignee);
+  }
+  returns: string state.result;
+
+  method close_ticket(workspace_id: string, ticket_id: string, reason: string) {
+    state.result = "ok";
+    state.open_ticket_count = state.open_ticket_count - 1;
+    emit TicketClosed(params.workspace_id, params.ticket_id, params.reason);
+  }
+  returns: string state.result;
+
+  method list_tickets(workspace_id: string, status: string) {
+    state.result = "ok";
+  }
+  returns: string state.result;
+}

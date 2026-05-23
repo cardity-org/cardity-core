@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/diagnostics_v1.schema.json",
+  "title": "Cardity Diagnostics v1",
+  "type": "object",
+  "required": ["schema", "diagnostics"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "cardity.diagnostics.v1" },
+    "source": { "type": ["string", "null"] },
+    "ok": { "type": "boolean" },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "diagnostic": {
+      "type": "object",
+      "required": ["error_code", "severity", "message", "repair_hint"],
+      "additionalProperties": true,
+      "properties": {
+        "error_code": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error", "fatal"] },
+        "message": { "type": "string", "minLength": 1 },
+        "location": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "path": { "type": "string" },
+            "line": { "type": "integer", "minimum": 1 },
+            "column": { "type": "integer", "minimum": 1 },
+            "symbol": { "type": "string" }
+          }
+        },
+        "expected": {},
+        "actual": {},
+        "repair_hint": { "type": "string", "minLength": 1 },
+        "llm_repair_prompt": { "type": "string" },
+        "minimal_patch_suggestion": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "format": { "enum": ["unified_diff", "replace_range", "insert_block", "none"] },
+            "patch": { "type": "string" }
+          }
+        },
+        "related_schema": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json",
+  "title": "Cardity Runtime Adapter Contract v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "runtime",
+    "supported_manifest_versions",
+    "supported_action_contracts",
+    "supported_projection_contracts",
+    "capabilities",
+    "conformance"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema": { "const": "cardity.runtime_adapter_contract.v1" },
+    "runtime": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "homepage": { "type": "string" }
+      }
+    },
+    "supported_manifest_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "supported_action_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "supported_projection_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "register_actions",
+        "permission_gate",
+        "dry_run_executor",
+        "write_executor",
+        "readback_executor",
+        "audit_sink",
+        "replay_guard"
+      ],
+      "properties": {
+        "register_actions": { "type": "boolean" },
+        "permission_gate": { "type": "boolean" },
+        "dry_run_executor": { "type": "boolean" },
+        "write_executor": { "type": "boolean" },
+        "readback_executor": { "type": "boolean" },
+        "audit_sink": { "type": "boolean" },
+        "replay_guard": { "type": "boolean" },
+        "external_navigation": { "type": "boolean" },
+        "external_services": { "type": "boolean" }
+      }
+    },
+    "endpoints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "conformance": { "type": "string" },
+        "run": { "type": "string" },
+        "events": { "type": "string" }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["untested", "passed", "failed", "partial"] },
+        "report_url": { "type": "string" },
+        "last_checked_at": { "type": "string" }
+      }
+    }
+  }
+}

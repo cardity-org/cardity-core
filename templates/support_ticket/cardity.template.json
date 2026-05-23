@@ -1,0 +1,7 @@
+{
+  "name": "support_ticket",
+  "title": "Support Ticket",
+  "description": "Customer support ticket workflow with create, assign, reply, close, and list query actions.",
+  "entry": "protocol.car",
+  "tags": ["agent-business", "support", "workflow", "read-model"]
+}

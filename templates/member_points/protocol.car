@@ -1,0 +1,71 @@
+protocol MemberPointsSystem {
+  version: "1.0.0";
+  owner: "agent-os";
+
+  state {
+    admin_addr: address = "doge1admin...";
+    total_points_issued: int = 0;
+    total_points_spent: int = 0;
+    result: string = "ok";
+  }
+
+  table member_point_balances {
+    user: address;
+    balance: int = 0;
+  }
+
+  table member_point_ledger {
+    user: address;
+    delta: int = 0;
+    reason: string = "";
+    actor: address;
+    operation: string = "";
+  }
+
+  event PointsEarned {
+    user: address;
+    amount: int;
+    reason: string;
+  }
+
+  event PointsSpent {
+    user: address;
+    amount: int;
+    reason: string;
+  }
+
+  event PointsAdjusted {
+    admin: address;
+    user: address;
+    delta: int;
+    reason: string;
+  }
+
+  method earn_points(user: address, amount: int, reason: string) {
+    state.result = "ok";
+    if (params.amount <= 0) { state.result = "InvalidAmount" }
+    if (state.result == "ok") { state.total_points_issued = state.total_points_issued + params.amount }
+    if (state.result == "ok") { emit PointsEarned(params.user, params.amount, params.reason) }
+  }
+  returns: string state.result;
+
+  method spend_points(user: address, amount: int, reason: string) {
+    state.result = "ok";
+    if (params.amount <= 0) { state.result = "InvalidAmount" }
+    if (state.result == "ok") { state.total_points_spent = state.total_points_spent + params.amount }
+    if (state.result == "ok") { emit PointsSpent(params.user, params.amount, params.reason) }
+  }
+  returns: string state.result;
+
+  method get_balance(user: address) {
+    state.result = "ok";
+  }
+  returns: string state.result;
+
+  method admin_adjust_points(user: address, delta: int, reason: string) {
+    state.result = "ok";
+    if (ctx.sender != state.admin_addr) { state.result = "Unauthorized" }
+    if (state.result == "ok") { emit PointsAdjusted(ctx.sender, params.user, params.delta, params.reason) }
+  }
+  returns: string state.result;
+}

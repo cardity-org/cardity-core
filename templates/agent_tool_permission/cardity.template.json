@@ -1,0 +1,7 @@
+{
+  "name": "agent_tool_permission",
+  "title": "Agent Tool Permission",
+  "description": "Generic agent tool permission contract with low-risk query, confirmed write, and high-risk external action patterns.",
+  "entry": "protocol.car",
+  "tags": ["agent-tool", "permission", "risk", "confirmation"]
+}

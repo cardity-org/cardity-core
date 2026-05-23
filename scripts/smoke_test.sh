@@ -15,6 +15,7 @@ AGENT_TEXT_OUT=/tmp/cardity_agent_text_result.json
 MEMBER_MANIFEST_OUT=/tmp/cardity_member_points.agent.json
 MEMBER_AGENT_DIR=/tmp/cardity_member_points_agent_artifacts
 BAD_AGENT_OUT=/tmp/cardity_bad_agent_result.json
+INIT_OUT=/tmp/cardity_init_template_project
 
 cd "$ROOT"
 
@@ -37,6 +38,11 @@ node scripts/verify_agent_manifest_contract.js \
   /tmp/cardity_member_points_agent_result.json \
   examples/03_merchant_erp_projection_v1_1.json >/dev/null
 node scripts/verify_contract_schemas.js >/dev/null
+node scripts/verify_next_stage_assets.js >/dev/null
+rm -rf "$INIT_OUT"
+node bin/cardity.js init "$INIT_OUT" --template member_points >/dev/null
+test -f "$INIT_OUT/src/protocol.car"
+test -f "$INIT_OUT/cardity.json"
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \

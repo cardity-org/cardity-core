@@ -24,6 +24,8 @@ const schemas = [
   "schemas/agent_manifest_v1.schema.json",
   "schemas/agent_action_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
+  "schemas/diagnostics_v1.schema.json",
+  "schemas/runtime_adapter_contract_v1.schema.json",
 ];
 
 for (const schemaPath of schemas) {
