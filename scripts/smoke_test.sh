@@ -27,6 +27,9 @@ DIFF_OUT=/tmp/cardity_member_points_diff.md
 DIFF_JSON_OUT=/tmp/cardity_member_points_diff.json
 CONFORMANCE_OUT=/tmp/cardity_member_points_conformance.md
 CONFORMANCE_JSON_OUT=/tmp/cardity_member_points_conformance.json
+PACKAGE_OUT=/tmp/cardity_member_points.carditypkg
+PACKAGE_VERIFY_OUT=/tmp/cardity_member_points_package_verify.json
+PACKAGE_UNPACK_DIR=/tmp/cardity_member_points_unpacked
 
 cd "$ROOT"
 
@@ -67,6 +70,11 @@ node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" > "$DIF
 node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" --json > "$DIFF_JSON_OUT"
 node bin/cardity.js conformance examples/02_member_points_agent.car > "$CONFORMANCE_OUT"
 node bin/cardity.js conformance "$MEMBER_MANIFEST_OUT" --runtime-adapter examples/runtime_adapter_cardity_mock.json --json > "$CONFORMANCE_JSON_OUT"
+rm -f "$PACKAGE_OUT"
+rm -rf "$PACKAGE_UNPACK_DIR"
+node bin/cardity.js pack "$MEMBER_AGENT_DIR" --name member-points-system --pkg-version 1.0.0 -o "$PACKAGE_OUT" >/dev/null
+node bin/cardity.js verify-package "$PACKAGE_OUT" --json > "$PACKAGE_VERIFY_OUT"
+node bin/cardity.js unpack "$PACKAGE_OUT" --out-dir "$PACKAGE_UNPACK_DIR" >/dev/null
 node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
 node --check src/cloudflare-worker.js >/tmp/cardity_worker_check_smoke.txt
@@ -208,6 +216,18 @@ fi
 if ! grep -q '"schema": "cardity.conformance_report.v1"' "$CONFORMANCE_JSON_OUT" || ! grep -q '"ok": true' "$CONFORMANCE_JSON_OUT"; then
   echo "Expected cardity conformance --json to render a passing report"
   cat "$CONFORMANCE_JSON_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.package_verification.v1"' "$PACKAGE_VERIFY_OUT" || ! grep -q '"ok": true' "$PACKAGE_VERIFY_OUT"; then
+  echo "Expected cardity verify-package --json to render a passing package verification"
+  cat "$PACKAGE_VERIFY_OUT"
+  exit 1
+fi
+
+if ! test -f "$PACKAGE_UNPACK_DIR/02_member_points_agent.agent.json"; then
+  echo "Expected cardity unpack to restore the agent manifest"
+  find "$PACKAGE_UNPACK_DIR" -maxdepth 2 -type f
   exit 1
 fi
 

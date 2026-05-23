@@ -94,6 +94,16 @@
       "url": "https://api.cardity.org/schemas/diagnostics_v1.schema.json",
       "title": "Cardity Diagnostics v1",
       "status": "stable"
+    },
+    {
+      "name": "package_v1",
+      "contract": "cardity.package.v1",
+      "version": "v1",
+      "file": "package_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/package_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/package_v1.schema.json",
+      "title": "Cardity Package v1",
+      "status": "alpha"
     }
   ]
 }

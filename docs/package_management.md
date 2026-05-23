@@ -2,6 +2,32 @@
 
 Cardity 包管理系统让开发者可以像使用 Solidity 和 npm 那样开发 Cardinals 协议，提供完整的包管理、依赖解析、构建和发布功能。
 
+> 当前 alpha 推荐优先使用 `.carditypkg` 作为 Agent/Runtime/Registry 的离线分发包。旧的 `deploy_package` inscription payload 仍保留给 Dogecoin/Cardinals 链上部署路径。
+
+## `.carditypkg` 协议包
+
+`.carditypkg` 使用 `cardity.package.v1`，用于把协议源码、编译产物、ABI、Agent OS Manifest、Schema、文档和 SHA-256 校验和打成一个可验证包。
+
+```bash
+cardity pack dist -o member-points.carditypkg
+cardity verify-package member-points.carditypkg
+cardity verify-package member-points.carditypkg --json
+cardity unpack member-points.carditypkg --out-dir ./unpacked
+```
+
+安全规则：
+
+- 解包前校验每个文件的 SHA-256。
+- 校验 package-level `files_sha256`。
+- 拒绝绝对路径和 `..` 路径穿越。
+- 非空输出目录需要显式 `--force`。
+
+Schema:
+
+```text
+https://api.cardity.org/schemas/package_v1.schema.json
+```
+
 ## 🚀 快速开始
 
 ### 安装 Cardity CLI
@@ -532,4 +558,4 @@ cardity test
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE](../LICENSE) 文件 
+MIT License - 详见 [LICENSE](../LICENSE) 文件

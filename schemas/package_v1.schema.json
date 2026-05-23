@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/package_v1.schema.json",
+  "title": "Cardity Package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "package",
+    "format",
+    "created_at",
+    "artifacts",
+    "files",
+    "checksums",
+    "signatures"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cardity.package.v1"
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        }
+      }
+    },
+    "format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "encoding", "hash"],
+      "properties": {
+        "version": {
+          "const": "v1"
+        },
+        "encoding": {
+          "const": "json+base64"
+        },
+        "hash": {
+          "const": "sha256"
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_sources",
+        "compiled_protocols",
+        "abis",
+        "agent_manifests",
+        "schemas",
+        "documentation"
+      ],
+      "properties": {
+        "protocol_sources": {
+          "$ref": "#/$defs/path_list"
+        },
+        "compiled_protocols": {
+          "$ref": "#/$defs/path_list"
+        },
+        "abis": {
+          "$ref": "#/$defs/path_list"
+        },
+        "agent_manifests": {
+          "$ref": "#/$defs/path_list"
+        },
+        "schemas": {
+          "$ref": "#/$defs/path_list"
+        },
+        "documentation": {
+          "$ref": "#/$defs/path_list"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "checksums": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_sha256"],
+      "properties": {
+        "files_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[^\\u0000]+$"
+    },
+    "path_list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "kind",
+        "media_type",
+        "size",
+        "sha256",
+        "content_b64"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "protocol_source",
+            "compiled_protocol",
+            "abi",
+            "agent_manifest",
+            "schema",
+            "documentation",
+            "json",
+            "file"
+          ]
+        },
+        "media_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "content_b64": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

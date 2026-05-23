@@ -91,6 +91,9 @@ Runtime, low-code platform, production write executor, or PMTSoul-specific DSL.
 | Runtime adapter validation | `node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json` |
 | Schema registry | `node bin/cardity.js schemas` |
 | Runtime compatibility registry | `node bin/cardity.js runtimes` |
+| Package protocol artifacts | `node bin/cardity.js pack dist -o protocol.carditypkg` |
+| Verify package | `node bin/cardity.js verify-package protocol.carditypkg` |
+| Unpack package | `node bin/cardity.js unpack protocol.carditypkg --out-dir unpacked` |
 | Verify schemas | `node scripts/verify_contract_schemas.js` |
 | Verify next-stage assets | `node scripts/verify_next_stage_assets.js` |
 

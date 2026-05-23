@@ -30,6 +30,7 @@ const schemas = [
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
   "schemas/manifest_visualization_v1.schema.json",
+  "schemas/package_v1.schema.json",
 ];
 
 const registry = readJson("schemas/registry.json");
@@ -125,6 +126,16 @@ for (const status of ["pass", "fail", "warn"]) {
 const visualizationSchema = readJson("schemas/manifest_visualization_v1.schema.json");
 for (const field of ["schema", "protocol", "summary", "nodes", "edges"]) {
   if (!visualizationSchema.required.includes(field)) fail(`manifest visualization schema missing required ${field}`);
+}
+
+const packageSchema = readJson("schemas/package_v1.schema.json");
+for (const field of ["schema", "package", "format", "files", "checksums"]) {
+  if (!packageSchema.required.includes(field)) fail(`package schema missing required ${field}`);
+}
+for (const kind of ["protocol_source", "compiled_protocol", "abi", "agent_manifest"]) {
+  if (!enumValues(packageSchema, "/$defs/file/properties/kind").includes(kind)) {
+    fail(`package schema missing file kind ${kind}`);
+  }
 }
 
 const runtimeAdapterSchema = readJson("schemas/runtime_adapter_contract_v1.schema.json");

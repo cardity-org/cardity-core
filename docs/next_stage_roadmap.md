@@ -73,7 +73,7 @@ Goal: manage protocol change over time.
 | Protocol Diff | `.car` and manifest diff with breaking-change classification. Initial CLI version is available. |
 | Migration Report | Human-readable migration advice. |
 | Schema Registry | Stable schema URLs and changelog. |
-| Package Format | `.carditypkg` layout for protocol distribution. |
+| Package Format | `.carditypkg` layout, schema, pack/unpack/verify CLI. Initial CLI version is available. |
 
 ## Milestone 5: Ecosystem
 

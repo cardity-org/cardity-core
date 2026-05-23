@@ -14,6 +14,7 @@ const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = requi
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
 const { runtimeRegistryResult } = require('./cardity_runtime_registry');
+const { packDirectory, unpackPackage, validatePackageFile } = require('./cardity_pack');
 
 function templatesPath() {
   return path.join(__dirname, '..', 'templates');
@@ -370,6 +371,82 @@ program
   });
 
 program
+  .command('pack <dir>')
+  .description('Create a portable .carditypkg from a protocol project or dist directory')
+  .option('-o, --output <file>', 'Output .carditypkg file')
+  .option('--name <name>', 'Override package name')
+  .option('--pkg-version <version>', 'Override package version')
+  .action((dir, options) => {
+    try {
+      const inputDir = path.resolve(dir);
+      const packageName = options.name || path.basename(inputDir);
+      const outputFile = options.output
+        ? path.resolve(options.output)
+        : path.resolve(process.cwd(), `${packageName}.carditypkg`);
+      const packageDocument = packDirectory(inputDir, outputFile, {
+        name: options.name,
+        version: options.pkgVersion
+      });
+      console.log(chalk.green(`✅ Created Cardity package: ${outputFile}`));
+      console.log(chalk.gray(`   ${packageDocument.package.name}@${packageDocument.package.version}`));
+      console.log(chalk.gray(`   files: ${packageDocument.files.length}`));
+      console.log(chalk.gray(`   sha256: ${packageDocument.checksums.files_sha256}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error packing Cardity package: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('unpack <file>')
+  .description('Unpack and verify a .carditypkg into a directory')
+  .requiredOption('--out-dir <dir>', 'Output directory')
+  .option('--force', 'Allow writing into a non-empty output directory')
+  .action((file, options) => {
+    try {
+      const packageDocument = unpackPackage(file, options.outDir, { force: options.force });
+      console.log(chalk.green(`✅ Unpacked Cardity package: ${path.resolve(options.outDir)}`));
+      console.log(chalk.gray(`   ${packageDocument.package.name}@${packageDocument.package.version}`));
+      console.log(chalk.gray(`   files: ${packageDocument.files.length}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error unpacking Cardity package: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('verify-package <file>')
+  .description('Verify .carditypkg metadata, file hashes, and package checksum')
+  .option('--json', 'Output machine-readable package metadata JSON')
+  .action((file, options) => {
+    try {
+      const packageDocument = validatePackageFile(file);
+      if (options.json) {
+        console.log(JSON.stringify({
+          schema: 'cardity.package_verification.v1',
+          ok: true,
+          package: packageDocument.package,
+          files: packageDocument.files.map((entry) => ({
+            path: entry.path,
+            kind: entry.kind,
+            size: entry.size,
+            sha256: entry.sha256
+          })),
+          checksums: packageDocument.checksums
+        }, null, 2));
+        return;
+      }
+      console.log(chalk.green(`✅ Cardity package verified: ${path.resolve(file)}`));
+      console.log(chalk.gray(`   ${packageDocument.package.name}@${packageDocument.package.version}`));
+      console.log(chalk.gray(`   files: ${packageDocument.files.length}`));
+      console.log(chalk.gray(`   sha256: ${packageDocument.checksums.files_sha256}`));
+    } catch (error) {
+      console.error(chalk.red(`❌ Error verifying Cardity package: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+program
   .command('visualize <file>')
   .description('Visualize a .car protocol or Agent OS manifest as a layered contract graph')
   .option('--json', 'Output machine-readable visualization JSON')
@@ -615,6 +692,8 @@ program
     console.log(chalk.gray('  cardity adapter runtime.json      # Validate runtime adapter compatibility\n'));
     console.log(chalk.gray('  cardity schemas                   # Show schema registry\n'));
     console.log(chalk.gray('  cardity runtimes                  # Show compatible runtime registry\n'));
+    console.log(chalk.gray('  cardity pack dist                 # Create a portable .carditypkg\n'));
+    console.log(chalk.gray('  cardity unpack app.carditypkg --out-dir out # Verify and unpack a package\n'));
     console.log(chalk.gray('  cardity visualize src/index.car  # Render a layered manifest graph\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));

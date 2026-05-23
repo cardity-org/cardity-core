@@ -340,6 +340,18 @@ curl https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg
 The hosted registry exposes the same schema files that local CLI, MCP, and CI
 checks consume.
 
+Create a portable Cardity package:
+
+```bash
+cardity pack /tmp/member_points -o member-points.carditypkg
+cardity verify-package member-points.carditypkg
+cardity unpack member-points.carditypkg --out-dir /tmp/member_points_unpacked
+```
+
+`.carditypkg` uses `cardity.package.v1` and bundles protocol source, compiled
+artifacts, ABI, Agent OS manifest, schemas, docs, and SHA-256 checksums for
+runtime installation or registry distribution.
+
 ## Local Development
 
 Requirements:

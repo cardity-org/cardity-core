@@ -37,6 +37,7 @@ schemas/registry.json
 | Protocol diff v1 | `https://api.cardity.org/schemas/protocol_diff_v1.schema.json` |
 | Manifest visualization v1 | `https://api.cardity.org/schemas/manifest_visualization_v1.schema.json` |
 | Diagnostics v1 | `https://api.cardity.org/schemas/diagnostics_v1.schema.json` |
+| Package v1 | `https://api.cardity.org/schemas/package_v1.schema.json` |
 
 The `$id` inside schemas remains under:
 
