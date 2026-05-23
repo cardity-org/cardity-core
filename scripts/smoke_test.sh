@@ -30,6 +30,8 @@ CONFORMANCE_JSON_OUT=/tmp/cardity_member_points_conformance.json
 PACKAGE_OUT=/tmp/cardity_member_points.carditypkg
 PACKAGE_VERIFY_OUT=/tmp/cardity_member_points_package_verify.json
 PACKAGE_UNPACK_DIR=/tmp/cardity_member_points_unpacked
+ECOSYSTEM_REGISTRY_OUT=/tmp/cardity_ecosystem_registry.json
+ECOSYSTEM_TEMPLATE_OUT=/tmp/cardity_ecosystem_registry_template.json
 
 cd "$ROOT"
 
@@ -77,6 +79,8 @@ node bin/cardity.js verify-package "$PACKAGE_OUT" --json > "$PACKAGE_VERIFY_OUT"
 node bin/cardity.js unpack "$PACKAGE_OUT" --out-dir "$PACKAGE_UNPACK_DIR" >/dev/null
 node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
+node bin/cardity.js registry --json > "$ECOSYSTEM_REGISTRY_OUT"
+node bin/cardity.js registry templates member_points --json > "$ECOSYSTEM_TEMPLATE_OUT"
 node --check src/cloudflare-worker.js >/tmp/cardity_worker_check_smoke.txt
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
@@ -91,6 +95,7 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"cardity_visualize_manifest","arguments":{"file":"examples/02_member_points_agent.car","format":"mermaid"}}}' \
   '{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"cardity_schema_registry","arguments":{"name":"runtime_adapter_contract_v1"}}}' \
   '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"cardity_runtime_compatibility","arguments":{"id":"pmtsoul-agent-os"}}}' \
+  '{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"cardity_ecosystem_registry","arguments":{"collection":"templates","id":"member_points"}}}' \
   | node bin/cardity_mcp_server.js > "$MCP_OUT"
 
 if node bin/cardity_agent.js compile --source-text 'protocol Bad { version: "1.0.0"; owner: "agent-os"; state { result: string = "ok"; } method get_balance(user: address) { state.balances[params.user] = state.balances[params.user]; } returns: string state.result; }' --out-dir /tmp/cardity_bad_agent_artifacts > "$BAD_AGENT_OUT" 2>&1; then
@@ -225,6 +230,18 @@ if ! grep -q '"schema": "cardity.package_verification.v1"' "$PACKAGE_VERIFY_OUT"
   exit 1
 fi
 
+if ! grep -q '"schema": "cardity.ecosystem_registry.v1"' "$ECOSYSTEM_REGISTRY_OUT" || ! grep -q '"member_points"' "$ECOSYSTEM_REGISTRY_OUT"; then
+  echo "Expected cardity registry to render the ecosystem registry"
+  cat "$ECOSYSTEM_REGISTRY_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.ecosystem_registry_entry.v1"' "$ECOSYSTEM_TEMPLATE_OUT" || ! grep -q '"Member Points"' "$ECOSYSTEM_TEMPLATE_OUT"; then
+  echo "Expected cardity registry templates member_points to render one template entry"
+  cat "$ECOSYSTEM_TEMPLATE_OUT"
+  exit 1
+fi
+
 if ! test -f "$PACKAGE_UNPACK_DIR/02_member_points_agent.agent.json"; then
   echo "Expected cardity unpack to restore the agent manifest"
   find "$PACKAGE_UNPACK_DIR" -maxdepth 2 -type f
@@ -305,6 +322,12 @@ fi
 
 if ! grep -q '"name":"cardity_runtime_compatibility"' "$MCP_OUT" || ! grep -q 'pmtsoul-agent-os' "$MCP_OUT"; then
   echo "Expected MCP server to expose and call cardity_runtime_compatibility"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_ecosystem_registry"' "$MCP_OUT" || ! grep -q 'cardity.ecosystem_registry_entry.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_ecosystem_registry"
   cat "$MCP_OUT"
   exit 1
 fi

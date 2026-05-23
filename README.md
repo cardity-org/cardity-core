@@ -332,12 +332,16 @@ cardity schemas
 cardity schemas projection_contract_v1_1
 cardity runtimes
 cardity runtimes pmtsoul-agent-os
+cardity registry
+cardity registry templates member_points
 curl https://api.cardity.org/schemas
 curl https://api.cardity.org/runtimes
+curl https://api.cardity.org/registry
 curl https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg
 ```
 
-The hosted registry exposes the same schema files that local CLI, MCP, and CI
+The hosted registries expose the same schema files, runtime compatibility
+entries, templates, badges, and package examples that local CLI, MCP, and CI
 checks consume.
 
 Create a portable Cardity package:
@@ -462,6 +466,7 @@ api.cardity.org/*
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
 - [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
 - [Schema registry](docs/schema_registry.md)
+- [Ecosystem registry](docs/cardity_registry.md)
 - [Runtime compatibility](docs/runtime_compatibility.md)
 - [Contract conformance](docs/conformance.md)
 - [Next-stage roadmap](docs/next_stage_roadmap.md)

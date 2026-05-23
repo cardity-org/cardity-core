@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/ecosystem_registry_v1.schema.json",
+  "title": "Cardity Ecosystem Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "base_url",
+    "source_repository",
+    "description",
+    "collections",
+    "templates",
+    "schemas",
+    "runtime_adapters",
+    "runtimes",
+    "badges",
+    "packages"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cardity.ecosystem_registry.v1"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "source_repository": {
+      "type": "string",
+      "format": "uri"
+    },
+    "description": {
+      "type": "string"
+    },
+    "collections": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    },
+    "schemas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    },
+    "runtime_adapters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    },
+    "runtimes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalog_item"
+      }
+    }
+  },
+  "$defs": {
+    "catalog_item": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

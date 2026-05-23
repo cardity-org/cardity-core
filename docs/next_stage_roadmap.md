@@ -81,7 +81,7 @@ Goal: make Cardity a standard surface for agent-generated systems.
 
 | Workstream | Deliverable |
 |---|---|
-| Registry | Templates, schemas, examples, runtime adapters, conformance badges. |
+| Registry | Templates, schemas, examples, runtime adapters, conformance badges. Initial static registry is available. |
 | Compatibility List | Runtimes that pass Cardity conformance. |
 | Community Templates | Reusable protocol packages. |
 | WASM Sandbox Runner | Browser/edge-safe validation and simulation subset. |

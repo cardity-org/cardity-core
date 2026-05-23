@@ -38,6 +38,7 @@ schemas/registry.json
 | Manifest visualization v1 | `https://api.cardity.org/schemas/manifest_visualization_v1.schema.json` |
 | Diagnostics v1 | `https://api.cardity.org/schemas/diagnostics_v1.schema.json` |
 | Package v1 | `https://api.cardity.org/schemas/package_v1.schema.json` |
+| Ecosystem registry v1 | `https://api.cardity.org/schemas/ecosystem_registry_v1.schema.json` |
 
 The `$id` inside schemas remains under:
 

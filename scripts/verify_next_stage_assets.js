@@ -24,6 +24,7 @@ for (const schemaPath of [
   "schemas/conformance_report_v1.schema.json",
   "schemas/manifest_visualization_v1.schema.json",
   "schemas/package_v1.schema.json",
+  "schemas/ecosystem_registry_v1.schema.json",
 ]) {
   const schema = readJson(schemaPath);
   if (!schema.$id?.startsWith("https://cardity.org/schemas/")) fail(`${schemaPath}: missing public $id`);
@@ -102,6 +103,29 @@ for (const field of ["schema", "package", "format", "files", "checksums"]) {
   if (!packageSchema.required.includes(field)) fail(`package schema missing required ${field}`);
 }
 
+const ecosystemRegistrySchema = readJson("schemas/ecosystem_registry_v1.schema.json");
+for (const field of ["schema", "collections", "templates", "schemas", "runtime_adapters", "runtimes", "badges", "packages"]) {
+  if (!ecosystemRegistrySchema.required.includes(field)) fail(`ecosystem registry schema missing required ${field}`);
+}
+
+const ecosystemRegistry = readJson("registry/catalog.json");
+if (ecosystemRegistry.schema !== "cardity.ecosystem_registry.v1") {
+  fail("ecosystem registry has wrong schema");
+}
+for (const collection of ["templates", "schemas", "runtime_adapters", "runtimes", "badges", "packages"]) {
+  if (!Array.isArray(ecosystemRegistry[collection])) fail(`ecosystem registry missing ${collection}`);
+  if (!ecosystemRegistry.collections?.[collection]) fail(`ecosystem registry missing collection URL for ${collection}`);
+}
+if (!ecosystemRegistry.templates.find((item) => item.id === "member_points")) {
+  fail("ecosystem registry missing member_points template");
+}
+if (!ecosystemRegistry.runtimes.find((item) => item.id === "pmtsoul-agent-os")) {
+  fail("ecosystem registry missing pmtsoul-agent-os runtime");
+}
+if (!ecosystemRegistry.packages.find((item) => item.schema === "cardity.package.v1")) {
+  fail("ecosystem registry missing cardity package example");
+}
+
 for (const prompt of [
   "prompts/cardity_protocol_author.md",
   "prompts/cardity_diagnostics_repair.md",
@@ -128,4 +152,4 @@ for (const name of templateNames) {
   if (!exists(`templates/${name}/README.md`)) fail(`${name}: README missing`);
 }
 
-console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 7 schema(s)`);
+console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 8 schema(s)`);

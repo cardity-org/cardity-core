@@ -65,6 +65,7 @@ npm run build
 | `cardity_validate_runtime_adapter` | Validate PMTSoul's runtime adapter compatibility declaration. |
 | `cardity_schema_registry` | Return stable Cardity schema URLs or schema documents. |
 | `cardity_runtime_compatibility` | Return PMTSoul's Cardity-compatible runtime registry entry. |
+| `cardity_ecosystem_registry` | Return templates, schema refs, runtime adapters, badges, and package examples. |
 
 Example `cardity_compile` arguments:
 
@@ -300,6 +301,14 @@ https://api.cardity.org/runtimes/pmtsoul-agent-os
 The entry records PMTSoul's current boundary: conformance gate enabled,
 Cardity metadata persisted, dry-run executor enabled, and production writes kept
 `dry_run_only`.
+
+PMTSoul can also consume the static ecosystem registry:
+
+```text
+https://api.cardity.org/registry
+https://api.cardity.org/registry/templates/member_points
+https://api.cardity.org/registry/packages/member-points-system
+```
 
 PMTSoul can embed the Cardity compatibility badge:
 

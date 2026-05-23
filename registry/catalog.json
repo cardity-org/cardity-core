@@ -1,0 +1,137 @@
+{
+  "schema": "cardity.ecosystem_registry.v1",
+  "version": "2026-05-24",
+  "base_url": "https://api.cardity.org/registry",
+  "source_repository": "https://github.com/cardity-org/cardity-core/tree/master/registry/catalog.json",
+  "description": "Static Cardity ecosystem registry for templates, schemas, runtime adapters, compatibility badges, and package examples.",
+  "collections": {
+    "templates": "https://api.cardity.org/registry/templates",
+    "schemas": "https://api.cardity.org/registry/schemas",
+    "runtime_adapters": "https://api.cardity.org/registry/runtime_adapters",
+    "runtimes": "https://api.cardity.org/registry/runtimes",
+    "badges": "https://api.cardity.org/registry/badges",
+    "packages": "https://api.cardity.org/registry/packages"
+  },
+  "templates": [
+    {
+      "id": "agent_tool_permission",
+      "title": "Agent Tool Permission",
+      "description": "Generic agent tool permission contract with low-risk query, confirmed write, and high-risk external action patterns.",
+      "tags": ["agent-tool", "permission", "risk", "confirmation"],
+      "source_url": "https://github.com/cardity-org/cardity-core/tree/master/templates/agent_tool_permission",
+      "init_command": "cardity init my-agent-tools --template agent_tool_permission"
+    },
+    {
+      "id": "member_points",
+      "title": "Member Points",
+      "description": "Membership points system with earn, spend, balance query, ledger, and admin adjustment actions.",
+      "tags": ["agent-business", "points", "ledger", "projection"],
+      "source_url": "https://github.com/cardity-org/cardity-core/tree/master/templates/member_points",
+      "init_command": "cardity init member-points --template member_points",
+      "package_command": "cardity pack dist --name member-points-system --pkg-version 1.0.0 -o member-points.carditypkg"
+    },
+    {
+      "id": "order_refund",
+      "title": "Order Refund",
+      "description": "Refund request protocol with dry-run friendly review, approval, rejection, and readback-ready events.",
+      "tags": ["agent-business", "refund", "permission", "readback"],
+      "source_url": "https://github.com/cardity-org/cardity-core/tree/master/templates/order_refund",
+      "init_command": "cardity init order-refund --template order_refund"
+    },
+    {
+      "id": "support_ticket",
+      "title": "Support Ticket",
+      "description": "Customer support ticket workflow with create, assign, reply, close, and list query actions.",
+      "tags": ["agent-business", "support", "workflow", "read-model"],
+      "source_url": "https://github.com/cardity-org/cardity-core/tree/master/templates/support_ticket",
+      "init_command": "cardity init support-ticket --template support_ticket"
+    }
+  ],
+  "schemas": [
+    {
+      "id": "agent_manifest_v1",
+      "contract": "cardity.agent_manifest.v1",
+      "url": "https://api.cardity.org/schemas/agent_manifest_v1.schema.json"
+    },
+    {
+      "id": "agent_action_contract_v1",
+      "contract": "agent_action_contract_v1",
+      "url": "https://api.cardity.org/schemas/agent_action_contract_v1.schema.json"
+    },
+    {
+      "id": "projection_contract_v1_1",
+      "contract": "projection_contract_v1_1",
+      "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json"
+    },
+    {
+      "id": "runtime_adapter_contract_v1",
+      "contract": "cardity.runtime_adapter_contract.v1",
+      "url": "https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json"
+    },
+    {
+      "id": "conformance_report_v1",
+      "contract": "cardity.conformance_report.v1",
+      "url": "https://api.cardity.org/schemas/conformance_report_v1.schema.json"
+    },
+    {
+      "id": "package_v1",
+      "contract": "cardity.package.v1",
+      "url": "https://api.cardity.org/schemas/package_v1.schema.json"
+    }
+  ],
+  "runtime_adapters": [
+    {
+      "id": "cardity-mock",
+      "name": "Cardity Mock Runtime Adapter",
+      "status": "partial",
+      "contract": "cardity.runtime_adapter_contract.v1",
+      "source_url": "https://github.com/cardity-org/cardity-core/blob/master/examples/runtime_adapter_cardity_mock.json"
+    },
+    {
+      "id": "pmtsoul-agent-os",
+      "name": "PMTSoul Agent OS",
+      "status": "passed",
+      "contract": "cardity.runtime_adapter_contract.v1",
+      "source_url": "https://github.com/cardity-org/cardity-core/blob/master/examples/runtime_adapter_pmtsoul_agent_os.json",
+      "runtime_url": "https://api.cardity.org/runtimes/pmtsoul-agent-os"
+    }
+  ],
+  "runtimes": [
+    {
+      "id": "pmtsoul-agent-os",
+      "name": "PMTSoul Agent OS",
+      "compatibility": "Cardity-compatible",
+      "conformance_status": "passed",
+      "production_write_policy": "dry_run_only",
+      "url": "https://api.cardity.org/runtimes/pmtsoul-agent-os",
+      "badge_svg_url": "https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg",
+      "badge_json_url": "https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.json"
+    }
+  ],
+  "badges": [
+    {
+      "id": "pmtsoul-agent-os",
+      "label": "Cardity-compatible",
+      "message": "dry_run_only",
+      "svg_url": "https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg",
+      "target_url": "https://api.cardity.org/runtimes/pmtsoul-agent-os",
+      "markdown": "[![Cardity-compatible](https://api.cardity.org/runtimes/pmtsoul-agent-os/badge.svg)](https://api.cardity.org/runtimes/pmtsoul-agent-os)"
+    }
+  ],
+  "packages": [
+    {
+      "id": "member-points-system",
+      "title": "Member Points System Package Example",
+      "schema": "cardity.package.v1",
+      "source_template": "member_points",
+      "package_schema_url": "https://api.cardity.org/schemas/package_v1.schema.json",
+      "build_steps": [
+        "cardity init member-points --template member_points",
+        "cd member-points",
+        "cardity_agent compile src/protocol.car --out-dir dist --include-manifest --include-protocol --include-abi",
+        "cardity pack dist --name member-points-system --pkg-version 1.0.0 -o member-points.carditypkg",
+        "cardity verify-package member-points.carditypkg"
+      ]
+    }
+  ]
+}

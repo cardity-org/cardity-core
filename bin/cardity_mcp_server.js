@@ -13,6 +13,7 @@ const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = requi
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
 const { runtimeRegistryResult } = require('./cardity_runtime_registry');
+const { registryResult } = require('./cardity_registry');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -196,6 +197,18 @@ const TOOLS = [
       type: 'object',
       properties: {
         id: { type: 'string', description: 'Optional runtime id or name, for example pmtsoul-agent-os.' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_ecosystem_registry',
+    description: 'Return the Cardity ecosystem registry or one collection/entry.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        collection: { type: 'string', description: 'Optional collection: templates, schemas, runtime_adapters, runtimes, badges, or packages.' },
+        id: { type: 'string', description: 'Optional entry id/name/contract within the collection.' }
       },
       required: []
     }
@@ -473,6 +486,10 @@ function runtimes(args) {
   return runtimeRegistryResult(args.id || args.name);
 }
 
+function ecosystemRegistry(args) {
+  return registryResult(args.collection, args.id || args.name || args.contract);
+}
+
 function visualize(args) {
   const manifestPayload = manifestFromArgs(args);
   const visualization = buildVisualization(manifestPayload);
@@ -556,6 +573,8 @@ async function handle(request) {
           success(request.id, toolResult(schemas(args)));
         } else if (params.name === 'cardity_runtime_compatibility') {
           success(request.id, toolResult(runtimes(args)));
+        } else if (params.name === 'cardity_ecosystem_registry') {
+          success(request.id, toolResult(ecosystemRegistry(args)));
         } else if (params.name === 'cardity_visualize_manifest') {
           success(request.id, toolResult(visualize(args)));
         } else {

@@ -25,6 +25,8 @@ Cardity release.
 | Protocol diff v1 | `schemas/protocol_diff_v1.schema.json` |
 | Conformance report v1 | `schemas/conformance_report_v1.schema.json` |
 | Manifest visualization v1 | `schemas/manifest_visualization_v1.schema.json` |
+| Package v1 | `schemas/package_v1.schema.json` |
+| Ecosystem registry v1 | `schemas/ecosystem_registry_v1.schema.json` |
 
 Hosted registry:
 

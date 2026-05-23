@@ -46,6 +46,8 @@ const SCHEMA_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/ca
 const RUNTIME_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/registry";
 const SCHEMA_FILE_RE = /^[A-Za-z0-9_]+(?:\.schema)?\.json$/;
 const RUNTIME_ID_RE = /^[A-Za-z0-9_-]+$/;
+const REGISTRY_COLLECTION_RE = /^[A-Za-z0-9_]+$/;
+const REGISTRY_ENTRY_RE = /^[A-Za-z0-9_.:-]+$/;
 
 async function fetchSchemaFile(file) {
   if (!SCHEMA_FILE_RE.test(file)) {
@@ -96,6 +98,67 @@ async function fetchRuntimeEntry(id) {
   return jsonDocument({ schema: "cardity.runtime_compatibility_entry.v1", runtime }, 200, {
     "content-type": "application/json; charset=utf-8",
     "x-cardity-runtime-id": runtime.id
+  });
+}
+
+async function ecosystemRegistryPayload() {
+  const response = await fetch(`${RUNTIME_REGISTRY_SOURCE}/catalog.json`, {
+    headers: { accept: "application/json" },
+    cf: { cacheTtl: 300, cacheEverything: true }
+  });
+  if (!response.ok) throw new Error("Ecosystem registry not found.");
+  return response.json();
+}
+
+async function fetchEcosystemRegistry() {
+  const payload = await ecosystemRegistryPayload();
+  return jsonDocument(payload, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-ecosystem-registry-source": `${RUNTIME_REGISTRY_SOURCE}/catalog.json`
+  });
+}
+
+async function fetchEcosystemRegistryCollection(collection) {
+  if (!REGISTRY_COLLECTION_RE.test(collection)) {
+    return json({ ok: false, error: { message: "Invalid registry collection." } }, 400);
+  }
+  const catalog = await ecosystemRegistryPayload();
+  const items = catalog[collection];
+  if (!Array.isArray(items)) {
+    return json({ ok: false, error: { message: `Registry collection not found: ${collection}` } }, 404);
+  }
+  return jsonDocument({
+    schema: "cardity.ecosystem_registry_collection.v1",
+    collection,
+    count: items.length,
+    items
+  }, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-registry-collection": collection
+  });
+}
+
+async function fetchEcosystemRegistryEntry(collection, id) {
+  if (!REGISTRY_COLLECTION_RE.test(collection) || !REGISTRY_ENTRY_RE.test(id)) {
+    return json({ ok: false, error: { message: "Invalid registry entry." } }, 400);
+  }
+  const catalog = await ecosystemRegistryPayload();
+  const items = catalog[collection];
+  if (!Array.isArray(items)) {
+    return json({ ok: false, error: { message: `Registry collection not found: ${collection}` } }, 404);
+  }
+  const item = items.find((entry) => entry.id === id || entry.name === id || entry.title === id || entry.contract === id);
+  if (!item) {
+    return json({ ok: false, error: { message: `Registry entry not found: ${collection}/${id}` } }, 404);
+  }
+  return jsonDocument({
+    schema: "cardity.ecosystem_registry_entry.v1",
+    collection,
+    item
+  }, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-registry-collection": collection,
+    "x-cardity-registry-entry": id
   });
 }
 
@@ -1800,6 +1863,11 @@ function mcpTools() {
         inputSchema: { type: "object", properties: { id: { type: "string" } }, required: [] }
       },
       {
+        name: "cardity_ecosystem_registry",
+        description: "Return the Cardity ecosystem registry or one collection/entry.",
+        inputSchema: { type: "object", properties: { collection: { type: "string" }, id: { type: "string" } }, required: [] }
+      },
+      {
         name: "cardity_visualize_manifest",
         description: "Visualize Cardity source text or an Agent OS manifest as a layered Mermaid contract graph.",
         inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json", "mermaid"], default: "markdown" } }, required: [] }
@@ -1861,6 +1929,15 @@ async function handleMcp(body) {
     }
     if (params.name === "cardity_runtime_compatibility") {
       const response = args.id || args.name ? await fetchRuntimeEntry(args.id || args.name) : await fetchRuntimeRegistry();
+      const payload = await response.json();
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
+    }
+    if (params.name === "cardity_ecosystem_registry") {
+      const response = args.collection
+        ? args.id || args.name || args.contract
+          ? await fetchEcosystemRegistryEntry(args.collection, args.id || args.name || args.contract)
+          : await fetchEcosystemRegistryCollection(args.collection)
+        : await fetchEcosystemRegistry();
       const payload = await response.json();
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
     }
@@ -1956,6 +2033,17 @@ export default {
     }
     if ((url.pathname === "/runtimes" || url.pathname === "/runtimes/registry.json") && request.method === "GET") {
       return fetchRuntimeRegistry();
+    }
+    if ((url.pathname === "/registry" || url.pathname === "/registry/catalog.json") && request.method === "GET") {
+      return fetchEcosystemRegistry();
+    }
+    {
+      const registryMatch = url.pathname.match(/^\/registry\/([^/]+)(?:\/([^/]+))?$/);
+      if (registryMatch && request.method === "GET") {
+        return registryMatch[2]
+          ? fetchEcosystemRegistryEntry(registryMatch[1], registryMatch[2].replace(/\.json$/, ""))
+          : fetchEcosystemRegistryCollection(registryMatch[1].replace(/\.json$/, ""));
+      }
     }
     {
       const badgeMatch = url.pathname.match(/^\/runtimes\/([^/]+)\/badge\.(json|svg)$/);

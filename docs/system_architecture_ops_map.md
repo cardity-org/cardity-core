@@ -91,6 +91,7 @@ Runtime, low-code platform, production write executor, or PMTSoul-specific DSL.
 | Runtime adapter validation | `node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json` |
 | Schema registry | `node bin/cardity.js schemas` |
 | Runtime compatibility registry | `node bin/cardity.js runtimes` |
+| Ecosystem registry | `node bin/cardity.js registry templates member_points` |
 | Package protocol artifacts | `node bin/cardity.js pack dist -o protocol.carditypkg` |
 | Verify package | `node bin/cardity.js verify-package protocol.carditypkg` |
 | Unpack package | `node bin/cardity.js unpack protocol.carditypkg --out-dir unpacked` |
@@ -110,6 +111,9 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 | `GET /runtimes/<id>` | Runtime compatibility entry. |
 | `GET /runtimes/<id>/badge.json` | Runtime compatibility badge payload. |
 | `GET /runtimes/<id>/badge.svg` | Runtime compatibility badge image. |
+| `GET /registry` | Ecosystem registry catalog. |
+| `GET /registry/<collection>` | Ecosystem registry collection. |
+| `GET /registry/<collection>/<id>` | Ecosystem registry entry. |
 | `GET /playground` | Browser playground for source, manifest, graph, review, and conformance output. |
 | `GET /edge-health` | Worker edge health. |
 | `GET /health` | Container health through fallback path. |
@@ -141,6 +145,7 @@ Hosted MCP tools:
 | `cardity_validate_runtime_adapter` | Validate runtime adapter compatibility declaration. |
 | `cardity_schema_registry` | Return registry entries or schema documents. |
 | `cardity_runtime_compatibility` | Return Cardity-compatible runtimes. |
+| `cardity_ecosystem_registry` | Return templates, schemas, adapters, badges, and package examples. |
 
 Local stdio MCP entry:
 
@@ -233,6 +238,7 @@ contract source, not an execution runtime. Key docs:
 | `docs/projection_contract_v1_1.md` | Read-model projection contract. |
 | `docs/runtime_adapter_contract_v1.md` | Runtime compatibility declaration. |
 | `docs/schema_registry.md` | Stable schema URLs. |
+| `docs/cardity_registry.md` | Static ecosystem registry URLs and usage. |
 | `docs/runtime_compatibility.md` | Compatible runtime list and boundary. |
 | `docs/conformance.md` | Compatibility checks. |
 | `docs/next_stage_roadmap.md` | Product/technical roadmap. |

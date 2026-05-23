@@ -53,6 +53,9 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 | `GET /runtimes/<id>` | Return one compatible runtime entry. |
 | `GET /runtimes/<id>/badge.json` | Return one runtime compatibility badge payload. |
 | `GET /runtimes/<id>/badge.svg` | Return one runtime compatibility badge SVG. |
+| `GET /registry` | Return the Cardity ecosystem registry. |
+| `GET /registry/<collection>` | Return one ecosystem registry collection. |
+| `GET /registry/<collection>/<id>` | Return one ecosystem registry entry. |
 | `GET /playground` | Browser playground for `.car` editing, manifest generation, graph visualization, review, and conformance. |
 | `GET /health` | Health check. |
 | `POST /v1/compile` | Compile Cardity source into protocol JSON, ABI, CARC, and Agent OS manifest. |
@@ -136,6 +139,7 @@ The `/mcp` endpoint supports:
 - `tools/call` with `cardity_validate_runtime_adapter`
 - `tools/call` with `cardity_schema_registry`
 - `tools/call` with `cardity_runtime_compatibility`
+- `tools/call` with `cardity_ecosystem_registry`
 
 `cardity_generation_guide` should be the first call for agents that generate a
 protocol from natural language. It tells the model to keep `state` scalar and to

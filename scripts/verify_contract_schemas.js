@@ -31,6 +31,7 @@ const schemas = [
   "schemas/conformance_report_v1.schema.json",
   "schemas/manifest_visualization_v1.schema.json",
   "schemas/package_v1.schema.json",
+  "schemas/ecosystem_registry_v1.schema.json",
 ];
 
 const registry = readJson("schemas/registry.json");
@@ -136,6 +137,11 @@ for (const kind of ["protocol_source", "compiled_protocol", "abi", "agent_manife
   if (!enumValues(packageSchema, "/$defs/file/properties/kind").includes(kind)) {
     fail(`package schema missing file kind ${kind}`);
   }
+}
+
+const ecosystemRegistrySchema = readJson("schemas/ecosystem_registry_v1.schema.json");
+for (const field of ["schema", "collections", "templates", "schemas", "runtime_adapters", "runtimes", "badges", "packages"]) {
+  if (!ecosystemRegistrySchema.required.includes(field)) fail(`ecosystem registry schema missing required ${field}`);
 }
 
 const runtimeAdapterSchema = readJson("schemas/runtime_adapter_contract_v1.schema.json");

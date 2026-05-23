@@ -104,6 +104,16 @@
       "url": "https://api.cardity.org/schemas/package_v1.schema.json",
       "title": "Cardity Package v1",
       "status": "alpha"
+    },
+    {
+      "name": "ecosystem_registry_v1",
+      "contract": "cardity.ecosystem_registry.v1",
+      "version": "v1",
+      "file": "ecosystem_registry_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/ecosystem_registry_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/ecosystem_registry_v1.schema.json",
+      "title": "Cardity Ecosystem Registry v1",
+      "status": "alpha"
     }
   ]
 }
