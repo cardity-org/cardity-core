@@ -18,6 +18,8 @@ BAD_AGENT_OUT=/tmp/cardity_bad_agent_result.json
 INIT_OUT=/tmp/cardity_init_template_project
 EXPLAIN_OUT=/tmp/cardity_counter_explain.md
 EXPLAIN_JSON_OUT=/tmp/cardity_counter_explain.json
+REVIEW_OUT=/tmp/cardity_member_points_review.md
+REVIEW_JSON_OUT=/tmp/cardity_member_points_review.json
 
 cd "$ROOT"
 
@@ -47,6 +49,8 @@ test -f "$INIT_OUT/src/protocol.car"
 test -f "$INIT_OUT/cardity.json"
 node bin/cardity.js explain examples/01_counter.car --diagram > "$EXPLAIN_OUT"
 node bin/cardity.js explain "$MANIFEST_OUT" --json > "$EXPLAIN_JSON_OUT"
+node bin/cardity.js review examples/02_member_points_agent.car > "$REVIEW_OUT"
+node bin/cardity.js review "$MEMBER_MANIFEST_OUT" --json > "$REVIEW_JSON_OUT"
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
@@ -130,6 +134,18 @@ fi
 if ! grep -q '"schema": "cardity.explain_result.v1"' "$EXPLAIN_JSON_OUT"; then
   echo "Expected cardity explain --json to render explain result schema"
   cat "$EXPLAIN_JSON_OUT"
+  exit 1
+fi
+
+if ! grep -q '# MemberPointsSystem Security Review' "$REVIEW_OUT"; then
+  echo "Expected cardity review to render Markdown security review"
+  cat "$REVIEW_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.security_review.v1"' "$REVIEW_JSON_OUT"; then
+  echo "Expected cardity review --json to render security review result schema"
+  cat "$REVIEW_JSON_OUT"
   exit 1
 fi
 

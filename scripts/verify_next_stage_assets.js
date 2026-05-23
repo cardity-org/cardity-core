@@ -19,6 +19,7 @@ function exists(relativePath) {
 for (const schemaPath of [
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
+  "schemas/security_review_v1.schema.json",
 ]) {
   const schema = readJson(schemaPath);
   if (!schema.$id?.startsWith("https://cardity.org/schemas/")) fail(`${schemaPath}: missing public $id`);
@@ -47,6 +48,11 @@ for (const field of [
   }
 }
 
+const securityReview = readJson("schemas/security_review_v1.schema.json");
+for (const field of ["schema", "protocol", "ok", "summary", "findings"]) {
+  if (!securityReview.required.includes(field)) fail(`security review schema missing required ${field}`);
+}
+
 for (const prompt of [
   "prompts/cardity_protocol_author.md",
   "prompts/cardity_diagnostics_repair.md",
@@ -73,4 +79,4 @@ for (const name of templateNames) {
   if (!exists(`templates/${name}/README.md`)) fail(`${name}: README missing`);
 }
 
-console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 2 schema(s)`);
+console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 3 schema(s)`);

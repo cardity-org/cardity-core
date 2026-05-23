@@ -19,6 +19,7 @@ Cardity release.
 | Projection contract v1.1 | `schemas/projection_contract_v1_1.schema.json` |
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
+| Security review v1 | `schemas/security_review_v1.schema.json` |
 
 ## Reference Examples
 
@@ -53,6 +54,7 @@ node scripts/verify_agent_manifest_contract.js examples/03_merchant_erp_projecti
 node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
+node bin/cardity.js review examples/02_member_points_agent.car
 ```
 
 ## Runtime Boundary

@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const { spawnSync } = require('child_process');
+const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 
 function templatesPath() {
   return path.join(__dirname, '..', 'templates');
@@ -425,6 +426,31 @@ program
     }
   });
 
+program
+  .command('review <file>')
+  .description('Review a .car protocol or Agent OS manifest for action/projection safety')
+  .option('--json', 'Output machine-readable security review JSON')
+  .option('-o, --output <file>', 'Write review to a file')
+  .action((file, options) => {
+    try {
+      const manifest = loadManifestFromFile(file);
+      const review = reviewManifest(manifest);
+      const output = options.json
+        ? `${JSON.stringify(review, null, 2)}\n`
+        : renderReviewMarkdown(review);
+
+      if (options.output) {
+        fs.ensureDirSync(path.dirname(path.resolve(options.output)));
+        fs.writeFileSync(options.output, output, 'utf8');
+      } else {
+        process.stdout.write(output);
+      }
+    } catch (error) {
+      console.error(chalk.red(`❌ Error reviewing ${file}: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
 // 部署命令
 program
   .command('deploy <file>')
@@ -637,6 +663,7 @@ program
     console.log(chalk.gray('  cardity abi src/index.car        # Generate ABI'));
     console.log(chalk.gray('  cardity manifest src/index.car   # Generate Agent OS manifest\n'));
     console.log(chalk.gray('  cardity explain src/index.car    # Explain manifest/action/database contract\n'));
+    console.log(chalk.gray('  cardity review src/index.car     # Review action/projection safety\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));
     console.log(chalk.gray('  cardity drc20 compile token.car  # Compile token'));

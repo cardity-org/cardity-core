@@ -26,6 +26,7 @@ const schemas = [
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
+  "schemas/security_review_v1.schema.json",
 ];
 
 for (const schemaPath of schemas) {
@@ -71,6 +72,16 @@ for (const op of ["insert", "upsert_delta", "upsert_snapshot", "delete", "soft_d
 for (const source of ["event", "confirmed_readback"]) {
   if (!enumValues(projectionSchema, "/$defs/projection/properties/source").includes(source)) {
     fail(`projection schema missing source ${source}`);
+  }
+}
+
+const securityReviewSchema = readJson("schemas/security_review_v1.schema.json");
+for (const field of ["schema", "protocol", "ok", "summary", "findings"]) {
+  if (!securityReviewSchema.required.includes(field)) fail(`security review schema missing required ${field}`);
+}
+for (const severity of ["error", "warning", "info"]) {
+  if (!enumValues(securityReviewSchema, "/properties/findings/items/properties/severity").includes(severity)) {
+    fail(`security review schema missing severity ${severity}`);
   }
 }
 

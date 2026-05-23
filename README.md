@@ -260,6 +260,18 @@ cardity explain dist/protocol.agent.json --json
 summary covering methods, actions, permissions, API routes, database contracts,
 events, workflows, and an optional Mermaid contract graph.
 
+Review action and projection safety:
+
+```bash
+cardity review examples/02_member_points_agent.car
+cardity review dist/protocol.agent.json --json
+```
+
+`cardity review` emits a security review for generic agent-action and projection
+contracts: confirmation, permissions, dry-run/readback, idempotency, replay
+policy, event runtime fields, read-model keys, query targets, and external
+service boundaries.
+
 ## Local Development
 
 Requirements:

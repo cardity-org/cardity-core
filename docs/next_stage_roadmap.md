@@ -51,7 +51,7 @@ Goal: make LLM-generated Cardity easier to repair and review.
 |---|---|
 | Diagnostics v1 | Stable `error_code`, `repair_hint`, `llm_repair_prompt`, and patch suggestion fields. |
 | Prompt Pack | Author, reviewer, repair, projection, and security prompts. |
-| Security Review v1 | Manifest risk report for permissions, readback, idempotency, and projections. |
+| Security Review v1 | Manifest risk report for permissions, readback, idempotency, and projections. Initial CLI version is available. |
 
 ## Milestone 3: Runtime Compatibility
 
@@ -96,7 +96,8 @@ The first implementation batch is intentionally small:
 - runtime adapter contract v1 schema;
 - local verification for those assets;
 - `cardity init --template`;
-- `cardity explain` Markdown/JSON summaries with optional Mermaid graph.
+- `cardity explain` Markdown/JSON summaries with optional Mermaid graph;
+- `cardity review` security reports for action/projection safety.
 
 This creates a firm foundation for Playground, Repair Loop, and Conformance
 Suite work without moving Cardity into runtime execution.
