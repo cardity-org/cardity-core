@@ -728,6 +728,104 @@ function reviewManifest(manifest) {
   return { schema: "cardity.security_review.v1", protocol: manifest.protocol || {}, ok: summary.errors === 0, summary, findings };
 }
 
+function collectStrings(value, out = []) {
+  if (typeof value === "string") {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStrings(item, out);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectStrings(item, out);
+  }
+  return out;
+}
+
+function eventReferences(value) {
+  const refs = new Set();
+  for (const text of collectStrings(value)) {
+    for (const match of text.matchAll(/\$event\.([A-Za-z_][A-Za-z0-9_]*)/g)) refs.add(match[1]);
+  }
+  return [...refs];
+}
+
+function runConformance(manifest, options = {}) {
+  const checks = [];
+  const system = manifest.system || {};
+  const database = system.database || {};
+  const actions = asArray(system.ui?.actions);
+  const runtimeAdapter = options.runtimeAdapter || null;
+  const check = (id, category, condition, message, location, recommendation, warnOnly = false) => {
+    checks.push({ id, category, status: condition ? "pass" : (warnOnly ? "warn" : "fail"), message, location, recommendation });
+  };
+
+  check("manifest.schema", "manifest", manifest.schema === "cardity.agent_manifest.v1", "Manifest uses cardity.agent_manifest.v1.", "schema", "Emit schema: cardity.agent_manifest.v1.");
+  for (const field of ["protocol", "events", "methods", "permissions", "system", "agent"]) check(`manifest.required.${field}`, "manifest", field in manifest, `Manifest includes top-level ${field}.`, field, `Add top-level ${field}.`);
+  for (const field of ["api", "database", "ui", "workflows", "modules", "external"]) check(`system.required.${field}`, "manifest", field in system, `Manifest includes system.${field}.`, `system.${field}`, `Add system.${field}.`);
+  check("action.list.present", "action", actions.length > 0, "Manifest exposes at least one agent action.", "system.ui.actions", "Emit system.ui.actions from methods/tools.");
+
+  const requiredActionFields = ["kind", "intent_names", "intent_examples", "disambiguation_keys", "required_context", "input_schema", "permission", "confirm_required", "dry_run_supported", "readback_required", "readback_query", "idempotency_key", "risk_level", "side_effects", "audit_event", "replay_policy"];
+  for (const action of actions) {
+    const name = action.name || "unnamed";
+    const location = `system.ui.actions.${name}`;
+    for (const field of requiredActionFields) check(`action.${name}.field.${field}`, "action", field in action, `Action ${name} declares ${field}.`, `${location}.${field}`, `Add ${field} to the action contract.`);
+    check(`action.${name}.kind`, "action", ["query", "command", "external_navigation"].includes(action.kind), `Action ${name} uses a valid kind.`, `${location}.kind`, "Use action.kind query, command, or external_navigation.");
+    check(`action.${name}.intent_names`, "action", Array.isArray(action.intent_names) && action.intent_names.length > 0, `Action ${name} has planner intent names.`, `${location}.intent_names`, "Add one or more intent_names.");
+    check(`action.${name}.output`, "action", Boolean(action.output_schema || action.returns_read_model), `Action ${name} declares output_schema or returns_read_model.`, `${location}.output_schema`, "Add output_schema or returns_read_model.");
+  }
+
+  check("runtime.modules.intent_names", "planner", asArray(system.modules).every((module) => Array.isArray(module.intent_names) && module.intent_names.length > 0), "Every module declares intent_names.", "system.modules", "Add system.modules[].intent_names.");
+  check("external.boundary", "external", Array.isArray(system.external?.navigation) && Array.isArray(system.external?.services), "External navigation/services boundaries are explicit.", "system.external", "Emit system.external.navigation and system.external.services arrays.");
+
+  const eventsByName = new Map(asArray(manifest.events).map((event) => [event.name, event]));
+  for (const projection of asArray(database.projections)) {
+    const name = projection.name || "unnamed";
+    const location = `system.database.projections.${name}`;
+    const event = projection.on && eventsByName.get(projection.on.event);
+    check(`projection.${name}.event`, "projection", Boolean(event), `Projection ${name} references a known event.`, `${location}.on.event`, "Set projection.on.event to an emitted event.");
+    const eventFields = new Set([...itemNames(event?.params), ...itemNames(event?.runtime_fields)]);
+    for (const ref of eventReferences(projection)) check(`projection.${name}.event_ref.${ref}`, "projection", eventFields.has(ref), `Projection ${name} declares $event.${ref}.`, location, `Add ${ref} to trigger event params or runtime_fields.`);
+    for (const field of ["source_id", "source_run_id", "projection_version", "write_index"]) check(`projection.${name}.idempotency.${field}`, "projection", Boolean(projection.idempotency?.[field]), `Projection ${name} has idempotency.${field}.`, `${location}.idempotency.${field}`, `Add idempotency.${field}.`);
+  }
+
+  for (const readModel of asArray(database.read_models)) {
+    const name = readModel.name || "unnamed";
+    check(`read_model.${name}.primary_key`, "projection", asArray(readModel.primary_key).length > 0, `Read model ${name} declares a primary key.`, `system.database.read_models.${name}.primary_key`, "Emit read_models[].primary_key.");
+    check(`read_model.${name}.columns`, "projection", asArray(readModel.columns).length > 0, `Read model ${name} declares columns.`, `system.database.read_models.${name}.columns`, "Emit read_models[].columns.", true);
+  }
+
+  const securityReview = reviewManifest(manifest);
+  check("security.review.errors", "security", securityReview.summary.errors === 0, "Security review has no error findings.", "security_review.findings", "Fix error findings from cardity review.");
+  check("security.review.warnings", "security", securityReview.summary.warnings === 0, "Security review has no warning findings.", "security_review.findings", "Review warning findings from cardity review.", true);
+
+  if (runtimeAdapter) {
+    check("runtime_adapter.schema", "runtime_adapter", runtimeAdapter.schema === "cardity.runtime_adapter_contract.v1", "Runtime adapter uses cardity.runtime_adapter_contract.v1.", "runtime_adapter.schema", "Emit schema: cardity.runtime_adapter_contract.v1.");
+    check("runtime_adapter.manifest_version", "runtime_adapter", asArray(runtimeAdapter.supported_manifest_versions).includes(manifest.schema), "Runtime adapter supports this manifest version.", "runtime_adapter.supported_manifest_versions", `Add ${manifest.schema} to supported_manifest_versions.`);
+    for (const capability of ["register_actions", "permission_gate", "dry_run_executor", "write_executor", "readback_executor", "audit_sink", "replay_guard"]) {
+      check(`runtime_adapter.capability.${capability}`, "runtime_adapter", Boolean(runtimeAdapter.capabilities?.[capability]), `Runtime adapter supports ${capability}.`, `runtime_adapter.capabilities.${capability}`, `Set capabilities.${capability}=true or declare partial compatibility.`, capability === "write_executor");
+    }
+  }
+
+  const summary = {
+    total: checks.length,
+    passed: checks.filter((item) => item.status === "pass").length,
+    failed: checks.filter((item) => item.status === "fail").length,
+    warnings: checks.filter((item) => item.status === "warn").length
+  };
+  return { schema: "cardity.conformance_report.v1", target: { protocol: protocolName(manifest.protocol), manifest_schema: manifest.schema || null, runtime_adapter: runtimeAdapter?.runtime || null }, ok: summary.failed === 0, summary, checks, security_review: securityReview };
+}
+
+function renderConformanceMarkdown(report) {
+  const rows = report.checks.filter((check) => check.status !== "pass").map((check) => [check.status, check.category, check.message, check.location, check.recommendation]);
+  return [
+    `# ${report.target.protocol} Conformance Report`,
+    "",
+    `Status: ${report.ok ? "pass" : "fail"}`,
+    "",
+    markdownTable(["Result", "Count"], [["passed", report.summary.passed], ["failed", report.summary.failed], ["warnings", report.summary.warnings]]),
+    "",
+    rows.length ? markdownTable(["Status", "Category", "Check", "Location", "Recommendation"], rows) : markdownTable(["Status", "Category", "Check", "Location", "Recommendation"], [["pass", "all", "All checks passed.", "-", "-"]])
+  ].join("\n") + "\n";
+}
+
 function renderReviewMarkdown(review) {
   if (!review.findings.length) return `# ${protocolName(review.protocol)} Security Review\n\nStatus: pass\n\nNo findings.\n`;
   return [
@@ -853,6 +951,11 @@ function mcpTools() {
         name: "cardity_diff",
         description: "Compare two Cardity source texts or Agent OS manifests for breaking contract changes.",
         inputSchema: { type: "object", properties: { old_source_text: { type: "string" }, new_source_text: { type: "string" }, old_manifest: { type: "object" }, new_manifest: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
+      },
+      {
+        name: "cardity_conformance",
+        description: "Run Cardity conformance checks for a manifest and optional runtime adapter declaration.",
+        inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, runtime_adapter: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
       }
     ]
   };
@@ -892,6 +995,11 @@ async function handleMcp(body) {
       const output = args.format === "json" ? diff : renderDiffMarkdown(diff);
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.protocol_diff_tool_result.v1", ok: diff.compatible, format: args.format || "markdown", diff, output }, null, 2) }] } };
     }
+    if (params.name === "cardity_conformance") {
+      const report = runConformance(manifestFromInput(args), { runtimeAdapter: args.runtime_adapter || null });
+      const output = args.format === "json" ? report : renderConformanceMarkdown(report);
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.conformance_tool_result.v1", ok: report.ok, format: args.format || "markdown", report, output }, null, 2) }] } };
+    }
     return { jsonrpc: "2.0", id: body.id, error: { code: -32602, message: `Unknown tool: ${params.name}` } };
   }
   return { jsonrpc: "2.0", id: body.id || null, error: { code: -32601, message: `Method not found: ${body.method}` } };
@@ -923,6 +1031,10 @@ async function edgeApi(request) {
   if (url.pathname === "/v1/diff") {
     const diff = diffManifest(manifestFromInput(body, "old_"), manifestFromInput(body, "new_"));
     return json({ schema: "cardity.protocol_diff_tool_result.v1", ok: diff.compatible, diff, output: body.format === "json" ? diff : renderDiffMarkdown(diff) });
+  }
+  if (url.pathname === "/v1/conformance") {
+    const report = runConformance(manifestFromInput(body), { runtimeAdapter: body.runtime_adapter || null });
+    return json({ schema: "cardity.conformance_tool_result.v1", ok: report.ok, report, output: body.format === "json" ? report : renderConformanceMarkdown(report) });
   }
   if (url.pathname === "/v1/abi") {
     const payload = compile(body.source_text, { include_abi: true, include_manifest: false });

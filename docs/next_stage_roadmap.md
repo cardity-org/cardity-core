@@ -60,8 +60,8 @@ Goal: let downstream runtimes declare Cardity compatibility.
 | Workstream | Deliverable |
 |---|---|
 | Runtime Adapter Contract v1 | Runtime capability declaration schema. |
-| Conformance Suite | Manifest/action/projection/runtime adapter checks. |
-| Mock Runtime Adapter | Minimal reference adapter declaration and report. |
+| Conformance Suite | Manifest/action/projection/runtime adapter checks. Initial CLI/MCP version is available. |
+| Mock Runtime Adapter | Minimal reference adapter declaration and conformance report input. |
 | PMTSoul Adapter Declaration | PMTSoul compatibility declaration against the contract. |
 
 ## Milestone 4: Production Evolution

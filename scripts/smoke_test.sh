@@ -23,6 +23,8 @@ REVIEW_JSON_OUT=/tmp/cardity_member_points_review.json
 DIFF_NEW_MANIFEST_OUT=/tmp/cardity_member_points_changed.agent.json
 DIFF_OUT=/tmp/cardity_member_points_diff.md
 DIFF_JSON_OUT=/tmp/cardity_member_points_diff.json
+CONFORMANCE_OUT=/tmp/cardity_member_points_conformance.md
+CONFORMANCE_JSON_OUT=/tmp/cardity_member_points_conformance.json
 
 cd "$ROOT"
 
@@ -57,6 +59,8 @@ node bin/cardity.js review "$MEMBER_MANIFEST_OUT" --json > "$REVIEW_JSON_OUT"
 node -e 'const fs=require("fs"); const f=process.argv[1]; const out=process.argv[2]; const m=JSON.parse(fs.readFileSync(f,"utf8")); m.methods=m.methods.filter(x=>x.name!=="spend_points"); m.system.ui.actions=m.system.ui.actions.filter(x=>x.method!=="spend_points"); fs.writeFileSync(out, JSON.stringify(m,null,2));' "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT"
 node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" > "$DIFF_OUT"
 node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" --json > "$DIFF_JSON_OUT"
+node bin/cardity.js conformance examples/02_member_points_agent.car > "$CONFORMANCE_OUT"
+node bin/cardity.js conformance "$MEMBER_MANIFEST_OUT" --runtime-adapter examples/runtime_adapter_cardity_mock.json --json > "$CONFORMANCE_JSON_OUT"
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
@@ -66,6 +70,7 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"cardity_explain_manifest","arguments":{"file":"examples/01_counter.car","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"cardity_review_security","arguments":{"file":"examples/02_member_points_agent.car","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"cardity_diff","arguments":{"old_file":"examples/01_counter.car","new_file":"examples/01_counter.car","format":"json"}}}' \
+  '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"cardity_conformance","arguments":{"file":"examples/02_member_points_agent.car","runtime_adapter_file":"examples/runtime_adapter_cardity_mock.json","format":"json"}}}' \
   | node bin/cardity_mcp_server.js > "$MCP_OUT"
 
 if node bin/cardity_agent.js compile --source-text 'protocol Bad { version: "1.0.0"; owner: "agent-os"; state { result: string = "ok"; } method get_balance(user: address) { state.balances[params.user] = state.balances[params.user]; } returns: string state.result; }' --out-dir /tmp/cardity_bad_agent_artifacts > "$BAD_AGENT_OUT" 2>&1; then
@@ -170,6 +175,18 @@ if ! grep -q '"schema": "cardity.protocol_diff.v1"' "$DIFF_JSON_OUT" || ! grep -
   exit 1
 fi
 
+if ! grep -q '# MemberPointsSystem Conformance Report' "$CONFORMANCE_OUT"; then
+  echo "Expected cardity conformance to render Markdown report"
+  cat "$CONFORMANCE_OUT"
+  exit 1
+fi
+
+if ! grep -q '"schema": "cardity.conformance_report.v1"' "$CONFORMANCE_JSON_OUT" || ! grep -q '"ok": true' "$CONFORMANCE_JSON_OUT"; then
+  echo "Expected cardity conformance --json to render a passing report"
+  cat "$CONFORMANCE_JSON_OUT"
+  exit 1
+fi
+
 if ! grep -q '"ok": true' "$AGENT_OUT"; then
   echo "Expected agent compile result to succeed"
   cat "$AGENT_OUT"
@@ -220,6 +237,12 @@ fi
 
 if ! grep -q '"name":"cardity_diff"' "$MCP_OUT" || ! grep -q 'cardity.protocol_diff_tool_result.v1' "$MCP_OUT"; then
   echo "Expected MCP server to expose and call cardity_diff"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_conformance"' "$MCP_OUT" || ! grep -q 'cardity.conformance_tool_result.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_conformance"
   cat "$MCP_OUT"
   exit 1
 fi

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/conformance_report_v1.schema.json",
+  "title": "Cardity Conformance Report v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "target", "ok", "summary", "checks"],
+  "properties": {
+    "schema": { "const": "cardity.conformance_report.v1" },
+    "target": {
+      "type": "object",
+      "required": ["protocol", "manifest_schema"],
+      "properties": {
+        "protocol": { "type": "string" },
+        "manifest_schema": { "type": ["string", "null"] },
+        "runtime_adapter": { "type": ["object", "null"] }
+      }
+    },
+    "ok": { "type": "boolean" },
+    "summary": {
+      "type": "object",
+      "required": ["total", "passed", "failed", "warnings"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "status", "message", "location", "recommendation"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pass", "fail", "warn"] },
+          "message": { "type": "string", "minLength": 1 },
+          "location": { "type": "string", "minLength": 1 },
+          "recommendation": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

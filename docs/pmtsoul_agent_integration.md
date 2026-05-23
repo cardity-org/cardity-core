@@ -60,6 +60,7 @@ npm run build
 | `cardity_explain_manifest` | Explain methods, actions, permissions, routes, database contracts, events, and workflows. |
 | `cardity_review_security` | Review action/projection safety before generated workspaces enable execution. |
 | `cardity_diff` | Compare old/new protocol or manifest contracts for breaking changes. |
+| `cardity_conformance` | Produce a compatibility report for manifest/action/projection/runtime-adapter consumption. |
 
 Example `cardity_compile` arguments:
 

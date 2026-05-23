@@ -5,6 +5,7 @@ Cardity's stable baseline is:
 - Agent OS manifest schema: `cardity.agent_manifest.v1`
 - Agent action contract: `agent_action_contract_v1`
 - Projection contract: `projection_contract_v1_1`
+- Conformance report: `cardity.conformance_report.v1`
 
 The repository keeps conformance local and explicit. GitHub Actions are optional
 for now; downstream runtimes can run the same scripts before consuming a new
@@ -21,6 +22,7 @@ Cardity release.
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 | Security review v1 | `schemas/security_review_v1.schema.json` |
 | Protocol diff v1 | `schemas/protocol_diff_v1.schema.json` |
+| Conformance report v1 | `schemas/conformance_report_v1.schema.json` |
 
 ## Reference Examples
 
@@ -30,6 +32,7 @@ Cardity release.
 | `examples/02_member_points_agent.car` | Table-first membership points manifest and projections. |
 | `examples/03_merchant_erp_agent.car` | Downstream ERP reference protocol. |
 | `examples/03_merchant_erp_projection_v1_1.json` | Full v1.1 read-model, projection, query, action, module, and external-service baseline. |
+| `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 
 ## Local Verification
 
@@ -45,6 +48,7 @@ The smoke test verifies:
 - local MCP tool listing and compile call;
 - projection contract v1.1 event/runtime field references;
 - generic agent-action contract fields;
+- conformance report generation;
 - machine-readable schema files parse and contain required contract anchors.
 
 Direct contract checks:
@@ -57,7 +61,16 @@ node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
+node bin/cardity.js conformance examples/02_member_points_agent.car
+node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json --json
 ```
+
+## Conformance Report
+
+`cardity conformance` produces Markdown by default and JSON with `--json`.
+The JSON report is intended for CI, hosted MCP tools, and downstream Agent
+runtimes that need a compatibility gate before consuming generated workspaces.
+Warnings do not fail the report; failed checks set `ok=false`.
 
 ## Runtime Boundary
 

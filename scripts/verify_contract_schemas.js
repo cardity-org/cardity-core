@@ -28,6 +28,7 @@ const schemas = [
   "schemas/runtime_adapter_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
+  "schemas/conformance_report_v1.schema.json",
 ];
 
 for (const schemaPath of schemas) {
@@ -93,6 +94,16 @@ for (const field of ["schema", "old_protocol", "new_protocol", "compatible", "su
 for (const severity of ["breaking", "warning", "info"]) {
   if (!enumValues(protocolDiffSchema, "/properties/changes/items/properties/severity").includes(severity)) {
     fail(`protocol diff schema missing severity ${severity}`);
+  }
+}
+
+const conformanceSchema = readJson("schemas/conformance_report_v1.schema.json");
+for (const field of ["schema", "target", "ok", "summary", "checks"]) {
+  if (!conformanceSchema.required.includes(field)) fail(`conformance report schema missing required ${field}`);
+}
+for (const status of ["pass", "fail", "warn"]) {
+  if (!enumValues(conformanceSchema, "/properties/checks/items/properties/status").includes(status)) {
+    fail(`conformance report schema missing status ${status}`);
   }
 }
 

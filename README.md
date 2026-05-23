@@ -287,6 +287,18 @@ cardity diff old.car new.car --json
 warning, and informational changes across methods, events, actions,
 permissions, API routes, read models, projections, and query contracts.
 
+Run compatibility checks:
+
+```bash
+cardity conformance examples/02_member_points_agent.car
+cardity conformance dist/protocol.agent.json --runtime-adapter examples/runtime_adapter_cardity_mock.json --json
+```
+
+`cardity conformance` emits a machine-readable compatibility report for
+manifest schema, generic action fields, planner hints, projection idempotency,
+read-model schema, security review status, and optional runtime adapter
+capabilities.
+
 ## Local Development
 
 Requirements:

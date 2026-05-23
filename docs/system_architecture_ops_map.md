@@ -86,6 +86,7 @@ Runtime, low-code platform, production write executor, or PMTSoul-specific DSL.
 | Explain manifest | `node bin/cardity.js explain examples/01_counter.car --diagram` |
 | Security review | `node bin/cardity.js review examples/02_member_points_agent.car` |
 | Protocol diff | `node bin/cardity.js diff examples/01_counter.car examples/01_counter.car` |
+| Conformance report | `node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json` |
 | Verify schemas | `node scripts/verify_contract_schemas.js` |
 | Verify next-stage assets | `node scripts/verify_next_stage_assets.js` |
 
@@ -106,6 +107,7 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 | `POST /v1/explain` | Explain source/manifest contract. |
 | `POST /v1/review` | Security review for action/projection safety. |
 | `POST /v1/diff` | Contract diff for old/new source or manifest. |
+| `POST /v1/conformance` | Manifest/action/projection/runtime compatibility report. |
 | `POST /mcp` | MCP-over-HTTP tool endpoint. |
 
 Hosted MCP tools:
@@ -118,6 +120,7 @@ Hosted MCP tools:
 | `cardity_explain_manifest` | Explain source or manifest. |
 | `cardity_review_security` | Review action/projection safety. |
 | `cardity_diff` | Compare old/new source or manifest contracts. |
+| `cardity_conformance` | Run manifest/action/projection/runtime compatibility checks. |
 
 Local stdio MCP entry:
 
@@ -191,6 +194,7 @@ node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
+node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json
 ```
 
 ## Adjacent Project Handoff

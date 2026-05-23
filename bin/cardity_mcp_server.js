@@ -8,6 +8,7 @@ const os = require('os');
 const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain');
 const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
+const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -139,6 +140,22 @@ const TOOLS = [
         new_source_text: { type: 'string', description: 'New protocol source text.' },
         old_manifest: { type: 'object', description: 'Old inline Agent OS manifest.' },
         new_manifest: { type: 'object', description: 'New inline Agent OS manifest.' },
+        format: { enum: ['markdown', 'json'], default: 'markdown' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_conformance',
+    description: 'Run Cardity conformance checks for an Agent OS manifest and optional runtime adapter declaration.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
+        source_text: { type: 'string', description: 'Protocol source text.' },
+        manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
+        runtime_adapter: { type: 'object', description: 'Inline runtime adapter contract JSON.' },
+        runtime_adapter_file: { type: 'string', description: 'Path to a runtime adapter contract JSON file.' },
         format: { enum: ['markdown', 'json'], default: 'markdown' }
       },
       required: []
@@ -367,6 +384,20 @@ function diff(args) {
   };
 }
 
+function conformance(args) {
+  const manifestPayload = manifestFromArgs(args);
+  const runtimeAdapter = args.runtime_adapter
+    || (args.runtime_adapter_file ? fs.readJsonSync(path.resolve(args.runtime_adapter_file)) : null);
+  const report = runConformance(manifestPayload, { runtimeAdapter });
+  return {
+    schema: 'cardity.conformance_tool_result.v1',
+    ok: report.ok,
+    format: args.format || 'markdown',
+    report,
+    output: args.format === 'json' ? report : renderConformanceMarkdown(report)
+  };
+}
+
 function toolResult(payload) {
   return {
     content: [
@@ -425,6 +456,8 @@ async function handle(request) {
           success(request.id, toolResult(review(args)));
         } else if (params.name === 'cardity_diff') {
           success(request.id, toolResult(diff(args)));
+        } else if (params.name === 'cardity_conformance') {
+          success(request.id, toolResult(conformance(args)));
         } else {
           failure(request.id, -32602, `Unknown tool: ${params.name}`);
         }

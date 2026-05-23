@@ -1,0 +1,24 @@
+{
+  "schema": "cardity.runtime_adapter_contract.v1",
+  "runtime": {
+    "name": "Cardity Mock Runtime Adapter",
+    "version": "0.1.0"
+  },
+  "supported_manifest_versions": ["cardity.agent_manifest.v1"],
+  "supported_action_contracts": ["agent_action_contract_v1"],
+  "supported_projection_contracts": ["projection_contract_v1_1"],
+  "capabilities": {
+    "register_actions": true,
+    "permission_gate": true,
+    "dry_run_executor": true,
+    "write_executor": false,
+    "readback_executor": true,
+    "audit_sink": true,
+    "replay_guard": true,
+    "external_navigation": true,
+    "external_services": true
+  },
+  "conformance": {
+    "status": "partial"
+  }
+}
