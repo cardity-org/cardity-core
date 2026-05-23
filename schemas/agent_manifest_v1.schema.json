@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/agent_manifest_v1.schema.json",
+  "title": "Cardity Agent OS Manifest v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "protocol", "events", "methods", "permissions", "system", "agent"],
+  "properties": {
+    "schema": { "const": "cardity.agent_manifest.v1" },
+    "protocol": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "events": { "type": "array" },
+    "methods": { "type": "array" },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "requires_confirmation"],
+        "properties": {
+          "action": { "type": "string" },
+          "requires_confirmation": { "type": "boolean" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "required": ["api", "database", "ui", "workflows", "modules", "external"],
+      "properties": {
+        "api": {
+          "type": "object",
+          "required": ["routes"],
+          "properties": {
+            "routes": { "type": "array" }
+          }
+        },
+        "database": {
+          "type": "object",
+          "required": ["tables", "read_models", "projections", "queries"],
+          "properties": {
+            "tables": { "type": "array" },
+            "read_models": { "type": "array" },
+            "projections": { "type": "array" },
+            "queries": { "type": "array" }
+          }
+        },
+        "ui": {
+          "type": "object",
+          "required": ["actions"],
+          "properties": {
+            "resources": { "type": "array" },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "agent_action_contract_v1.schema.json"
+              }
+            }
+          }
+        },
+        "workflows": { "type": "array" },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "intent_names"],
+            "properties": {
+              "name": { "type": "string" },
+              "intent_names": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "external": {
+          "type": "object",
+          "required": ["navigation", "services"],
+          "properties": {
+            "navigation": { "type": "array" },
+            "services": { "type": "array" }
+          }
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": ["tools", "events"],
+      "properties": {
+        "tools": { "type": "array" },
+        "events": { "type": "array" }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "cardity",
-  "version": "1.0.1",
+  "version": "0.1.0-alpha.1",
   "description": "Cardity Core - an agent protocol compiler for ABI, MCP, and Agent OS manifests",
   "main": "dist/index.js",
   "bin": {

@@ -11,6 +11,12 @@
 
 ## First Public Version
 
+Recommended tag:
+
+```text
+v0.1.0-alpha.1
+```
+
 Ship as:
 
 ```text
@@ -24,6 +30,10 @@ Scope:
 - generate ABI;
 - generate `cardity.agent_manifest.v1`;
 - expose local MCP and HTTP API.
+- publish `cardity.agent_manifest.v1`;
+- publish agent action contract v1;
+- publish projection contract v1.1;
+- include machine-readable schemas and local conformance scripts.
 
 Out of scope:
 
@@ -44,8 +54,8 @@ npm publish --access public
 Docker:
 
 ```bash
-docker build -t ghcr.io/cardity-org/cardity-core:0.1.0 .
-docker push ghcr.io/cardity-org/cardity-core:0.1.0
+docker build -t ghcr.io/cardity-org/cardity-core:0.1.0-alpha.1 .
+docker push ghcr.io/cardity-org/cardity-core:0.1.0-alpha.1
 ```
 
 Hosted service:
@@ -59,6 +69,7 @@ PORT=8787 node bin/cardity_http_server.js
 ```bash
 npm run build
 npm test
+node scripts/verify_contract_schemas.js
 node bin/cardity_agent.js compile examples/01_counter.car --include-manifest
 npm run serve
 ```

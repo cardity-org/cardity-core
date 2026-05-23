@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/agent_action_contract_v1.schema.json",
+  "title": "Cardity Agent Action Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "name",
+    "kind",
+    "intent_names",
+    "intent_examples",
+    "disambiguation_keys",
+    "required_context",
+    "input_schema",
+    "permission",
+    "confirm_required",
+    "dry_run_supported",
+    "readback_required",
+    "readback_query",
+    "idempotency_key",
+    "risk_level",
+    "side_effects",
+    "audit_event",
+    "replay_policy"
+  ],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["query", "command", "external_navigation"] },
+    "intent_names": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "intent_examples": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "disambiguation_keys": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "required_context": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "input_schema": { "type": "object" },
+    "output_schema": { "type": ["object", "null"] },
+    "returns_read_model": { "type": ["string", "null"] },
+    "permission": { "type": ["string", "null"] },
+    "confirm_required": { "type": "boolean" },
+    "dry_run_supported": { "type": "boolean" },
+    "readback_required": { "type": "boolean" },
+    "readback_query": {
+      "type": ["object", "string", "null"],
+      "additionalProperties": true
+    },
+    "idempotency_key": { "type": ["string", "null"] },
+    "risk_level": { "enum": ["low", "medium", "high"] },
+    "side_effects": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "audit_event": { "type": ["string", "null"] },
+    "replay_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "minLength": 1 },
+        "idempotency_key": { "type": ["string", "null"] },
+        "on_replay": { "type": "string" }
+      }
+    }
+  },
+  "anyOf": [
+    { "required": ["output_schema"] },
+    { "required": ["returns_read_model"] }
+  ]
+}

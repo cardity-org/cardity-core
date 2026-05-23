@@ -218,6 +218,19 @@ state.balances[params.user] = state.balances[params.user] + params.amount;
 The hosted compiler rejects agent-unsafe indexed state access and returns repair
 guidance so an LLM can fix the protocol.
 
+## Stable Contract Baseline
+
+Cardity's current baseline for downstream Agent runtimes is:
+
+| Contract | Purpose |
+|---|---|
+| `cardity.agent_manifest.v1` | Main handoff for generated APIs, database tables, UI actions, workflows, permissions, and tools. |
+| Agent action contract v1 | Generic action semantics, planner hints, permission/confirmation flags, dry-run/readback metadata, risk/audit/replay fields, modules, and external navigation/services. |
+| Projection contract v1.1 | Replay-safe read-model writes with confirmed readback, composite keys, runtime event fields, and query contracts. |
+
+Machine-readable schemas live in [schemas](schemas). Local conformance guidance
+lives in [docs/conformance.md](docs/conformance.md).
+
 ## Local Development
 
 Requirements:
@@ -233,6 +246,7 @@ Install, build, and test:
 npm install
 npm run build
 npm test
+node scripts/verify_contract_schemas.js
 ```
 
 Run the HTTP API locally:
@@ -325,6 +339,7 @@ api.cardity.org/*
 - [Agent protocol layer](docs/agent_protocol_layer.md)
 - [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
+- [Contract conformance](docs/conformance.md)
 - [Public API](docs/public_api.md)
 - [PMTSoul Agent integration](docs/pmtsoul_agent_integration.md)
 - [Release plan](docs/release_plan.md)
