@@ -90,6 +90,7 @@ Runtime, low-code platform, production write executor, or PMTSoul-specific DSL.
 | Conformance report | `node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json` |
 | Runtime adapter validation | `node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json` |
 | Schema registry | `node bin/cardity.js schemas` |
+| Runtime compatibility registry | `node bin/cardity.js runtimes` |
 | Verify schemas | `node scripts/verify_contract_schemas.js` |
 | Verify next-stage assets | `node scripts/verify_next_stage_assets.js` |
 
@@ -102,6 +103,8 @@ The hosted API is served by Cloudflare Worker `cardity-core-api-proxy` at
 |---|---|
 | `GET /schemas` | Schema registry. |
 | `GET /schemas/<file>` | Registered schema document. |
+| `GET /runtimes` | Runtime compatibility registry. |
+| `GET /runtimes/<id>` | Runtime compatibility entry. |
 | `GET /playground` | Browser playground for source, manifest, graph, review, and conformance output. |
 | `GET /edge-health` | Worker edge health. |
 | `GET /health` | Container health through fallback path. |
@@ -132,6 +135,7 @@ Hosted MCP tools:
 | `cardity_conformance` | Run manifest/action/projection/runtime compatibility checks. |
 | `cardity_validate_runtime_adapter` | Validate runtime adapter compatibility declaration. |
 | `cardity_schema_registry` | Return registry entries or schema documents. |
+| `cardity_runtime_compatibility` | Return Cardity-compatible runtimes. |
 
 Local stdio MCP entry:
 
@@ -209,6 +213,7 @@ node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json
 node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json
 node bin/cardity.js schemas
+node bin/cardity.js runtimes pmtsoul-agent-os
 ```
 
 ## Adjacent Project Handoff
@@ -223,6 +228,7 @@ contract source, not an execution runtime. Key docs:
 | `docs/projection_contract_v1_1.md` | Read-model projection contract. |
 | `docs/runtime_adapter_contract_v1.md` | Runtime compatibility declaration. |
 | `docs/schema_registry.md` | Stable schema URLs. |
+| `docs/runtime_compatibility.md` | Compatible runtime list and boundary. |
 | `docs/conformance.md` | Compatibility checks. |
 | `docs/next_stage_roadmap.md` | Product/technical roadmap. |
 

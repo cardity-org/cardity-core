@@ -64,6 +64,7 @@ npm run build
 | `cardity_conformance` | Produce a compatibility report for manifest/action/projection/runtime-adapter consumption. |
 | `cardity_validate_runtime_adapter` | Validate PMTSoul's runtime adapter compatibility declaration. |
 | `cardity_schema_registry` | Return stable Cardity schema URLs or schema documents. |
+| `cardity_runtime_compatibility` | Return PMTSoul's Cardity-compatible runtime registry entry. |
 
 Example `cardity_compile` arguments:
 
@@ -289,6 +290,16 @@ https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
+
+PMTSoul is also listed in the Cardity runtime compatibility registry:
+
+```text
+https://api.cardity.org/runtimes/pmtsoul-agent-os
+```
+
+The entry records PMTSoul's current boundary: conformance gate enabled,
+Cardity metadata persisted, dry-run executor enabled, and production writes kept
+`dry_run_only`.
 
 ## Reference ERP Example
 

@@ -12,6 +12,7 @@ const { runConformance, renderConformanceMarkdown } = require('./cardity_conform
 const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
+const { runtimeRegistryResult } = require('./cardity_runtime_registry');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -184,6 +185,17 @@ const TOOLS = [
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Optional schema name, contract id, or schema file.' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_runtime_compatibility',
+    description: 'Return the Cardity-compatible runtime registry or one runtime entry.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Optional runtime id or name, for example pmtsoul-agent-os.' }
       },
       required: []
     }
@@ -457,6 +469,10 @@ function schemas(args) {
   return schemaRegistryResult(args.name || args.schema || args.file);
 }
 
+function runtimes(args) {
+  return runtimeRegistryResult(args.id || args.name);
+}
+
 function visualize(args) {
   const manifestPayload = manifestFromArgs(args);
   const visualization = buildVisualization(manifestPayload);
@@ -538,6 +554,8 @@ async function handle(request) {
           success(request.id, toolResult(adapter(args)));
         } else if (params.name === 'cardity_schema_registry') {
           success(request.id, toolResult(schemas(args)));
+        } else if (params.name === 'cardity_runtime_compatibility') {
+          success(request.id, toolResult(runtimes(args)));
         } else if (params.name === 'cardity_visualize_manifest') {
           success(request.id, toolResult(visualize(args)));
         } else {

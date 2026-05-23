@@ -33,6 +33,16 @@ const registry = readJson("schemas/registry.json");
 if (registry.schema !== "cardity.schema_registry.v1") fail("schema registry has wrong schema");
 if (registry.schemas.length < 9) fail("schema registry missing contract entries");
 
+const runtimeRegistry = readJson("registry/runtimes.json");
+if (runtimeRegistry.schema !== "cardity.runtime_compatibility_registry.v1") {
+  fail("runtime compatibility registry has wrong schema");
+}
+const pmtsoulRuntime = runtimeRegistry.runtimes.find((runtime) => runtime.id === "pmtsoul-agent-os");
+if (!pmtsoulRuntime) fail("runtime compatibility registry missing pmtsoul-agent-os");
+if (pmtsoulRuntime.production_write_policy?.mode !== "dry_run_only") {
+  fail("pmtsoul-agent-os must remain dry_run_only until write permission contract exists");
+}
+
 const diagnostics = readJson("schemas/diagnostics_v1.schema.json");
 for (const field of ["error_code", "severity", "message", "repair_hint"]) {
   if (!diagnostics.$defs.diagnostic.required.includes(field)) {

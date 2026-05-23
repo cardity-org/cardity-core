@@ -32,7 +32,9 @@ function html(body, status = 200) {
 }
 
 const SCHEMA_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/schemas";
+const RUNTIME_REGISTRY_SOURCE = "https://raw.githubusercontent.com/cardity-org/cardity-core/master/registry";
 const SCHEMA_FILE_RE = /^[A-Za-z0-9_]+(?:\.schema)?\.json$/;
+const RUNTIME_ID_RE = /^[A-Za-z0-9_-]+$/;
 
 async function fetchSchemaFile(file) {
   if (!SCHEMA_FILE_RE.test(file)) {
@@ -54,6 +56,36 @@ async function fetchSchemaFile(file) {
 
 async function fetchSchemaRegistry() {
   return fetchSchemaFile("registry.json");
+}
+
+async function runtimeRegistryPayload() {
+  const response = await fetch(`${RUNTIME_REGISTRY_SOURCE}/runtimes.json`, {
+    headers: { accept: "application/json" },
+    cf: { cacheTtl: 300, cacheEverything: true }
+  });
+  if (!response.ok) throw new Error("Runtime registry not found.");
+  return response.json();
+}
+
+async function fetchRuntimeRegistry() {
+  const payload = await runtimeRegistryPayload();
+  return jsonDocument(payload, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-runtime-registry-source": `${RUNTIME_REGISTRY_SOURCE}/runtimes.json`
+  });
+}
+
+async function fetchRuntimeEntry(id) {
+  if (!RUNTIME_ID_RE.test(id)) {
+    return json({ ok: false, error: { message: "Invalid runtime id." } }, 400);
+  }
+  const registry = await runtimeRegistryPayload();
+  const runtime = asArray(registry.runtimes).find((item) => item.id === id || item.name === id);
+  if (!runtime) return json({ ok: false, error: { message: `Runtime not found: ${id}` } }, 404);
+  return jsonDocument({ schema: "cardity.runtime_compatibility_entry.v1", runtime }, 200, {
+    "content-type": "application/json; charset=utf-8",
+    "x-cardity-runtime-id": runtime.id
+  });
 }
 
 function extractBlock(source, startIndex) {
@@ -1667,6 +1699,11 @@ function mcpTools() {
         inputSchema: { type: "object", properties: { name: { type: "string" } }, required: [] }
       },
       {
+        name: "cardity_runtime_compatibility",
+        description: "Return the Cardity-compatible runtime registry or one runtime entry.",
+        inputSchema: { type: "object", properties: { id: { type: "string" } }, required: [] }
+      },
+      {
         name: "cardity_visualize_manifest",
         description: "Visualize Cardity source text or an Agent OS manifest as a layered Mermaid contract graph.",
         inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json", "mermaid"], default: "markdown" } }, required: [] }
@@ -1723,6 +1760,11 @@ async function handleMcp(body) {
       const name = args.name || args.schema || args.file || "registry.json";
       const file = name === "registry" ? "registry.json" : name;
       const response = await fetchSchemaFile(file.endsWith(".json") ? file : `${file}.schema.json`);
+      const payload = await response.json();
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
+    }
+    if (params.name === "cardity_runtime_compatibility") {
+      const response = args.id || args.name ? await fetchRuntimeEntry(args.id || args.name) : await fetchRuntimeRegistry();
       const payload = await response.json();
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
     }
@@ -1815,6 +1857,12 @@ export default {
     }
     if (url.pathname.startsWith("/schemas/") && request.method === "GET") {
       return fetchSchemaFile(url.pathname.slice("/schemas/".length));
+    }
+    if ((url.pathname === "/runtimes" || url.pathname === "/runtimes/registry.json") && request.method === "GET") {
+      return fetchRuntimeRegistry();
+    }
+    if (url.pathname.startsWith("/runtimes/") && request.method === "GET") {
+      return fetchRuntimeEntry(url.pathname.slice("/runtimes/".length).replace(/\.json$/, ""));
     }
     if ((url.pathname === "/playground" || url.pathname === "/playground/") && (request.method === "GET" || request.method === "HEAD")) {
       return html(playgroundHtml());

@@ -1,0 +1,51 @@
+{
+  "schema": "cardity.runtime_compatibility_registry.v1",
+  "version": "2026-05-24",
+  "base_url": "https://api.cardity.org/runtimes",
+  "source_repository": "https://github.com/cardity-org/cardity-core/tree/master/registry/runtimes.json",
+  "runtimes": [
+    {
+      "id": "pmtsoul-agent-os",
+      "name": "PMTSoul Agent OS",
+      "homepage": "https://pmtsoul.com",
+      "status": "compatible",
+      "compatibility_label": "Cardity-compatible",
+      "adapter_contract": "cardity.runtime_adapter_contract.v1",
+      "adapter_url": "https://github.com/cardity-org/cardity-core/blob/master/examples/runtime_adapter_pmtsoul_agent_os.json",
+      "supported_manifest_versions": ["cardity.agent_manifest.v1"],
+      "supported_action_contracts": ["agent_action_contract_v1"],
+      "supported_projection_contracts": ["projection_contract_v1_1"],
+      "capabilities": {
+        "conformance_gate": true,
+        "manifest_validation": true,
+        "workspace_metadata": true,
+        "diagnostics_surface": true,
+        "permission_gate": true,
+        "dry_run_executor": true,
+        "write_executor": false,
+        "readback_executor": true,
+        "audit_sink": true,
+        "replay_guard": true
+      },
+      "production_write_policy": {
+        "mode": "dry_run_only",
+        "notes": "Production writes remain disabled unless a future explicit deployment/write permission contract is added."
+      },
+      "conformance": {
+        "status": "passed",
+        "last_checked_at": "2026-05-23",
+        "summary": "PMTSoul blocks workspace generation when Cardity conformance fails and stores Cardity contract metadata in generated workspaces."
+      },
+      "reference_implementations": [
+        {
+          "name": "Merchant ERP reference demo",
+          "contracts": [
+            "agent_action_contract_v1",
+            "projection_contract_v1_1",
+            "cardity.runtime_adapter_contract.v1"
+          ]
+        }
+      ]
+    }
+  ]
+}

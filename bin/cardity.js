@@ -13,6 +13,7 @@ const { runConformance, renderConformanceMarkdown } = require('./cardity_conform
 const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
+const { runtimeRegistryResult } = require('./cardity_runtime_registry');
 
 function templatesPath() {
   return path.join(__dirname, '..', 'templates');
@@ -347,6 +348,28 @@ program
   });
 
 program
+  .command('runtimes [id]')
+  .description('Show Cardity-compatible runtime registry entries')
+  .option('--json', 'Output machine-readable JSON', true)
+  .option('-o, --output <file>', 'Write runtime registry output to a file')
+  .action((id, options) => {
+    try {
+      const payload = runtimeRegistryResult(id);
+      const output = `${JSON.stringify(payload, null, 2)}\n`;
+
+      if (options.output) {
+        fs.ensureDirSync(path.dirname(path.resolve(options.output)));
+        fs.writeFileSync(options.output, output, 'utf8');
+      } else {
+        process.stdout.write(output);
+      }
+    } catch (error) {
+      console.error(chalk.red(`❌ Error reading runtime registry: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+program
   .command('visualize <file>')
   .description('Visualize a .car protocol or Agent OS manifest as a layered contract graph')
   .option('--json', 'Output machine-readable visualization JSON')
@@ -591,6 +614,7 @@ program
     console.log(chalk.gray('  cardity conformance src/index.car # Run Cardity compatibility checks\n'));
     console.log(chalk.gray('  cardity adapter runtime.json      # Validate runtime adapter compatibility\n'));
     console.log(chalk.gray('  cardity schemas                   # Show schema registry\n'));
+    console.log(chalk.gray('  cardity runtimes                  # Show compatible runtime registry\n'));
     console.log(chalk.gray('  cardity visualize src/index.car  # Render a layered manifest graph\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));

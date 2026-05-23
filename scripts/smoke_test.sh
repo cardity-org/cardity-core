@@ -67,6 +67,8 @@ node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" > "$DIF
 node bin/cardity.js diff "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT" --json > "$DIFF_JSON_OUT"
 node bin/cardity.js conformance examples/02_member_points_agent.car > "$CONFORMANCE_OUT"
 node bin/cardity.js conformance "$MEMBER_MANIFEST_OUT" --runtime-adapter examples/runtime_adapter_cardity_mock.json --json > "$CONFORMANCE_JSON_OUT"
+node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
+node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
 printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' \
@@ -78,6 +80,8 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"cardity_diff","arguments":{"old_file":"examples/01_counter.car","new_file":"examples/01_counter.car","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"cardity_conformance","arguments":{"file":"examples/02_member_points_agent.car","runtime_adapter_file":"examples/runtime_adapter_cardity_mock.json","format":"json"}}}' \
   '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"cardity_visualize_manifest","arguments":{"file":"examples/02_member_points_agent.car","format":"mermaid"}}}' \
+  '{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"cardity_schema_registry","arguments":{"name":"runtime_adapter_contract_v1"}}}' \
+  '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"cardity_runtime_compatibility","arguments":{"id":"pmtsoul-agent-os"}}}' \
   | node bin/cardity_mcp_server.js > "$MCP_OUT"
 
 if node bin/cardity_agent.js compile --source-text 'protocol Bad { version: "1.0.0"; owner: "agent-os"; state { result: string = "ok"; } method get_balance(user: address) { state.balances[params.user] = state.balances[params.user]; } returns: string state.result; }' --out-dir /tmp/cardity_bad_agent_artifacts > "$BAD_AGENT_OUT" 2>&1; then
@@ -268,6 +272,18 @@ fi
 
 if ! grep -q '"name":"cardity_visualize_manifest"' "$MCP_OUT" || ! grep -q 'cardity.visualization_tool_result.v1' "$MCP_OUT"; then
   echo "Expected MCP server to expose and call cardity_visualize_manifest"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_schema_registry"' "$MCP_OUT" || ! grep -q 'runtime_adapter_contract_v1.schema.json' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_schema_registry"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_runtime_compatibility"' "$MCP_OUT" || ! grep -q 'pmtsoul-agent-os' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_runtime_compatibility"
   cat "$MCP_OUT"
   exit 1
 fi
