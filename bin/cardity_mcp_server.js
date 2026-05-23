@@ -4,6 +4,10 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs-extra');
 const readline = require('readline');
+const os = require('os');
+const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain');
+const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
+const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -90,6 +94,52 @@ const TOOLS = [
           type: 'string',
           description: 'Optional manifest output path.'
         }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_explain_manifest',
+    description: 'Explain a Cardity .car protocol or Agent OS manifest as Markdown or JSON summary.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
+        source_text: { type: 'string', description: 'Protocol source text.' },
+        manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
+        format: { enum: ['markdown', 'json'], default: 'markdown' },
+        diagram: { type: 'boolean', default: false }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_review_security',
+    description: 'Review a Cardity .car protocol or Agent OS manifest for generic action/projection safety.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
+        source_text: { type: 'string', description: 'Protocol source text.' },
+        manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
+        format: { enum: ['markdown', 'json'], default: 'markdown' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_diff',
+    description: 'Compare two Cardity protocols or Agent OS manifests for breaking contract changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        old_file: { type: 'string', description: 'Path to the old .car protocol or manifest JSON file.' },
+        new_file: { type: 'string', description: 'Path to the new .car protocol or manifest JSON file.' },
+        old_source_text: { type: 'string', description: 'Old protocol source text.' },
+        new_source_text: { type: 'string', description: 'New protocol source text.' },
+        old_manifest: { type: 'object', description: 'Old inline Agent OS manifest.' },
+        new_manifest: { type: 'object', description: 'New inline Agent OS manifest.' },
+        format: { enum: ['markdown', 'json'], default: 'markdown' }
       },
       required: []
     }
@@ -242,6 +292,81 @@ function manifest(args) {
   };
 }
 
+function manifestFromArgs(args, prefix = '') {
+  const manifestArg = args[`${prefix}manifest`] || (!prefix ? args.manifest : undefined);
+  if (manifestArg) return manifestArg.manifest || manifestArg;
+
+  const file = args[`${prefix}file`] || (!prefix ? args.file : undefined);
+  const sourceText = args[`${prefix}source_text`] || (!prefix ? args.source_text : undefined);
+  if (sourceText) {
+    return compile({
+      source_text: sourceText,
+      out_dir: args.out_dir || path.join(process.cwd(), 'dist'),
+      name: args.name,
+      include_manifest: true,
+      include_abi: false,
+      include_protocol: false,
+      carc: false
+    }).manifest;
+  }
+
+  if (file) {
+    const absolute = path.resolve(file);
+    if (path.extname(absolute).toLowerCase() === '.json') {
+      const payload = fs.readJsonSync(absolute);
+      return payload.manifest || payload;
+    }
+    return compile({
+      file: absolute,
+      out_dir: path.join(os.tmpdir(), 'cardity-mcp-artifacts'),
+      name: path.basename(absolute, path.extname(absolute)),
+      include_manifest: true,
+      include_abi: false,
+      include_protocol: false,
+      carc: false
+    }).manifest;
+  }
+
+  throw new Error(`Missing ${prefix ? prefix.replace(/_$/, ' ') : ''}file, source_text, or manifest.`);
+}
+
+function explain(args) {
+  const manifestPayload = manifestFromArgs(args);
+  const summary = summarizeManifest(manifestPayload);
+  return {
+    schema: 'cardity.explain_tool_result.v1',
+    ok: true,
+    format: args.format || 'markdown',
+    summary,
+    output: args.format === 'json' ? summary : renderExplainMarkdown(summary, { diagram: Boolean(args.diagram) })
+  };
+}
+
+function review(args) {
+  const manifestPayload = manifestFromArgs(args);
+  const reviewPayload = reviewManifest(manifestPayload);
+  return {
+    schema: 'cardity.security_review_tool_result.v1',
+    ok: reviewPayload.ok,
+    format: args.format || 'markdown',
+    review: reviewPayload,
+    output: args.format === 'json' ? reviewPayload : renderReviewMarkdown(reviewPayload)
+  };
+}
+
+function diff(args) {
+  const oldManifest = manifestFromArgs(args, 'old_');
+  const newManifest = manifestFromArgs(args, 'new_');
+  const diffPayload = diffManifest(oldManifest, newManifest);
+  return {
+    schema: 'cardity.protocol_diff_tool_result.v1',
+    ok: diffPayload.compatible,
+    format: args.format || 'markdown',
+    diff: diffPayload,
+    output: args.format === 'json' ? diffPayload : renderDiffMarkdown(diffPayload)
+  };
+}
+
 function toolResult(payload) {
   return {
     content: [
@@ -294,6 +419,12 @@ async function handle(request) {
           success(request.id, toolResult(compile(args)));
         } else if (params.name === 'cardity_manifest') {
           success(request.id, toolResult(manifest(args)));
+        } else if (params.name === 'cardity_explain_manifest') {
+          success(request.id, toolResult(explain(args)));
+        } else if (params.name === 'cardity_review_security') {
+          success(request.id, toolResult(review(args)));
+        } else if (params.name === 'cardity_diff') {
+          success(request.id, toolResult(diff(args)));
         } else {
           failure(request.id, -32602, `Unknown tool: ${params.name}`);
         }

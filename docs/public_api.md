@@ -52,6 +52,9 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 | `POST /v1/validate` | Validate source and return protocol summary. |
 | `POST /v1/manifest` | Return only the Agent OS manifest. |
 | `POST /v1/abi` | Return only ABI. |
+| `POST /v1/explain` | Explain a source/manifest contract as Markdown plus JSON summary. |
+| `POST /v1/review` | Review action/projection safety. |
+| `POST /v1/diff` | Compare two sources/manifests for breaking contract changes. |
 | `POST /v1/generation-guide` | Return the current agent-safe protocol generation rules. |
 | `POST /mcp` | Minimal JSON-RPC MCP-over-HTTP endpoint for tool discovery and calls. |
 
@@ -114,6 +117,10 @@ The `/mcp` endpoint supports:
 - `tools/list`
 - `tools/call` with `cardity_generation_guide`
 - `tools/call` with `cardity_compile`
+- `tools/call` with `cardity_manifest`
+- `tools/call` with `cardity_explain_manifest`
+- `tools/call` with `cardity_review_security`
+- `tools/call` with `cardity_diff`
 
 `cardity_generation_guide` should be the first call for agents that generate a
 protocol from natural language. It tells the model to keep `state` scalar and to

@@ -63,6 +63,9 @@ printf '%s\n' \
   '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
   '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"cardity_generation_guide","arguments":{"requirement":"member points"}}}' \
   '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"cardity_compile","arguments":{"file":"examples/01_counter.car","out_dir":"/tmp/cardity_mcp_artifacts","include_manifest":true}}}' \
+  '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"cardity_explain_manifest","arguments":{"file":"examples/01_counter.car","format":"json"}}}' \
+  '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"cardity_review_security","arguments":{"file":"examples/02_member_points_agent.car","format":"json"}}}' \
+  '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"cardity_diff","arguments":{"old_file":"examples/01_counter.car","new_file":"examples/01_counter.car","format":"json"}}}' \
   | node bin/cardity_mcp_server.js > "$MCP_OUT"
 
 if node bin/cardity_agent.js compile --source-text 'protocol Bad { version: "1.0.0"; owner: "agent-os"; state { result: string = "ok"; } method get_balance(user: address) { state.balances[params.user] = state.balances[params.user]; } returns: string state.result; }' --out-dir /tmp/cardity_bad_agent_artifacts > "$BAD_AGENT_OUT" 2>&1; then
@@ -199,6 +202,24 @@ fi
 
 if ! grep -q 'cardity.generation_guide.v1' "$MCP_OUT"; then
   echo "Expected MCP cardity_generation_guide call to return generation guide"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_explain_manifest"' "$MCP_OUT" || ! grep -q 'cardity.explain_tool_result.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_explain_manifest"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_review_security"' "$MCP_OUT" || ! grep -q 'cardity.security_review_tool_result.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_review_security"
+  cat "$MCP_OUT"
+  exit 1
+fi
+
+if ! grep -q '"name":"cardity_diff"' "$MCP_OUT" || ! grep -q 'cardity.protocol_diff_tool_result.v1' "$MCP_OUT"; then
+  echo "Expected MCP server to expose and call cardity_diff"
   cat "$MCP_OUT"
   exit 1
 fi

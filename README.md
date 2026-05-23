@@ -231,6 +231,10 @@ Cardity's current baseline for downstream Agent runtimes is:
 Machine-readable schemas live in [schemas](schemas). Local conformance guidance
 lives in [docs/conformance.md](docs/conformance.md).
 
+For future maintenance, deployment, MCP, release, and adjacent-project lookup,
+use [docs/system_architecture_ops_map.md](docs/system_architecture_ops_map.md)
+as the common architecture and operations map.
+
 ## Next-Stage Assets
 
 Cardity's next stage is focused on the protocol-contract layer, not a full

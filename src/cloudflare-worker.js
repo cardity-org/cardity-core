@@ -553,6 +553,258 @@ function generationGuide(requirement = "") {
   };
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function itemNames(items) {
+  return asArray(items).map((item) => item && item.name).filter(Boolean);
+}
+
+function protocolName(protocol) {
+  if (typeof protocol === "string") return protocol;
+  return protocol?.name || "Cardity Protocol";
+}
+
+function stable(value) {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])]));
+  }
+  return value;
+}
+
+function same(a, b) {
+  return JSON.stringify(stable(a)) === JSON.stringify(stable(b));
+}
+
+function summarizeManifest(manifest) {
+  const system = manifest.system || {};
+  const database = system.database || {};
+  const ui = system.ui || {};
+  const api = system.api || {};
+  const actions = asArray(ui.actions);
+  return {
+    schema: "cardity.explain_result.v1",
+    protocol: manifest.protocol || {},
+    counts: {
+      state: asArray(manifest.state).length,
+      tables: asArray(database.tables).length,
+      read_models: asArray(database.read_models).length,
+      methods: asArray(manifest.methods).length,
+      events: asArray(manifest.events).length,
+      routes: asArray(api.routes).length,
+      actions: actions.length,
+      workflows: asArray(system.workflows).length,
+      tools: asArray(manifest.agent?.tools).length
+    },
+    methods: asArray(manifest.methods).map((method) => ({
+      name: method.name,
+      route: method.route ? `${method.route.method} ${method.route.path}` : "-",
+      returns: method.returns || "-",
+      writes: asArray(method.effects?.writes),
+      emits: asArray(method.effects?.emits)
+    })),
+    actions: actions.map((action) => ({
+      name: action.name,
+      kind: action.kind || "-",
+      permission: action.permission || "-",
+      confirm_required: Boolean(action.confirm_required),
+      dry_run_supported: Boolean(action.dry_run_supported),
+      readback_required: Boolean(action.readback_required),
+      risk_level: action.risk_level || "-"
+    })),
+    database: {
+      tables: itemNames(database.tables),
+      read_models: itemNames(database.read_models),
+      projections: itemNames(database.projections),
+      queries: asArray(database.queries).map((query) => query.name || query.id).filter(Boolean)
+    },
+    permissions: asArray(manifest.permissions).map((permission) => ({
+      action: permission.action,
+      requires_confirmation: Boolean(permission.requires_confirmation),
+      reason: permission.reason || ""
+    })),
+    events: asArray(manifest.events).map((event) => ({
+      name: event.name,
+      params: itemNames(event.params),
+      runtime_fields: itemNames(event.runtime_fields),
+      stream: event.stream || "-"
+    }))
+  };
+}
+
+function markdownTable(headers, rows) {
+  const safeRows = asArray(rows);
+  const header = `| ${headers.join(" | ")} |`;
+  const separator = `| ${headers.map(() => "---").join(" | ")} |`;
+  if (!safeRows.length) return `${header}\n${separator}\n| ${headers.map(() => "-").join(" | ")} |`;
+  return [header, separator, ...safeRows.map((row) => `| ${row.map((cell) => String(cell ?? "-").replace(/\|/g, "\\|")).join(" | ")} |`)].join("\n");
+}
+
+function renderExplainMarkdown(summary) {
+  return [
+    `# ${protocolName(summary.protocol)} Manifest`,
+    "",
+    markdownTable(["Field", "Value"], [
+      ["Version", summary.protocol.version || "-"],
+      ["Methods", summary.counts.methods],
+      ["Events", summary.counts.events],
+      ["Actions", summary.counts.actions],
+      ["Tables", summary.counts.tables],
+      ["Read Models", summary.counts.read_models],
+      ["Projections", summary.database.projections.length]
+    ]),
+    "",
+    "## Agent Actions",
+    "",
+    markdownTable(["Action", "Kind", "Risk", "Confirm", "Readback", "Permission"], summary.actions.map((action) => [
+      action.name,
+      action.kind,
+      action.risk_level,
+      action.confirm_required ? "yes" : "no",
+      action.readback_required ? "yes" : "no",
+      action.permission
+    ]))
+  ].join("\n") + "\n";
+}
+
+function hasWriteSideEffects(action) {
+  const sideEffects = action.side_effects || {};
+  return asArray(sideEffects.writes).length > 0 || asArray(sideEffects.emits).length > 0 || asArray(sideEffects.external).length > 0;
+}
+
+function reviewManifest(manifest) {
+  const findings = [];
+  const database = manifest.system?.database || {};
+  const actions = asArray(manifest.system?.ui?.actions);
+  const readModelsByName = new Set(itemNames(database.read_models));
+  const tableNames = new Set(itemNames(database.tables));
+  const eventsByName = new Map(asArray(manifest.events).map((event) => [event.name, event]));
+  const add = (severity, code, location, message, recommendation) => findings.push({ severity, code, location, message, recommendation });
+
+  for (const action of actions) {
+    const location = `system.ui.actions.${action.name || "<unnamed>"}`;
+    const writes = action.kind === "command" || hasWriteSideEffects(action);
+    if (!action.kind) add("error", "ACTION_KIND_MISSING", location, "Action has no kind.", "Set action.kind.");
+    if (writes) {
+      if (!action.permission) add(action.dry_run_supported ? "warning" : "error", action.dry_run_supported ? "COMMAND_PLANNED_ONLY" : "COMMAND_PERMISSION_MISSING", location, "Write-like action has no concrete permission contract.", "Add permission before enabling production writes.");
+      if (!action.confirm_required) add("error", "COMMAND_CONFIRMATION_MISSING", location, "Write-like action does not require confirmation.", "Set confirm_required=true.");
+      if (!action.idempotency_key) add("error", "COMMAND_IDEMPOTENCY_MISSING", location, "Command has no idempotency key.", "Use a stable expression such as $run.id.");
+      if (!action.replay_policy?.mode) add("error", "COMMAND_REPLAY_POLICY_MISSING", location, "Command has no replay policy.", "Add replay_policy.mode.");
+      if (action.readback_required && !action.readback_query) add("error", "READBACK_QUERY_MISSING", location, "Action requires readback but has no query.", "Add readback_query.");
+    }
+  }
+
+  for (const readModel of asArray(database.read_models)) {
+    const location = `system.database.read_models.${readModel.name || "<unnamed>"}`;
+    if (!asArray(readModel.primary_key).length) add("error", "READ_MODEL_PRIMARY_KEY_MISSING", location, "Read model has no primary key.", "Emit a primary_key.");
+    if (!asArray(readModel.columns).length) add("warning", "READ_MODEL_COLUMNS_MISSING", location, "Read model has no columns.", "Emit column schema metadata.");
+  }
+
+  for (const query of asArray(database.queries)) {
+    if (query.read_model && !readModelsByName.has(query.read_model)) {
+      add("error", "QUERY_READ_MODEL_UNKNOWN", `system.database.queries.${query.name || "<unnamed>"}`, `Query references unknown read model ${query.read_model}.`, "Point to an emitted read model.");
+    }
+  }
+
+  for (const projection of asArray(database.projections)) {
+    const location = `system.database.projections.${projection.name || "<unnamed>"}`;
+    if (!eventsByName.has(projection.on?.event)) add("error", "PROJECTION_EVENT_UNKNOWN", location, "Projection trigger event is missing or unknown.", "Set projection.on.event to an emitted event.");
+    if (!projection.idempotency) add("error", "PROJECTION_IDEMPOTENCY_MISSING", location, "Projection has no idempotency metadata.", "Add replay guard metadata.");
+    for (const write of asArray(projection.writes)) {
+      if (write.table && !tableNames.has(write.table) && !readModelsByName.has(write.table)) add("warning", "PROJECTION_WRITE_TABLE_UNKNOWN", `${location}.writes.${write.table}`, `Projection writes to unknown table ${write.table}.`, "Emit target schema.");
+      if (["upsert_delta", "upsert_snapshot", "delete", "soft_delete"].includes(write.operation) && !write.key) add("error", "PROJECTION_KEY_MISSING", `${location}.writes.${write.table || "<unknown>"}`, `${write.operation} projection write has no key.`, "Add replay-safe key.");
+      if (write.operation === "delete") add("warning", "PROJECTION_HARD_DELETE", `${location}.writes.${write.table || "<unknown>"}`, "Projection performs a hard delete.", "Prefer soft_delete for business objects.");
+    }
+  }
+
+  const summary = {
+    total: findings.length,
+    errors: findings.filter((item) => item.severity === "error").length,
+    warnings: findings.filter((item) => item.severity === "warning").length,
+    info: findings.filter((item) => item.severity === "info").length
+  };
+  return { schema: "cardity.security_review.v1", protocol: manifest.protocol || {}, ok: summary.errors === 0, summary, findings };
+}
+
+function renderReviewMarkdown(review) {
+  if (!review.findings.length) return `# ${protocolName(review.protocol)} Security Review\n\nStatus: pass\n\nNo findings.\n`;
+  return [
+    `# ${protocolName(review.protocol)} Security Review`,
+    "",
+    `Status: ${review.ok ? "pass" : "fail"}`,
+    "",
+    markdownTable(["Severity", "Code", "Location", "Finding", "Recommendation"], review.findings.map((finding) => [
+      finding.severity,
+      finding.code,
+      finding.location,
+      finding.message,
+      finding.recommendation
+    ]))
+  ].join("\n") + "\n";
+}
+
+function mapBy(items, keyFn) {
+  return new Map(asArray(items).map((item) => [keyFn(item), item]).filter(([key]) => key));
+}
+
+function compareCollections(changes, oldItems, newItems, options) {
+  const keyFn = options.key || ((item) => item?.name);
+  const oldMap = mapBy(oldItems, keyFn);
+  const newMap = mapBy(newItems, keyFn);
+  for (const [name, oldItem] of oldMap) {
+    if (!newMap.has(name)) changes.push({ severity: options.removedSeverity || "breaking", code: options.removedCode, location: `${options.location}.${name}`, message: `${options.label} ${name} was removed.`, advice: `Keep ${options.label.toLowerCase()} ${name}, or publish a breaking migration note.`, before: oldItem, after: null });
+  }
+  for (const [name, newItem] of newMap) {
+    if (!oldMap.has(name)) {
+      changes.push({ severity: options.addedSeverity || "info", code: options.addedCode, location: `${options.location}.${name}`, message: `${options.label} ${name} was added.`, advice: "Ensure downstream runtimes can consume the new contract entry.", before: null, after: newItem });
+    } else if (!same(options.shape(oldMap.get(name)), options.shape(newItem))) {
+      changes.push({ severity: options.changedSeverity || "warning", code: options.changedCode, location: `${options.location}.${name}`, message: `${options.label} ${name} changed.`, advice: options.changedAdvice || "Review compatibility before deploying.", before: options.shape(oldMap.get(name)), after: options.shape(newItem) });
+    }
+  }
+}
+
+function diffManifest(oldManifest, newManifest) {
+  const changes = [];
+  const oldDb = oldManifest.system?.database || {};
+  const newDb = newManifest.system?.database || {};
+  const oldUi = oldManifest.system?.ui || {};
+  const newUi = newManifest.system?.ui || {};
+  const oldName = protocolName(oldManifest.protocol);
+  const newName = protocolName(newManifest.protocol);
+  if (oldName !== newName) changes.push({ severity: "breaking", code: "PROTOCOL_NAME_CHANGED", location: "protocol.name", message: `Protocol name changed from ${oldName} to ${newName}.`, advice: "Treat protocol renames as a new protocol unless every runtime has a migration.", before: oldName, after: newName });
+  compareCollections(changes, oldManifest.methods, newManifest.methods, { label: "Method", location: "methods", removedCode: "METHOD_REMOVED", addedCode: "METHOD_ADDED", changedCode: "METHOD_SIGNATURE_CHANGED", changedSeverity: "breaking", shape: (method) => ({ params: method.params, returns: method.returns, route: method.route, effects: method.effects }) });
+  compareCollections(changes, oldManifest.events, newManifest.events, { label: "Event", location: "events", removedCode: "EVENT_REMOVED", addedCode: "EVENT_ADDED", changedCode: "EVENT_SCHEMA_CHANGED", changedSeverity: "breaking", shape: (event) => ({ params: event.params, runtime_fields: event.runtime_fields, stream: event.stream }) });
+  compareCollections(changes, oldUi.actions, newUi.actions, { label: "Action", location: "system.ui.actions", removedCode: "ACTION_REMOVED", addedCode: "ACTION_ADDED", changedCode: "ACTION_CONTRACT_CHANGED", changedSeverity: "breaking", shape: (action) => ({ kind: action.kind, permission: action.permission, confirm_required: action.confirm_required, readback_required: action.readback_required, idempotency_key: action.idempotency_key, risk_level: action.risk_level }) });
+  compareCollections(changes, oldManifest.permissions, newManifest.permissions, { label: "Permission", location: "permissions", key: (permission) => permission?.action, removedCode: "PERMISSION_REMOVED", addedCode: "PERMISSION_ADDED", changedCode: "PERMISSION_CHANGED", changedSeverity: "breaking", shape: (permission) => ({ action: permission.action, requires_confirmation: permission.requires_confirmation }) });
+  compareCollections(changes, oldDb.tables, newDb.tables, { label: "Table", location: "system.database.tables", removedCode: "TABLE_REMOVED", addedCode: "TABLE_ADDED", changedCode: "TABLE_SCHEMA_CHANGED", changedSeverity: "breaking", shape: (table) => ({ columns: table.columns, primary_key: table.primary_key, indexes: table.indexes }) });
+  compareCollections(changes, oldDb.read_models, newDb.read_models, { label: "Read model", location: "system.database.read_models", removedCode: "READ_MODEL_REMOVED", addedCode: "READ_MODEL_ADDED", changedCode: "READ_MODEL_SCHEMA_CHANGED", changedSeverity: "breaking", shape: (model) => ({ columns: model.columns, primary_key: model.primary_key, query_contracts: model.query_contracts }) });
+  compareCollections(changes, oldDb.projections, newDb.projections, { label: "Projection", location: "system.database.projections", removedCode: "PROJECTION_REMOVED", addedCode: "PROJECTION_ADDED", changedCode: "PROJECTION_CHANGED", changedSeverity: "warning", shape: (projection) => ({ version: projection.version, source: projection.source, on: projection.on, idempotency: projection.idempotency, writes: projection.writes }) });
+  compareCollections(changes, oldDb.queries, newDb.queries, { label: "Query", location: "system.database.queries", removedCode: "QUERY_REMOVED", addedCode: "QUERY_ADDED", changedCode: "QUERY_CHANGED", changedSeverity: "breaking", shape: (query) => ({ read_model: query.read_model, operation: query.operation, filters: query.filters }) });
+  const summary = { total: changes.length, breaking: changes.filter((item) => item.severity === "breaking").length, warnings: changes.filter((item) => item.severity === "warning").length, info: changes.filter((item) => item.severity === "info").length };
+  return { schema: "cardity.protocol_diff.v1", old_protocol: oldManifest.protocol || {}, new_protocol: newManifest.protocol || {}, compatible: summary.breaking === 0, summary, changes };
+}
+
+function renderDiffMarkdown(diff) {
+  if (!diff.changes.length) return `# ${protocolName(diff.old_protocol)} Diff\n\nCompatibility: compatible\n\nNo contract changes.\n`;
+  return [
+    `# ${protocolName(diff.old_protocol)} Diff`,
+    "",
+    `Compatibility: ${diff.compatible ? "compatible" : "breaking changes detected"}`,
+    "",
+    markdownTable(["Severity", "Code", "Location", "Change", "Advice"], diff.changes.map((change) => [change.severity, change.code, change.location, change.message, change.advice]))
+  ].join("\n") + "\n";
+}
+
+function manifestFromInput(input, prefix = "") {
+  const manifest = input[`${prefix}manifest`] || (!prefix ? input.manifest : undefined);
+  if (manifest) return manifest.manifest || manifest;
+  const sourceText = input[`${prefix}source_text`] || (!prefix ? input.source_text : undefined);
+  if (!sourceText) throw new Error(`Missing ${prefix}source_text or ${prefix}manifest`);
+  return compile(sourceText, { include_abi: false, include_manifest: true, include_protocol: false, carc: false }).manifest;
+}
+
 async function readBody(request) {
   if (request.method === "GET" || request.method === "HEAD") return {};
   const text = await request.text();
@@ -581,6 +833,26 @@ function mcpTools() {
           },
           required: ["source_text"]
         }
+      },
+      {
+        name: "cardity_manifest",
+        description: "Generate only the Agent OS manifest from Cardity source text.",
+        inputSchema: { type: "object", properties: { source_text: { type: "string" } }, required: ["source_text"] }
+      },
+      {
+        name: "cardity_explain_manifest",
+        description: "Explain Cardity source text or an Agent OS manifest.",
+        inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
+      },
+      {
+        name: "cardity_review_security",
+        description: "Review Cardity source text or an Agent OS manifest for action/projection safety.",
+        inputSchema: { type: "object", properties: { source_text: { type: "string" }, manifest: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
+      },
+      {
+        name: "cardity_diff",
+        description: "Compare two Cardity source texts or Agent OS manifests for breaking contract changes.",
+        inputSchema: { type: "object", properties: { old_source_text: { type: "string" }, new_source_text: { type: "string" }, old_manifest: { type: "object" }, new_manifest: { type: "object" }, format: { enum: ["markdown", "json"], default: "markdown" } }, required: [] }
       }
     ]
   };
@@ -601,6 +873,25 @@ async function handleMcp(body) {
       const payload = compile(args.source_text || "", args);
       return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] } };
     }
+    if (params.name === "cardity_manifest") {
+      const payload = compile(args.source_text || "", { include_abi: false, include_manifest: true, include_protocol: false, carc: false });
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.agent_manifest_result.v1", ok: true, protocol: payload.protocol, manifest: payload.manifest }, null, 2) }] } };
+    }
+    if (params.name === "cardity_explain_manifest") {
+      const summary = summarizeManifest(manifestFromInput(args));
+      const output = args.format === "json" ? summary : renderExplainMarkdown(summary);
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.explain_tool_result.v1", ok: true, format: args.format || "markdown", summary, output }, null, 2) }] } };
+    }
+    if (params.name === "cardity_review_security") {
+      const review = reviewManifest(manifestFromInput(args));
+      const output = args.format === "json" ? review : renderReviewMarkdown(review);
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.security_review_tool_result.v1", ok: review.ok, format: args.format || "markdown", review, output }, null, 2) }] } };
+    }
+    if (params.name === "cardity_diff") {
+      const diff = diffManifest(manifestFromInput(args, "old_"), manifestFromInput(args, "new_"));
+      const output = args.format === "json" ? diff : renderDiffMarkdown(diff);
+      return { jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: JSON.stringify({ schema: "cardity.protocol_diff_tool_result.v1", ok: diff.compatible, format: args.format || "markdown", diff, output }, null, 2) }] } };
+    }
     return { jsonrpc: "2.0", id: body.id, error: { code: -32602, message: `Unknown tool: ${params.name}` } };
   }
   return { jsonrpc: "2.0", id: body.id || null, error: { code: -32601, message: `Method not found: ${body.method}` } };
@@ -610,7 +901,7 @@ async function edgeApi(request) {
   const url = new URL(request.url);
   const body = await readBody(request);
   if (url.pathname === "/mcp") return json(await handleMcp(body));
-  if (!body.source_text && url.pathname !== "/v1/generation-guide") return null;
+  if (!body.source_text && !body.manifest && !body.old_source_text && !body.old_manifest && url.pathname !== "/v1/generation-guide") return null;
   if (url.pathname === "/v1/generation-guide") return json(generationGuide(body.requirement || ""));
   if (url.pathname === "/v1/compile") return json(compile(body.source_text, body));
   if (url.pathname === "/v1/validate") {
@@ -620,6 +911,18 @@ async function edgeApi(request) {
   if (url.pathname === "/v1/manifest") {
     const payload = compile(body.source_text, { include_abi: false, include_manifest: true });
     return json({ schema: "cardity.agent_manifest_result.v1", ok: true, protocol: payload.protocol, manifest: payload.manifest });
+  }
+  if (url.pathname === "/v1/explain") {
+    const summary = summarizeManifest(manifestFromInput(body));
+    return json({ schema: "cardity.explain_tool_result.v1", ok: true, summary, output: body.format === "json" ? summary : renderExplainMarkdown(summary) });
+  }
+  if (url.pathname === "/v1/review") {
+    const review = reviewManifest(manifestFromInput(body));
+    return json({ schema: "cardity.security_review_tool_result.v1", ok: review.ok, review, output: body.format === "json" ? review : renderReviewMarkdown(review) });
+  }
+  if (url.pathname === "/v1/diff") {
+    const diff = diffManifest(manifestFromInput(body, "old_"), manifestFromInput(body, "new_"));
+    return json({ schema: "cardity.protocol_diff_tool_result.v1", ok: diff.compatible, diff, output: body.format === "json" ? diff : renderDiffMarkdown(diff) });
   }
   if (url.pathname === "/v1/abi") {
     const payload = compile(body.source_text, { include_abi: true, include_manifest: false });
