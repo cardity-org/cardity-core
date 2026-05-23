@@ -228,6 +228,7 @@ Cardity's current baseline for downstream Agent runtimes is:
 | `cardity.agent_manifest.v1` | Main handoff for generated APIs, database tables, UI actions, workflows, permissions, and tools. |
 | Agent action contract v1 | Generic action semantics, planner hints, permission/confirmation flags, dry-run/readback metadata, risk/audit/replay fields, modules, and external navigation/services. |
 | Projection contract v1.1 | Replay-safe read-model writes with confirmed readback, composite keys, runtime event fields, and query contracts. |
+| Runtime adapter contract v1 | Machine-readable compatibility declaration for downstream Agent runtimes. |
 
 Machine-readable schemas live in [schemas](schemas). Local conformance guidance
 lives in [docs/conformance.md](docs/conformance.md).
@@ -311,6 +312,17 @@ cardity conformance dist/protocol.agent.json --runtime-adapter examples/runtime_
 manifest schema, generic action fields, planner hints, projection idempotency,
 read-model schema, security review status, and optional runtime adapter
 capabilities.
+
+Validate a runtime adapter declaration:
+
+```bash
+cardity adapter examples/runtime_adapter_pmtsoul_agent_os.json
+cardity adapter examples/runtime_adapter_pmtsoul_agent_os.json --json
+```
+
+`cardity adapter` validates `cardity.runtime_adapter_contract.v1`, including
+supported contract versions, runtime capabilities, conformance status, and
+production write policy.
 
 ## Local Development
 
@@ -420,6 +432,7 @@ api.cardity.org/*
 - [Agent protocol layer](docs/agent_protocol_layer.md)
 - [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
+- [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
 - [Contract conformance](docs/conformance.md)
 - [Next-stage roadmap](docs/next_stage_roadmap.md)
 - [Public API](docs/public_api.md)

@@ -1,8 +1,9 @@
 {
   "schema": "cardity.runtime_adapter_contract.v1",
   "runtime": {
-    "name": "Cardity Mock Runtime Adapter",
-    "version": "0.1.0"
+    "name": "PMTSoul Agent OS",
+    "version": "0.1.0-alpha.cardity-v1",
+    "homepage": "https://pmtsoul.com"
   },
   "supported_manifest_versions": ["cardity.agent_manifest.v1"],
   "supported_action_contracts": ["agent_action_contract_v1"],
@@ -19,7 +20,7 @@
     "external_services": true,
     "conformance_gate": true,
     "manifest_validation": true,
-    "workspace_metadata": false,
+    "workspace_metadata": true,
     "diagnostics_surface": true
   },
   "production_write_policy": {
@@ -29,9 +30,21 @@
     "requires_readback_query": true,
     "requires_idempotency_key": true,
     "requires_replay_policy": true,
-    "notes": "Mock adapter never executes production writes."
+    "notes": "Production writes remain disabled until PMTSoul receives an explicit deployment/write permission contract."
+  },
+  "endpoints": {
+    "conformance": "make cardity-validate",
+    "run": "tools/generate_merchant_erp_catalog.py",
+    "events": "generated workspace audit/event sinks"
   },
   "conformance": {
-    "status": "partial"
-  }
+    "status": "passed",
+    "report_url": "docs/generated/merchant-erp-cardity-conformance.json",
+    "last_checked_at": "2026-05-23"
+  },
+  "notes": [
+    "Merchant ERP is a downstream reference implementation only.",
+    "Cardity remains the generic protocol/action/projection contract layer.",
+    "PMTSoul blocks workspace generation when Cardity conformance fails."
+  ]
 }

@@ -11,6 +11,7 @@ const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
 const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
+const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 
 function templatesPath() {
   return path.join(__dirname, '..', 'templates');
@@ -298,6 +299,31 @@ program
   });
 
 program
+  .command('adapter <file>')
+  .description('Validate a Cardity runtime adapter declaration')
+  .option('--json', 'Output machine-readable adapter validation JSON')
+  .option('-o, --output <file>', 'Write validation report to a file')
+  .action((file, options) => {
+    try {
+      const adapter = fs.readJsonSync(path.resolve(file));
+      const report = validateRuntimeAdapter(adapter);
+      const output = options.json
+        ? `${JSON.stringify(report, null, 2)}\n`
+        : renderRuntimeAdapterMarkdown(report);
+
+      if (options.output) {
+        fs.ensureDirSync(path.dirname(path.resolve(options.output)));
+        fs.writeFileSync(options.output, output, 'utf8');
+      } else {
+        process.stdout.write(output);
+      }
+    } catch (error) {
+      console.error(chalk.red(`❌ Error validating runtime adapter: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+program
   .command('visualize <file>')
   .description('Visualize a .car protocol or Agent OS manifest as a layered contract graph')
   .option('--json', 'Output machine-readable visualization JSON')
@@ -540,6 +566,7 @@ program
     console.log(chalk.gray('  cardity review src/index.car     # Review action/projection safety\n'));
     console.log(chalk.gray('  cardity diff old.car new.car     # Compare protocol contract changes\n'));
     console.log(chalk.gray('  cardity conformance src/index.car # Run Cardity compatibility checks\n'));
+    console.log(chalk.gray('  cardity adapter runtime.json      # Validate runtime adapter compatibility\n'));
     console.log(chalk.gray('  cardity visualize src/index.car  # Render a layered manifest graph\n'));
     
     console.log(chalk.yellow.bold('DRC-20 Token Operations:'));

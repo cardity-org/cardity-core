@@ -10,7 +10,8 @@
     "supported_action_contracts",
     "supported_projection_contracts",
     "capabilities",
-    "conformance"
+    "conformance",
+    "production_write_policy"
   ],
   "additionalProperties": true,
   "properties": {
@@ -59,7 +60,25 @@
         "audit_sink": { "type": "boolean" },
         "replay_guard": { "type": "boolean" },
         "external_navigation": { "type": "boolean" },
-        "external_services": { "type": "boolean" }
+        "external_services": { "type": "boolean" },
+        "conformance_gate": { "type": "boolean" },
+        "manifest_validation": { "type": "boolean" },
+        "workspace_metadata": { "type": "boolean" },
+        "diagnostics_surface": { "type": "boolean" }
+      }
+    },
+    "production_write_policy": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": true,
+      "properties": {
+        "mode": { "enum": ["disabled", "dry_run_only", "permissioned"] },
+        "requires_permission_contract": { "type": "boolean" },
+        "requires_confirm_required": { "type": "boolean" },
+        "requires_readback_query": { "type": "boolean" },
+        "requires_idempotency_key": { "type": "boolean" },
+        "requires_replay_policy": { "type": "boolean" },
+        "notes": { "type": "string" }
       }
     },
     "endpoints": {

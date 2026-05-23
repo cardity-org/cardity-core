@@ -113,4 +113,23 @@ for (const field of ["schema", "protocol", "summary", "nodes", "edges"]) {
   if (!visualizationSchema.required.includes(field)) fail(`manifest visualization schema missing required ${field}`);
 }
 
+const runtimeAdapterSchema = readJson("schemas/runtime_adapter_contract_v1.schema.json");
+for (const field of [
+  "schema",
+  "runtime",
+  "supported_manifest_versions",
+  "supported_action_contracts",
+  "supported_projection_contracts",
+  "capabilities",
+  "conformance",
+  "production_write_policy",
+]) {
+  if (!runtimeAdapterSchema.required.includes(field)) fail(`runtime adapter schema missing required ${field}`);
+}
+for (const mode of ["disabled", "dry_run_only", "permissioned"]) {
+  if (!enumValues(runtimeAdapterSchema, "/properties/production_write_policy/properties/mode").includes(mode)) {
+    fail(`runtime adapter schema missing production write mode ${mode}`);
+  }
+}
+
 console.log(`Contract schemas verified for ${schemas.length} file(s)`);

@@ -37,6 +37,9 @@ for (const field of ["error_code", "severity", "message", "repair_hint"]) {
 }
 
 const adapter = readJson("schemas/runtime_adapter_contract_v1.schema.json");
+if (!adapter.required.includes("production_write_policy")) {
+  fail("runtime adapter schema missing production_write_policy");
+}
 for (const field of [
   "register_actions",
   "permission_gate",
@@ -49,6 +52,14 @@ for (const field of [
   if (!adapter.properties.capabilities.required.includes(field)) {
     fail(`runtime adapter schema missing capability ${field}`);
   }
+}
+
+const pmtsoulAdapter = readJson("examples/runtime_adapter_pmtsoul_agent_os.json");
+if (pmtsoulAdapter.schema !== "cardity.runtime_adapter_contract.v1") {
+  fail("PMTSoul runtime adapter example has wrong schema");
+}
+if (!pmtsoulAdapter.supported_projection_contracts.includes("projection_contract_v1_1")) {
+  fail("PMTSoul runtime adapter example must support projection_contract_v1_1");
 }
 
 const securityReview = readJson("schemas/security_review_v1.schema.json");

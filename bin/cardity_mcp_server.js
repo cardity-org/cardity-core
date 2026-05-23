@@ -10,6 +10,7 @@ const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
 const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
+const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 
 const SERVER_INFO = {
   name: 'cardity-core',
@@ -155,6 +156,19 @@ const TOOLS = [
         file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
         source_text: { type: 'string', description: 'Protocol source text.' },
         manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
+        runtime_adapter: { type: 'object', description: 'Inline runtime adapter contract JSON.' },
+        runtime_adapter_file: { type: 'string', description: 'Path to a runtime adapter contract JSON file.' },
+        format: { enum: ['markdown', 'json'], default: 'markdown' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'cardity_validate_runtime_adapter',
+    description: 'Validate a Cardity runtime adapter contract declaration.',
+    inputSchema: {
+      type: 'object',
+      properties: {
         runtime_adapter: { type: 'object', description: 'Inline runtime adapter contract JSON.' },
         runtime_adapter_file: { type: 'string', description: 'Path to a runtime adapter contract JSON file.' },
         format: { enum: ['markdown', 'json'], default: 'markdown' }
@@ -413,6 +427,20 @@ function conformance(args) {
   };
 }
 
+function adapter(args) {
+  const runtimeAdapter = args.runtime_adapter
+    || (args.runtime_adapter_file ? fs.readJsonSync(path.resolve(args.runtime_adapter_file)) : null);
+  if (!runtimeAdapter) throw new Error('Missing runtime_adapter or runtime_adapter_file.');
+  const report = validateRuntimeAdapter(runtimeAdapter);
+  return {
+    schema: 'cardity.runtime_adapter_validation_tool_result.v1',
+    ok: report.ok,
+    format: args.format || 'markdown',
+    report,
+    output: args.format === 'json' ? report : renderRuntimeAdapterMarkdown(report)
+  };
+}
+
 function visualize(args) {
   const manifestPayload = manifestFromArgs(args);
   const visualization = buildVisualization(manifestPayload);
@@ -490,6 +518,8 @@ async function handle(request) {
           success(request.id, toolResult(diff(args)));
         } else if (params.name === 'cardity_conformance') {
           success(request.id, toolResult(conformance(args)));
+        } else if (params.name === 'cardity_validate_runtime_adapter') {
+          success(request.id, toolResult(adapter(args)));
         } else if (params.name === 'cardity_visualize_manifest') {
           success(request.id, toolResult(visualize(args)));
         } else {

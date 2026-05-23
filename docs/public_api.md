@@ -58,6 +58,7 @@ native C++ binaries. Plain Workers cannot execute those binaries directly.
 | `POST /v1/review` | Review action/projection safety. |
 | `POST /v1/diff` | Compare two sources/manifests for breaking contract changes. |
 | `POST /v1/conformance` | Run manifest/action/projection/runtime compatibility checks. |
+| `POST /v1/runtime-adapter/validate` | Validate a runtime adapter contract declaration. |
 | `POST /v1/generation-guide` | Return the current agent-safe protocol generation rules. |
 | `POST /mcp` | Minimal JSON-RPC MCP-over-HTTP endpoint for tool discovery and calls. |
 
@@ -126,6 +127,7 @@ The `/mcp` endpoint supports:
 - `tools/call` with `cardity_review_security`
 - `tools/call` with `cardity_diff`
 - `tools/call` with `cardity_conformance`
+- `tools/call` with `cardity_validate_runtime_adapter`
 
 `cardity_generation_guide` should be the first call for agents that generate a
 protocol from natural language. It tells the model to keep `state` scalar and to

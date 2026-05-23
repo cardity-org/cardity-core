@@ -62,6 +62,7 @@ npm run build
 | `cardity_review_security` | Review action/projection safety before generated workspaces enable execution. |
 | `cardity_diff` | Compare old/new protocol or manifest contracts for breaking changes. |
 | `cardity_conformance` | Produce a compatibility report for manifest/action/projection/runtime-adapter consumption. |
+| `cardity_validate_runtime_adapter` | Validate PMTSoul's runtime adapter compatibility declaration. |
 
 Example `cardity_compile` arguments:
 
@@ -249,6 +250,33 @@ Read-model schemas are emitted under `system.database.read_models` and include
 Start with MCP because it keeps the repo boundary clean. Once the manifest
 contract stabilizes, PMTSoul can add a built-in `tools/cardity_tool.py` wrapper
 that calls the same `cardity_agent` CLI or links a future Cardity SDK.
+
+PMTSoul should publish and keep current a runtime adapter declaration shaped by
+`schemas/runtime_adapter_contract_v1.schema.json`. The current reference lives
+at:
+
+```text
+examples/runtime_adapter_pmtsoul_agent_os.json
+```
+
+Validate it locally:
+
+```bash
+node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json
+```
+
+Validate it through hosted Cardity:
+
+```bash
+curl https://api.cardity.org/v1/runtime-adapter/validate \
+  -H "content-type: application/json" \
+  -d @examples/runtime_adapter_pmtsoul_agent_os.json
+```
+
+The adapter declaration is how PMTSoul says: which Cardity manifest/action/
+projection contract versions it supports, whether conformance blocks workspace
+generation, how dry-run/readback/audit/replay are handled, and whether
+production writes are disabled or permissioned.
 
 ## Reference ERP Example
 

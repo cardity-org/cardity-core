@@ -1,4 +1,5 @@
 const { reviewManifest } = require('./cardity_review');
+const { validateRuntimeAdapter } = require('./cardity_adapter');
 
 const CONFORMANCE_SCHEMA = 'cardity.conformance_report.v1';
 
@@ -253,6 +254,19 @@ function runConformance(manifest, options = {}) {
   );
 
   if (runtimeAdapter) {
+    const adapterValidation = validateRuntimeAdapter(runtimeAdapter);
+    for (const adapterCheck of adapterValidation.checks) {
+      check(
+        `runtime_adapter.contract.${adapterCheck.id}`,
+        'runtime_adapter',
+        adapterCheck.status === 'pass',
+        adapterCheck.message,
+        adapterCheck.location,
+        adapterCheck.recommendation,
+        adapterCheck.status === 'warn'
+      );
+    }
+
     check(
       'runtime_adapter.schema',
       'runtime_adapter',
@@ -268,6 +282,22 @@ function runConformance(manifest, options = {}) {
       'Runtime adapter supports this manifest version.',
       'runtime_adapter.supported_manifest_versions',
       `Add ${manifest.schema} to supported_manifest_versions.`
+    );
+    check(
+      'runtime_adapter.action_contract',
+      'runtime_adapter',
+      asArray(runtimeAdapter.supported_action_contracts).includes('agent_action_contract_v1'),
+      'Runtime adapter supports agent_action_contract_v1.',
+      'runtime_adapter.supported_action_contracts',
+      'Add agent_action_contract_v1 to supported_action_contracts.'
+    );
+    check(
+      'runtime_adapter.projection_contract',
+      'runtime_adapter',
+      asArray(runtimeAdapter.supported_projection_contracts).includes('projection_contract_v1_1'),
+      'Runtime adapter supports projection_contract_v1_1.',
+      'runtime_adapter.supported_projection_contracts',
+      'Add projection_contract_v1_1 to supported_projection_contracts.'
     );
     for (const capability of [
       'register_actions',

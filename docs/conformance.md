@@ -5,6 +5,7 @@ Cardity's stable baseline is:
 - Agent OS manifest schema: `cardity.agent_manifest.v1`
 - Agent action contract: `agent_action_contract_v1`
 - Projection contract: `projection_contract_v1_1`
+- Runtime adapter contract: `cardity.runtime_adapter_contract.v1`
 - Conformance report: `cardity.conformance_report.v1`
 
 The repository keeps conformance local and explicit. GitHub Actions are optional
@@ -34,6 +35,7 @@ Cardity release.
 | `examples/03_merchant_erp_agent.car` | Downstream ERP reference protocol. |
 | `examples/03_merchant_erp_projection_v1_1.json` | Full v1.1 read-model, projection, query, action, module, and external-service baseline. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
+| `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
 ## Local Verification
 
@@ -66,6 +68,7 @@ node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 node bin/cardity.js conformance examples/02_member_points_agent.car
 node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-adapter examples/runtime_adapter_cardity_mock.json --json
+node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json
 ```
 
 ## Conformance Report
@@ -74,6 +77,10 @@ node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-ad
 The JSON report is intended for CI, hosted MCP tools, and downstream Agent
 runtimes that need a compatibility gate before consuming generated workspaces.
 Warnings do not fail the report; failed checks set `ok=false`.
+
+`cardity adapter` validates a runtime adapter declaration independently of any
+manifest. It checks supported contract versions, capability declarations,
+conformance status, and production write policy.
 
 ## Runtime Boundary
 
