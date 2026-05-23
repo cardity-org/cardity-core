@@ -273,11 +273,13 @@ Visualize a manifest as a layered contract graph:
 cardity visualize examples/02_member_points_agent.car
 cardity visualize dist/protocol.agent.json --mermaid
 cardity visualize dist/protocol.agent.json --json
+cardity visualize dist/protocol.agent.json --html -o dist/protocol.visualizer.html
 ```
 
 `cardity visualize` renders the manifest as three layers: business protocol,
 system generation, and agent execution. The JSON output exposes graph nodes and
-edges for Playground, docs, and downstream runtime tooling.
+edges for Playground, docs, and downstream runtime tooling. The HTML output is a
+self-contained report that can be opened locally or shared with runtime teams.
 
 Review action and projection safety:
 

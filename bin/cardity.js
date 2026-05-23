@@ -10,7 +10,7 @@ const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
-const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
+const { buildVisualization, renderMermaid, renderVisualizationMarkdown, renderVisualizationHtml } = require('./cardity_visualize');
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
 const { runtimeRegistryResult } = require('./cardity_runtime_registry');
@@ -477,6 +477,7 @@ program
   .description('Visualize a .car protocol or Agent OS manifest as a layered contract graph')
   .option('--json', 'Output machine-readable visualization JSON')
   .option('--mermaid', 'Output only the Mermaid graph')
+  .option('--html', 'Output a self-contained HTML visualization report')
   .option('-o, --output <file>', 'Write visualization to a file')
   .action((file, options) => {
     try {
@@ -486,7 +487,9 @@ program
         ? `${JSON.stringify(visualization, null, 2)}\n`
         : options.mermaid
           ? `${renderMermaid(visualization)}\n`
-          : renderVisualizationMarkdown(visualization);
+          : options.html
+            ? renderVisualizationHtml(visualization)
+            : renderVisualizationMarkdown(visualization);
 
       if (options.output) {
         fs.ensureDirSync(path.dirname(path.resolve(options.output)));

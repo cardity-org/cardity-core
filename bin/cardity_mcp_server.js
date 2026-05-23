@@ -9,7 +9,7 @@ const { summarizeManifest, renderExplainMarkdown } = require('./cardity_explain'
 const { reviewManifest, renderReviewMarkdown } = require('./cardity_review');
 const { diffManifest, renderDiffMarkdown } = require('./cardity_diff');
 const { runConformance, renderConformanceMarkdown } = require('./cardity_conformance');
-const { buildVisualization, renderMermaid, renderVisualizationMarkdown } = require('./cardity_visualize');
+const { buildVisualization, renderMermaid, renderVisualizationMarkdown, renderVisualizationHtml } = require('./cardity_visualize');
 const { validateRuntimeAdapter, renderRuntimeAdapterMarkdown } = require('./cardity_adapter');
 const { schemaRegistryResult } = require('./cardity_schema_registry');
 const { runtimeRegistryResult } = require('./cardity_runtime_registry');
@@ -222,7 +222,7 @@ const TOOLS = [
         file: { type: 'string', description: 'Path to a .car protocol file or manifest JSON file.' },
         source_text: { type: 'string', description: 'Protocol source text.' },
         manifest: { type: 'object', description: 'Inline Agent OS manifest JSON.' },
-        format: { enum: ['markdown', 'json', 'mermaid'], default: 'markdown' }
+        format: { enum: ['markdown', 'json', 'mermaid', 'html'], default: 'markdown' }
       },
       required: []
     }
@@ -497,7 +497,9 @@ function visualize(args) {
     ? visualization
     : args.format === 'mermaid'
       ? renderMermaid(visualization)
-      : renderVisualizationMarkdown(visualization);
+      : args.format === 'html'
+        ? renderVisualizationHtml(visualization)
+        : renderVisualizationMarkdown(visualization);
   return {
     schema: 'cardity.visualization_tool_result.v1',
     ok: true,

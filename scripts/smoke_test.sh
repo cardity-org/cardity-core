@@ -20,6 +20,7 @@ EXPLAIN_OUT=/tmp/cardity_counter_explain.md
 EXPLAIN_JSON_OUT=/tmp/cardity_counter_explain.json
 VISUALIZE_OUT=/tmp/cardity_member_points_visualize.md
 VISUALIZE_JSON_OUT=/tmp/cardity_member_points_visualize.json
+VISUALIZE_HTML_OUT=/tmp/cardity_member_points_visualize.html
 REVIEW_OUT=/tmp/cardity_member_points_review.md
 REVIEW_JSON_OUT=/tmp/cardity_member_points_review.json
 DIFF_NEW_MANIFEST_OUT=/tmp/cardity_member_points_changed.agent.json
@@ -65,6 +66,7 @@ node bin/cardity.js explain examples/01_counter.car --diagram > "$EXPLAIN_OUT"
 node bin/cardity.js explain "$MANIFEST_OUT" --json > "$EXPLAIN_JSON_OUT"
 node bin/cardity.js visualize examples/02_member_points_agent.car > "$VISUALIZE_OUT"
 node bin/cardity.js visualize "$MEMBER_MANIFEST_OUT" --json > "$VISUALIZE_JSON_OUT"
+node bin/cardity.js visualize "$MEMBER_MANIFEST_OUT" --html > "$VISUALIZE_HTML_OUT"
 node bin/cardity.js review examples/02_member_points_agent.car > "$REVIEW_OUT"
 node bin/cardity.js review "$MEMBER_MANIFEST_OUT" --json > "$REVIEW_JSON_OUT"
 node -e 'const fs=require("fs"); const f=process.argv[1]; const out=process.argv[2]; const m=JSON.parse(fs.readFileSync(f,"utf8")); m.methods=m.methods.filter(x=>x.name!=="spend_points"); m.system.ui.actions=m.system.ui.actions.filter(x=>x.method!=="spend_points"); fs.writeFileSync(out, JSON.stringify(m,null,2));' "$MEMBER_MANIFEST_OUT" "$DIFF_NEW_MANIFEST_OUT"
@@ -186,6 +188,12 @@ fi
 if ! grep -q '"schema": "cardity.manifest_visualization.v1"' "$VISUALIZE_JSON_OUT"; then
   echo "Expected cardity visualize --json to render visualization schema"
   cat "$VISUALIZE_JSON_OUT"
+  exit 1
+fi
+
+if ! grep -q '<title>MemberPointsSystem Manifest Visualizer</title>' "$VISUALIZE_HTML_OUT" || ! grep -q 'Contract Edges' "$VISUALIZE_HTML_OUT"; then
+  echo "Expected cardity visualize --html to render a standalone HTML report"
+  cat "$VISUALIZE_HTML_OUT"
   exit 1
 fi
 

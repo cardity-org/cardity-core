@@ -73,6 +73,7 @@ node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js visualize examples/02_member_points_agent.car
+node bin/cardity.js visualize examples/02_member_points_agent.car --html -o /tmp/cardity_visualizer.html
 node bin/cardity.js review examples/02_member_points_agent.car
 node bin/cardity.js diff examples/01_counter.car examples/01_counter.car
 node bin/cardity.js conformance examples/02_member_points_agent.car
