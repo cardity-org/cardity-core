@@ -288,9 +288,17 @@ metadata so future validation can resolve the same Cardity contract documents:
 https://api.cardity.org/schemas
 https://api.cardity.org/schemas/agent_manifest_v1.schema.json
 https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
+https://api.cardity.org/schemas/production_write_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
+
+For PMTSoul's next production-write phase, Cardity now exposes a generic
+`cardity.production_write_contract.v1` schema. PMTSoul can use it to gate real
+writes with permission id, confirmation policy, confirmation UI state,
+confirmed readback verification, idempotency, audit, replay, compensation,
+long-running task result, and role-scoped tool permission metadata. This remains
+a generic Agent action contract, not an ERP-specific DSL.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

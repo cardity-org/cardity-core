@@ -1,0 +1,70 @@
+{
+  "schema": "cardity.production_write_contract.v1",
+  "permission": {
+    "id": "catalog.item.update",
+    "scope": "workspace",
+    "grant_required": true,
+    "runtime_grant_ref": "$ctx.permission_grant_id"
+  },
+  "confirm_policy": {
+    "required": true,
+    "required_before": "write_commit",
+    "expires_after_seconds": 900,
+    "approver_context": ["$ctx.workspace_id", "$ctx.actor_id"]
+  },
+  "confirmation_ui": {
+    "states": ["draft", "preparing", "pending", "approved", "verified", "failed", "expired", "cancelled"],
+    "runnable_states": ["approved"],
+    "terminal_states": ["verified", "failed", "expired", "cancelled"],
+    "disabled_reason_field": "$confirmation.disabled_reason"
+  },
+  "readback": {
+    "required": true,
+    "query": {
+      "name": "catalog.item.detail",
+      "input": {
+        "workspace_id": "$ctx.workspace_id",
+        "item_id": "$input.item_id"
+      }
+    },
+    "expected_fields": ["workspace_id", "item_id", "name", "price", "updated_at"],
+    "verification_status": "pending",
+    "stale_write_policy": "block"
+  },
+  "idempotency": {
+    "key": "$run.id",
+    "source_id": "$event.id",
+    "write_index": "$event.write_index",
+    "replay_window_seconds": 86400
+  },
+  "audit": {
+    "event": "CatalogItemUpdated",
+    "fields": ["$ctx.workspace_id", "$ctx.actor_id", "$input.item_id", "$run.id", "$event.id"]
+  },
+  "replay_policy": {
+    "mode": "idempotent_command",
+    "on_replay": "return_prior_result",
+    "dedupe_tuple": ["$event.id", "$event.write_index", "$run.id"]
+  },
+  "compensation_policy": {
+    "mode": "manual",
+    "action": null,
+    "required_context": ["$ctx.workspace_id", "$ctx.actor_id", "$run.id"]
+  },
+  "long_running_task": {
+    "enabled": false,
+    "task_id": null,
+    "status_query": null,
+    "progress_event": null,
+    "result_readback": null,
+    "timeout_seconds": 0
+  },
+  "role_scope": {
+    "roles": ["operator", "admin"],
+    "skill_whitelist": ["catalog.read", "catalog.write"],
+    "tool_permissions": ["catalog.item.update"],
+    "credential_required": true,
+    "visibility": "conditional",
+    "runnable_when": ["$ctx.permission_grant_id", "$confirmation.state == 'approved'"]
+  }
+}

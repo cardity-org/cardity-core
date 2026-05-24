@@ -82,6 +82,7 @@ node bin/cardity.js verify-package "$PACKAGE_OUT" --json > "$PACKAGE_VERIFY_OUT"
 node bin/cardity.js unpack "$PACKAGE_OUT" --out-dir "$PACKAGE_UNPACK_DIR" >/dev/null
 node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
 node bin/cardity.js schemas explain_result_v1 --json >/tmp/cardity_explain_schema_registry_smoke.json
+node bin/cardity.js schemas production_write_contract_v1 --json >/tmp/cardity_production_write_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
 node bin/cardity.js registry --json > "$ECOSYSTEM_REGISTRY_OUT"
 node bin/cardity.js registry templates member_points --json > "$ECOSYSTEM_TEMPLATE_OUT"

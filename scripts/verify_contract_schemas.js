@@ -23,6 +23,7 @@ function enumValues(schema, pointer) {
 const schemas = [
   "schemas/agent_manifest_v1.schema.json",
   "schemas/agent_action_contract_v1.schema.json",
+  "schemas/production_write_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -92,6 +93,31 @@ for (const op of ["insert", "upsert_delta", "upsert_snapshot", "delete", "soft_d
 for (const source of ["event", "confirmed_readback"]) {
   if (!enumValues(projectionSchema, "/$defs/projection/properties/source").includes(source)) {
     fail(`projection schema missing source ${source}`);
+  }
+}
+
+const productionWriteSchema = readJson("schemas/production_write_contract_v1.schema.json");
+for (const field of [
+  "schema",
+  "permission",
+  "confirm_policy",
+  "confirmation_ui",
+  "readback",
+  "idempotency",
+  "audit",
+  "replay_policy",
+  "compensation_policy",
+]) {
+  if (!productionWriteSchema.required.includes(field)) fail(`production write schema missing required ${field}`);
+}
+for (const state of ["draft", "preparing", "pending", "approved", "verified", "failed"]) {
+  if (!enumValues(productionWriteSchema, "/properties/confirmation_ui/properties/states/items").includes(state)) {
+    fail(`production write schema missing confirmation state ${state}`);
+  }
+}
+for (const mode of ["none", "manual", "compensating_action"]) {
+  if (!enumValues(productionWriteSchema, "/properties/compensation_policy/properties/mode").includes(mode)) {
+    fail(`production write schema missing compensation mode ${mode}`);
   }
 }
 

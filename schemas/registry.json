@@ -26,6 +26,16 @@
       "status": "stable"
     },
     {
+      "name": "production_write_contract_v1",
+      "contract": "cardity.production_write_contract.v1",
+      "version": "v1",
+      "file": "production_write_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/production_write_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/production_write_contract_v1.schema.json",
+      "title": "Cardity Production Write Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",

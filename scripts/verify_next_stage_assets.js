@@ -16,16 +16,19 @@ function exists(relativePath) {
   return fs.existsSync(path.join(root, relativePath));
 }
 
-for (const schemaPath of [
+const nextStageSchemaPaths = [
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
+  "schemas/production_write_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
   "schemas/manifest_visualization_v1.schema.json",
   "schemas/package_v1.schema.json",
   "schemas/ecosystem_registry_v1.schema.json",
-]) {
+];
+
+for (const schemaPath of nextStageSchemaPaths) {
   const schema = readJson(schemaPath);
   if (!schema.$id?.startsWith("https://cardity.org/schemas/")) fail(`${schemaPath}: missing public $id`);
   if (!schema.title) fail(`${schemaPath}: missing title`);
@@ -68,6 +71,20 @@ for (const field of [
   if (!adapter.properties.capabilities.required.includes(field)) {
     fail(`runtime adapter schema missing capability ${field}`);
   }
+}
+
+const productionWrite = readJson("schemas/production_write_contract_v1.schema.json");
+for (const field of ["permission", "confirm_policy", "confirmation_ui", "readback", "idempotency", "audit", "replay_policy"]) {
+  if (!productionWrite.required.includes(field)) {
+    fail(`production write schema missing required ${field}`);
+  }
+}
+const productionWriteExample = readJson("examples/04_production_write_contract_v1.json");
+if (productionWriteExample.schema !== "cardity.production_write_contract.v1") {
+  fail("production write example has wrong schema");
+}
+for (const field of productionWrite.required) {
+  if (!(field in productionWriteExample)) fail(`production write example missing ${field}`);
 }
 
 const pmtsoulAdapter = readJson("examples/runtime_adapter_pmtsoul_agent_os.json");
@@ -152,4 +169,4 @@ for (const name of templateNames) {
   if (!exists(`templates/${name}/README.md`)) fail(`${name}: README missing`);
 }
 
-console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), 8 schema(s)`);
+console.log(`Next-stage assets verified: ${templateNames.length} template(s), 5 prompt(s), ${nextStageSchemaPaths.length} schema(s)`);

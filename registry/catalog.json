@@ -59,6 +59,11 @@
       "url": "https://api.cardity.org/schemas/agent_action_contract_v1.schema.json"
     },
     {
+      "id": "production_write_contract_v1",
+      "contract": "cardity.production_write_contract.v1",
+      "url": "https://api.cardity.org/schemas/production_write_contract_v1.schema.json"
+    },
+    {
       "id": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json"

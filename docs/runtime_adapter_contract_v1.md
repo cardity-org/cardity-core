@@ -31,6 +31,7 @@ https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 | `supported_manifest_versions` | Cardity manifest versions accepted by the runtime. |
 | `supported_action_contracts` | Action contract versions accepted by the runtime. |
 | `supported_projection_contracts` | Projection contract versions accepted by the runtime. |
+| `supported_production_write_contracts` | Optional production write contract versions accepted by the runtime. |
 | `capabilities` | Boolean capability map for execution behavior. |
 | `production_write_policy` | Production write boundary. |
 | `conformance.status` | Current Cardity compatibility status. |
@@ -66,7 +67,8 @@ its safety boundary.
     "requires_confirm_required": true,
     "requires_readback_query": true,
     "requires_idempotency_key": true,
-    "requires_replay_policy": true
+    "requires_replay_policy": true,
+    "requires_production_write_contract": true
   }
 }
 ```
@@ -78,6 +80,10 @@ Allowed modes:
 | `disabled` | Runtime never executes production writes from Cardity actions. |
 | `dry_run_only` | Runtime can plan/preview writes, but production write execution is disabled. |
 | `permissioned` | Runtime may execute writes only when full permission/readback/idempotency/replay contracts exist. |
+
+When a runtime supports real writes, it should declare
+`supported_production_write_contracts` and require
+`production_write_policy.requires_production_write_contract=true`.
 
 ## PMTSoul Reference Adapter
 

@@ -47,6 +47,7 @@ runtime-facing execution safety metadata.
 | `readback_required` | yes | Whether a committed command must provide a confirmed readback payload. |
 | `readback_query` | yes | Query contract or post-commit route used to fetch readback state. Use `null` when not applicable. |
 | `idempotency_key` | yes | Expression used to deduplicate command execution, usually `$run.id`. Use `null` for pure queries. |
+| `production_write_contract` | no | Optional inline contract or schema reference for `cardity.production_write_contract.v1`. |
 | `risk_level` | yes | Planner-facing risk hint, usually `low`, `medium`, or `high`. |
 | `side_effects` | yes | Declared reads, writes, emitted events, or external effects. |
 | `audit_event` | yes | Event name a runtime can use for audit trails. Use `null` when not applicable. |
@@ -184,6 +185,12 @@ Runtimes consuming this contract should apply these rules:
 | Readback before projection | If `readback_required: true`, confirmed readback must be available before applying readback projections. |
 | Idempotency before replay | Use `idempotency_key` and `replay_policy` to avoid duplicate command execution. |
 | External stays external | Navigation/service entries do not imply write permission. |
+
+For real writes, runtimes should also require the optional
+`production_write_contract` block or a separately granted equivalent contract.
+That contract standardizes permission id, confirmation UI state, confirmed
+readback verification, idempotency, audit, replay, compensation, long-running
+task status, and role-scoped tool permissions.
 
 ## Stable Baseline
 

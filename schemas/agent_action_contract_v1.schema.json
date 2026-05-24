@@ -56,6 +56,11 @@
       "additionalProperties": true
     },
     "idempotency_key": { "type": ["string", "null"] },
+    "production_write_contract": {
+      "type": ["object", "string", "null"],
+      "additionalProperties": true,
+      "description": "Optional inline contract or reference for cardity.production_write_contract.v1."
+    },
     "risk_level": { "enum": ["low", "medium", "high"] },
     "side_effects": {
       "type": "object",

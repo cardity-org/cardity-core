@@ -40,6 +40,10 @@
       "minItems": 1,
       "items": { "type": "string" }
     },
+    "supported_production_write_contracts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "capabilities": {
       "type": "object",
       "required": [
@@ -78,6 +82,7 @@
         "requires_readback_query": { "type": "boolean" },
         "requires_idempotency_key": { "type": "boolean" },
         "requires_replay_policy": { "type": "boolean" },
+        "requires_production_write_contract": { "type": "boolean" },
         "notes": { "type": "string" }
       }
     },
