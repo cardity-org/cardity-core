@@ -54,6 +54,7 @@ node scripts/verify_agent_manifest_contract.js \
   "$AGENT_OUT" \
   /tmp/cardity_member_points_agent_result.json \
   examples/03_merchant_erp_projection_v1_1.json >/dev/null
+node scripts/verify_npm_package.js >/dev/null
 node scripts/verify_contract_schemas.js >/dev/null
 node scripts/verify_next_stage_assets.js >/dev/null
 grep -q 'Cardity Playground' src/cloudflare-worker.js

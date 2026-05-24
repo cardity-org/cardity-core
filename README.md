@@ -60,7 +60,8 @@ curl -sS https://api.cardity.org/v1/compile \
 
 ## MCP
 
-Cardity exposes two primary MCP tools:
+Cardity exposes MCP tools for compiler, contract review, registry, and runtime
+integration workflows. Core tools include:
 
 | Tool | Purpose |
 |---|---|

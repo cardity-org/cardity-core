@@ -149,7 +149,7 @@ function executeCommand(name, args) {
 
 program
   .name('cardity')
-  .description('Cardity - A modern programming language for blockchain protocol development on Dogecoin')
+  .description('Cardity - An agent protocol contract compiler for AI-generated systems')
   .version('1.0.0');
 
 // 编译器命令
@@ -705,8 +705,8 @@ program
   .command('help')
   .description('Show detailed help information')
   .action(() => {
-    console.log(chalk.blue.bold('Cardity - Blockchain Protocol Development Language'));
-    console.log(chalk.gray('A modern programming language for Dogecoin blockchain protocols\n'));
+    console.log(chalk.blue.bold('Cardity - Agent Protocol Contract Compiler'));
+    console.log(chalk.gray('A compiler for .car protocols, Agent OS manifests, schemas, conformance, and MCP tooling\n'));
     
     console.log(chalk.yellow.bold('Quick Start:'));
     console.log(chalk.gray('  cardity init my-project          # Create new project'));

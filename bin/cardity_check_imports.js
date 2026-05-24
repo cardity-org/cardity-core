@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { spawnSync } = require('child_process');
 
 function listCarFiles(rootDir) {
@@ -118,89 +119,91 @@ function main() {
   }
   const repoRoot = path.resolve(__dirname, '..');
   const pkgDir = path.resolve(packageDirArg);
-  const tmpOut = path.join(pkgDir, '.cardity_check_build');
-  fs.mkdirSync(tmpOut, { recursive: true });
+  const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 'cardity-check-imports-'));
 
-  const carFiles = listCarFiles(pkgDir);
-  if (carFiles.length === 0) {
-    console.error('No .car files found');
-    process.exit(2);
-  }
-
-  // Build module registry: moduleName -> { methods: {name: {paramCount, paramTypes[]}} }
-  const moduleRegistry = new Map();
-  const fileToModule = new Map();
-  const fileToJson = new Map();
-  for (const f of carFiles) {
-    const jsonPath = runCompilerJson(repoRoot, f, tmpOut);
-    fileToJson.set(f, jsonPath);
-    const car = readJson(jsonPath);
-    const moduleName = car.protocol || path.basename(f, '.car');
-    fileToModule.set(f, moduleName);
-    const methods = {};
-    const m = car.cpl?.methods || {};
-    for (const [mn, def] of Object.entries(m)) {
-      const params = Array.isArray(def.params) ? def.params : [];
-      const types = Array.isArray(def.param_types) ? def.param_types : [];
-      methods[mn] = { paramCount: params.length, paramTypes: types };
+  try {
+    const carFiles = listCarFiles(pkgDir);
+    if (carFiles.length === 0) {
+      console.error('No .car files found');
+      process.exit(2);
     }
-    moduleRegistry.set(moduleName, { methods });
-  }
 
-  const errors = [];
-  for (const f of carFiles) {
-    const src = fs.readFileSync(f, 'utf-8');
-    const aliases = parseAliases(src);
-    const car = readJson(fileToJson.get(f));
-    const methods = car.cpl?.methods || {};
-    for (const [mn, def] of Object.entries(methods)) {
-      const logic = typeof def.logic === 'string' ? def.logic : (Array.isArray(def.logic) ? def.logic.join('\n') : '');
-      if (!logic) continue;
-      const calls = findExternalCalls(logic);
-      for (const call of calls) {
-        const moduleName = aliases.get(call.alias) || call.alias;
-        if (!moduleRegistry.has(moduleName)) {
-          errors.push(`${path.basename(f)}:${mn}: Unknown module alias '${call.alias}' → '${moduleName}'`);
-          continue;
-        }
-        const reg = moduleRegistry.get(moduleName);
-        if (!reg.methods[call.method]) {
-          errors.push(`${path.basename(f)}:${mn}: Unknown method '${moduleName}.${call.method}'`);
-          continue;
-        }
-        const sig = reg.methods[call.method];
-        const expected = sig.paramCount;
-        if (expected !== call.argCount) {
-          errors.push(`${path.basename(f)}:${mn}: Argument count mismatch for '${moduleName}.${call.method}' (expected ${expected}, got ${call.argCount})`);
-          continue;
-        }
-        // Basic type compatibility check when param_types available (skip if empty)
-        if (Array.isArray(sig.paramTypes) && sig.paramTypes.length === expected) {
-          const localParamTypes = new Map();
-          const names = Array.isArray(def.params) ? def.params : [];
-          const types = Array.isArray(def.param_types) ? def.param_types : [];
-          for (let i=0;i<names.length;i++) localParamTypes.set(names[i], types[i]||'');
-          for (let i=0;i<expected;i++) {
-            const want = normalizeType(sig.paramTypes[i]||'');
-            if (!want) continue;
-            const have = normalizeType(inferArgType(call.args[i], localParamTypes));
-            if (have && want && have !== want) {
-              errors.push(`${path.basename(f)}:${mn}: Type mismatch for '${moduleName}.${call.method}' arg${i+1} (expected ${want}, got ${have})`);
+    // Build module registry: moduleName -> { methods: {name: {paramCount, paramTypes[]}} }
+    const moduleRegistry = new Map();
+    const fileToModule = new Map();
+    const fileToJson = new Map();
+    for (const f of carFiles) {
+      const jsonPath = runCompilerJson(repoRoot, f, tmpOut);
+      fileToJson.set(f, jsonPath);
+      const car = readJson(jsonPath);
+      const moduleName = car.protocol || path.basename(f, '.car');
+      fileToModule.set(f, moduleName);
+      const methods = {};
+      const m = car.cpl?.methods || {};
+      for (const [mn, def] of Object.entries(m)) {
+        const params = Array.isArray(def.params) ? def.params : [];
+        const types = Array.isArray(def.param_types) ? def.param_types : [];
+        methods[mn] = { paramCount: params.length, paramTypes: types };
+      }
+      moduleRegistry.set(moduleName, { methods });
+    }
+
+    const errors = [];
+    for (const f of carFiles) {
+      const src = fs.readFileSync(f, 'utf-8');
+      const aliases = parseAliases(src);
+      const car = readJson(fileToJson.get(f));
+      const methods = car.cpl?.methods || {};
+      for (const [mn, def] of Object.entries(methods)) {
+        const logic = typeof def.logic === 'string' ? def.logic : (Array.isArray(def.logic) ? def.logic.join('\n') : '');
+        if (!logic) continue;
+        const calls = findExternalCalls(logic);
+        for (const call of calls) {
+          const moduleName = aliases.get(call.alias) || call.alias;
+          if (!moduleRegistry.has(moduleName)) {
+            errors.push(`${path.basename(f)}:${mn}: Unknown module alias '${call.alias}' -> '${moduleName}'`);
+            continue;
+          }
+          const reg = moduleRegistry.get(moduleName);
+          if (!reg.methods[call.method]) {
+            errors.push(`${path.basename(f)}:${mn}: Unknown method '${moduleName}.${call.method}'`);
+            continue;
+          }
+          const sig = reg.methods[call.method];
+          const expected = sig.paramCount;
+          if (expected !== call.argCount) {
+            errors.push(`${path.basename(f)}:${mn}: Argument count mismatch for '${moduleName}.${call.method}' (expected ${expected}, got ${call.argCount})`);
+            continue;
+          }
+          // Basic type compatibility check when param_types available (skip if empty)
+          if (Array.isArray(sig.paramTypes) && sig.paramTypes.length === expected) {
+            const localParamTypes = new Map();
+            const names = Array.isArray(def.params) ? def.params : [];
+            const types = Array.isArray(def.param_types) ? def.param_types : [];
+            for (let i=0;i<names.length;i++) localParamTypes.set(names[i], types[i]||'');
+            for (let i=0;i<expected;i++) {
+              const want = normalizeType(sig.paramTypes[i]||'');
+              if (!want) continue;
+              const have = normalizeType(inferArgType(call.args[i], localParamTypes));
+              if (have && want && have !== want) {
+                errors.push(`${path.basename(f)}:${mn}: Type mismatch for '${moduleName}.${call.method}' arg${i+1} (expected ${want}, got ${have})`);
+              }
             }
           }
         }
       }
     }
-  }
 
-  if (errors.length) {
-    console.error('❌ Import/using semantic check failed:');
-    for (const e of errors) console.error(' - ' + e);
-    process.exit(3);
+    if (errors.length) {
+      console.error('❌ Import/using semantic check failed:');
+      for (const e of errors) console.error(' - ' + e);
+      process.exit(3);
+    }
+    console.log('✅ Import/using semantic check passed');
+  } finally {
+    fs.rmSync(tmpOut, { recursive: true, force: true });
   }
-  console.log('✅ Import/using semantic check passed');
 }
 
 if (require.main === module) main();
-
 
