@@ -1,614 +1,316 @@
-# Cardity 发布和部署指南
+# Cardity Release Guide
 
-本指南介绍如何发布 Cardity 编译器，让开发者可以像使用 Solidity 那样开发 Cardinals 协议。
+This guide describes the current release flow for Cardity Core. It is scoped to
+the protocol contract layer: compiler, CLI, API, MCP, schemas, examples,
+conformance, npm package, and website handoff. It does not describe a full Agent
+Runtime, low-code platform, production write executor, or separate package
+registry.
 
-## 🚀 发布策略
+Use [docs/system_architecture_ops_map.md](system_architecture_ops_map.md) for
+the current deployment map, Cloudflare targets, npm token location, adjacent
+projects, and public URLs.
 
-### 1. 核心编译器发布
+## Release Targets
 
-#### 预编译二进制包
+| Target | Current path |
+|---|---|
+| Source | `cardity-org/cardity-core`, branch `master` |
+| npm package | `cardity`, alpha tag |
+| Hosted API | `https://api.cardity.org` |
+| Hosted MCP | `https://api.cardity.org/mcp` |
+| Schema registry | `https://api.cardity.org/schemas` |
+| Runtime registry | `https://api.cardity.org/runtimes` |
+| Ecosystem registry | `https://api.cardity.org/registry` |
+| Website | `https://cardity.org` from `cardity_web` |
 
-```bash
-# 为不同平台编译
-# Linux x64
-docker run --rm -v $(pwd):/src -w /src ubuntu:20.04 bash -c "
-  apt-get update && apt-get install -y build-essential cmake libcurl4-openssl-dev libarchive-dev nlohmann-json3-dev
-  mkdir build && cd build
-  cmake .. && make -j$(nproc)
-  tar -czf cardity-linux-x64.tar.gz cardity cardity_cli cardity_runtime cardity_abi cardityc
-"
+## Product Boundary
 
-# macOS x64
-mkdir build && cd build
-cmake .. && make -j$(nproc)
-tar -czf cardity-macos-x64.tar.gz cardity cardity_cli cardity_runtime cardity_abi cardityc
+Release work must preserve Cardity's boundary:
 
-# Windows x64
-mkdir build && cd build
-cmake .. -G "Visual Studio 16 2019" -A x64
-cmake --build . --config Release
-tar -czf cardity-windows-x64.tar.gz Release/cardity.exe Release/cardity_cli.exe Release/cardity_runtime.exe Release/cardity_abi.exe Release/cardityc.exe
-```
+- Cardity compiles `.car` protocols into protocol JSON, ABI, CARC, and Agent OS
+  manifests.
+- Cardity exposes machine-readable contracts for actions, projections, runtime
+  adapters, schemas, conformance, security review, diff, and visualization.
+- Cardity may provide CLI, API, MCP, WASM, templates, prompts, examples, and
+  docs to help downstream agents consume these contracts.
+- Downstream runtimes, such as PMTSoul Agent OS, own workspace generation,
+  permission gates, dry-run/write execution, readback, replay storage, and audit
+  sinks.
 
-#### 包管理器集成
+Do not release features that turn Cardity into a full runtime, project
+generator, low-code platform, enterprise SaaS, or production write executor.
 
-```bash
-# Homebrew (macOS)
-brew tap cardity/cardity
-brew install cardity
+## Pre-Release Checklist
 
-# apt (Ubuntu/Debian)
-curl -fsSL https://packages.cardity.dev/gpg | sudo apt-key add -
-echo "deb https://packages.cardity.dev/ubuntu focal main" | sudo tee /etc/apt/sources.list.d/cardity.list
-sudo apt update
-sudo apt install cardity
-
-# yum (CentOS/RHEL)
-curl -fsSL https://packages.cardity.dev/gpg | sudo rpm --import -
-sudo tee /etc/yum.repos.d/cardity.repo << EOF
-[cardity]
-name=Cardity Repository
-baseurl=https://packages.cardity.dev/centos/\$releasever/\$basearch
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.cardity.dev/gpg
-EOF
-sudo yum install cardity
-```
-
-### 2. 包注册表部署
-
-#### 注册表服务器
+Run these checks before publishing npm, deploying the hosted API, or announcing a
+release:
 
 ```bash
-# 部署到云服务器
-docker run -d \
-  --name cardity-registry \
-  -p 80:80 \
-  -p 443:443 \
-  -v /var/lib/cardity-registry:/data \
-  -e REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/data \
-  cardity/registry:latest
-
-# 配置 Nginx
-server {
-    listen 80;
-    server_name registry.cardity.dev;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name registry.cardity.dev;
-    
-    ssl_certificate /etc/letsencrypt/live/registry.cardity.dev/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/registry.cardity.dev/privkey.pem;
-    
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+npm run build
+npm test
+npm run check:package
+npm run check:imports
+node scripts/verify_contract_schemas.js
+node scripts/verify_next_stage_assets.js
+npm_config_cache=/tmp/cardity-npm-cache npm pack --dry-run
 ```
 
-#### 包搜索和文档网站
+Expected evidence:
+
+- `npm test` ends with `Smoke test passed`.
+- `npm run check:package` reports executable bin and package file counts.
+- `npm run check:imports` reports import/using semantic check passed.
+- schema verification reports all registered contract schemas verified.
+- next-stage assets verification reports templates, prompts, and schemas.
+- `npm pack --dry-run` includes `bin/`, `compiler/`, `schemas/`, `registry/`,
+  `templates/`, `examples/`, `docs/`, `README.md`, and `LICENSE`.
+
+## Compatibility Review
+
+Before publishing, check whether the release changes any compatibility surface.
+
+| Surface | Backward compatibility rule |
+|---|---|
+| CLI | Existing commands and flags should keep working. |
+| API | Existing endpoints and response schemas should keep working. |
+| MCP | Existing tool names and input/output shapes should keep working. |
+| Schema registry | Existing schema names, files, and public URLs should remain stable. |
+| Agent manifest | Existing fields should not be removed or renamed. |
+| Action contract | Existing action semantics and safety fields should remain readable. |
+| Projection contract | Existing projection v1.1 fields and idempotency semantics should remain readable. |
+| Runtime adapter | Existing adapter declarations should continue to validate. |
+
+If a breaking change is unavoidable, stop before release and document:
+
+- why the breaking change is required;
+- affected files, schemas, endpoints, tools, and examples;
+- migration path;
+- user decision needed before continuing.
+
+## npm Alpha Release
+
+The current npm package is source-based and builds native binaries during
+install/build. It is intended for alpha distribution of the CLI, MCP server,
+schemas, templates, examples, and docs.
+
+1. Verify the package:
 
 ```bash
-# 部署搜索网站
-docker run -d \
-  --name cardity-search \
-  -p 3000:3000 \
-  -e REGISTRY_URL=https://registry.cardity.dev \
-  cardity/search:latest
-
-# 部署文档网站
-docker run -d \
-  --name cardity-docs \
-  -p 8080:80 \
-  -v /var/lib/cardity-docs:/usr/share/nginx/html \
-  nginx:alpine
+npm run build
+npm test
+npm run check:package
+npm_config_cache=/tmp/cardity-npm-cache npm pack --dry-run
 ```
 
-### 3. 开发工具集成
-
-#### IDE 插件
+2. Confirm package metadata:
 
 ```bash
-# VS Code 插件
-# 发布到 VS Code Marketplace
-vsce package
-vsce publish
-
-# IntelliJ IDEA 插件
-# 发布到 JetBrains Marketplace
-./gradlew buildPlugin
-./gradlew publishPlugin
+node -p "require('./package.json').version"
+node -p "Object.keys(require('./package.json').bin).sort().join('\n')"
 ```
 
-#### 在线编辑器
+3. Publish alpha:
 
 ```bash
-# 部署 Monaco Editor 在线版本
-docker run -d \
-  --name cardity-playground \
-  -p 3001:3000 \
-  -e REGISTRY_URL=https://registry.cardity.dev \
-  cardity/playground:latest
+npm publish --tag alpha
 ```
 
-## 📦 包生态系统
-
-### 1. 官方包
-
-#### 标准库 (@cardity/standard)
+4. Verify from a clean install environment when practical:
 
 ```bash
-# 发布标准库
-cd packages/standard
-cardity publish
-
-# 版本管理
-cardity version patch  # 1.0.0 -> 1.0.1
-cardity version minor  # 1.0.1 -> 1.1.0
-cardity version major  # 1.1.0 -> 2.0.0
+npm view cardity dist-tags version
+npm install -g cardity@alpha
+cardity --help
+cardity_agent --help
+cardity_mcp_server --help
 ```
 
-#### 工具库 (@cardity/utils)
+Do not commit npm tokens or local credential files. The current local token file
+is documented in the ops map and must stay outside the repo.
+
+## Hosted API And MCP Deployment
+
+The hosted API/MCP runs as Cloudflare Worker `cardity-core-api-proxy` backed by
+the current container/native compiler setup.
+
+Deploy:
 
 ```bash
-# 发布工具库
-cd packages/utils
-cardity publish
-
-# 包含的工具函数
-- Hash: sha256, keccak256, ripemd160
-- Math: add, sub, mul, div, mod, pow
-- String: concat, split, replace, trim
-- Time: now, format, parse
-- Array: push, pop, shift, unshift, slice
-- Object: keys, values, entries, assign
+npm run build
+wrangler deploy
 ```
 
-#### 测试框架 (@cardity/test)
+Verify:
 
 ```bash
-# 发布测试框架
-cd packages/test
-cardity publish
-
-# 测试功能
-- 单元测试
-- 集成测试
-- 性能测试
-- 覆盖率报告
+curl -sS https://api.cardity.org/edge-health
+curl -sS https://api.cardity.org/v1/generation-guide \
+  -H 'content-type: application/json' \
+  -d '{"requirement":"member points"}'
+curl -sS https://api.cardity.org/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-### 2. 社区包
+For endpoint-level verification, use [docs/public_api.md](public_api.md) as the
+source of truth for the public API surface.
 
-#### 模板包
+## Schema And Registry Release
+
+Schemas and registry entries are part of the release contract. They must remain
+stable and machine-readable.
+
+Verify locally:
 
 ```bash
-# 创建模板包
-cardity init --template @cardity/template-defi
-cardity init --template @cardity/template-nft
-cardity init --template @cardity/template-dao
+node scripts/verify_contract_schemas.js
+node bin/cardity.js schemas
+node bin/cardity.js schemas projection_contract_v1_1
+node bin/cardity.js runtimes pmtsoul-agent-os
+node bin/cardity.js registry templates member_points
 ```
 
-#### 工具包
+Verify hosted URLs after API deployment:
 
 ```bash
-# 常用工具包
-cardity install @cardity/security  # 安全工具
-cardity install @cardity/audit      # 审计工具
-cardity install @cardity/deploy     # 部署工具
+curl -sS https://api.cardity.org/schemas
+curl -sS https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
+curl -sS https://api.cardity.org/runtimes/pmtsoul-agent-os
+curl -sS https://api.cardity.org/registry/templates/member_points
 ```
 
-## 🔧 开发者体验
+If adding a schema:
 
-### 1. 快速开始
+1. Add `schemas/<name>.schema.json`.
+2. Register it in `schemas/registry.json`.
+3. Add or update verification in `scripts/verify_contract_schemas.js` or
+   `scripts/verify_next_stage_assets.js`.
+4. Add public API/docs references only after the schema is stable.
 
-#### 一键安装
+## Examples And Templates
+
+Examples and templates are release fixtures. They should compile and represent
+current Cardity capabilities without becoming business-specific runtime logic.
+
+Core fixtures:
+
+| Fixture | Purpose |
+|---|---|
+| `examples/01_counter.car` | Minimal compiler and manifest sanity check. |
+| `examples/02_member_points_agent.car` | Agent action, table, permission, event, and conformance baseline. |
+| `examples/03_merchant_erp_projection_v1_1.json` | Projection v1.1 and PMTSoul contract reference. |
+| `examples/runtime_adapter_pmtsoul_agent_os.json` | Runtime adapter compatibility example. |
+| `templates/member_points` | Default `cardity init` template. |
+
+Verify:
 
 ```bash
-# 安装 Cardity
-curl -fsSL https://install.cardity.dev | bash
-
-# 验证安装
-cardity --version
+npm test
+node scripts/verify_projection_contract.js \
+  /tmp/cardity_member_points.agent.json \
+  /tmp/cardity_member_points_agent_result.json \
+  examples/03_merchant_erp_projection_v1_1.json
+node scripts/verify_next_stage_assets.js
 ```
 
-#### 项目模板
+The smoke test already generates the `/tmp` artifacts used by the projection
+verification command above.
+
+## Website Sync
+
+The website is not the core product. It should only expose concise explanation,
+quickstart, core capability links, and a small number of examples.
+
+Update `cardity_web` only when a release changes public positioning, install
+commands, public API/MCP URLs, schema links, examples, or docs entry points.
+
+Recommended website checks:
 
 ```bash
-# 使用模板创建项目
-cardity create my-protocol --template defi
-cd my-protocol
-
-# 安装依赖
-cardity install
-
-# 开发
-cardity dev
-
-# 构建
-cardity build
-
-# 测试
-cardity test
-
-# 部署
-cardity deploy
+cd /Users/dogesong/Documents/workspace/cardity_web
+npm run build
+wrangler pages deploy out --project-name=cardity-org-web --branch=main
+curl -sSI https://cardity.org/
+curl -sSI https://cardity.org/visualizer/?lang=en
 ```
 
-### 2. 开发工具
+Do not expand the website into a runtime dashboard or generated-system product.
 
-#### VS Code 扩展
+## GitHub Release Notes
 
-```json
-{
-  "name": "cardity",
-  "displayName": "Cardity",
-  "description": "Cardity language support for VS Code",
-  "version": "1.0.0",
-  "engines": {
-    "vscode": "^1.60.0"
-  },
-  "categories": ["Programming Languages"],
-  "activationEvents": ["onLanguage:cardity"],
-  "main": "./out/extension.js",
-  "contributes": {
-    "languages": [{
-      "id": "cardity",
-      "aliases": ["Cardity", "cardity"],
-      "extensions": [".cardity"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "cardity",
-      "scopeName": "source.cardity",
-      "path": "./syntaxes/cardity.tmLanguage.json"
-    }],
-    "snippets": [{
-      "language": "cardity",
-      "path": "./snippets/cardity.json"
-    }]
-  }
-}
-```
+Release notes should emphasize contract-layer changes:
 
-#### 在线 Playground
+- compiler or CLI changes;
+- API/MCP changes;
+- schema additions or compatibility updates;
+- manifest/action/projection/runtime adapter changes;
+- conformance or security review changes;
+- npm package and install changes;
+- migration notes and known risks.
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Cardity Playground</title>
-    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
-</head>
-<body>
-    <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
-    <script>
-        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
-            var editor = monaco.editor.create(document.getElementById('container'), {
-                value: 'protocol HelloCardity {\n  version: "1.0.0";\n  owner: "doge1...";\n  \n  state {\n    message: string = "Hello, Cardity!";\n  }\n  \n  method get_message() {\n    return state.message;\n  }\n}',
-                language: 'cardity',
-                theme: 'vs-dark'
-            });
-        });
-    </script>
-</body>
-</html>
-```
-
-### 3. 文档和教程
-
-#### 官方文档
-
-```bash
-# 部署文档网站
-cd docs
-mkdocs build
-mkdocs gh-deploy
-
-# 文档结构
-docs/
-├── getting-started/
-│   ├── installation.md
-│   ├── quick-start.md
-│   └── first-protocol.md
-├── language/
-│   ├── syntax.md
-│   ├── types.md
-│   ├── events.md
-│   └── methods.md
-├── packages/
-│   ├── package-management.md
-│   ├── standard-library.md
-│   └── publishing.md
-├── deployment/
-│   ├── local-testing.md
-│   ├── testnet-deployment.md
-│   └── mainnet-deployment.md
-└── api/
-    ├── compiler-api.md
-    ├── runtime-api.md
-    └── package-api.md
-```
-
-#### 视频教程
-
-```bash
-# 录制教程视频
-- 安装和配置 (5分钟)
-- 第一个协议 (10分钟)
-- 包管理 (8分钟)
-- 测试和部署 (12分钟)
-- 高级特性 (15分钟)
-```
-
-## 🌐 社区建设
-
-### 1. 开发者社区
-
-#### Discord 服务器
-
-```bash
-# 创建 Discord 服务器
-- #general - 一般讨论
-- #help - 帮助和支持
-- #showcase - 项目展示
-- #development - 开发讨论
-- #announcements - 官方公告
-```
-
-#### GitHub 组织
-
-```bash
-# 创建 GitHub 组织
-github.com/cardity
-├── cardity-core          # 核心编译器
-├── cardity-standard      # 标准库
-├── cardity-utils         # 工具库
-├── cardity-test          # 测试框架
-├── cardity-docs          # 文档
-├── cardity-examples      # 示例项目
-└── cardity-templates     # 项目模板
-```
-
-### 2. 内容创作
-
-#### 博客文章
+Suggested structure:
 
 ```markdown
-# 博客主题
-- "Cardity vs Solidity: 为什么选择 Cardity 开发 Cardinals 协议"
-- "使用 Cardity 构建你的第一个 DeFi 协议"
-- "Cardity 包管理系统深度解析"
-- "从零开始：Cardity 协议开发完整指南"
-- "Cardity 最佳实践和设计模式"
+# Cardity vX.Y.Z
+
+## Highlights
+- ...
+
+## Compatibility
+- CLI:
+- API:
+- MCP:
+- Schema:
+- Manifest:
+- Action contract:
+- Projection contract:
+
+## Validation
+- `npm test`
+- `npm run check:package`
+- `npm_config_cache=/tmp/cardity-npm-cache npm pack --dry-run`
+
+## Known Risks
+- ...
 ```
 
-#### 技术分享
+## Rollback
+
+For npm:
 
 ```bash
-# 会议和活动
-- Ethereum Devcon
-- Bitcoin Conference
-- Web3 Summit
-- Local Meetups
-- Online Webinars
+npm dist-tag add cardity@<previous-version> alpha
+npm view cardity dist-tags version
 ```
 
-### 3. 生态系统
-
-#### 合作伙伴
+For Cloudflare API/MCP:
 
 ```bash
-# 技术合作伙伴
-- Dogecoin Foundation
-- Bitcoin Core Developers
-- Ethereum Foundation
-- Web3 Foundation
-
-# 工具集成
-- MetaMask
-- WalletConnect
-- The Graph
-- IPFS
+wrangler deployments list
+wrangler rollback
+curl -sS https://api.cardity.org/edge-health
 ```
 
-#### 开发者激励
+For website:
 
-```bash
-# 赏金计划
-- Bug 赏金
-- 功能开发赏金
-- 文档改进赏金
-- 社区贡献赏金
+- use Cloudflare Pages deployment history for `cardity-org-web`;
+- rollback to the previous successful deployment;
+- verify `https://cardity.org` and key routes.
 
-# 开发者计划
-- 早期采用者计划
-- 大使计划
-- 导师计划
+## Legacy Notes
+
+Older docs and scripts may still mention Cardinals-only distribution,
+cross-platform binary archives, custom package registries, IDE plugins, or
+large ecosystem roadmaps. Those are not current release blockers unless they are
+converted into verified Cardity protocol-contract-layer deliverables.
+
+The current release path is:
+
+```text
+cardity-core source
+  -> build/test/schema/conformance/package verification
+  -> npm alpha package
+  -> Cloudflare API/MCP deployment
+  -> schema/runtime/ecosystem registry verification
+  -> concise website sync when public entry points changed
 ```
-
-## 📊 监控和分析
-
-### 1. 使用统计
-
-```bash
-# 安装统计
-- 下载量统计
-- 平台分布
-- 版本使用情况
-
-# 使用统计
-- 活跃用户数
-- 协议部署数
-- 包下载量
-- 错误报告
-```
-
-### 2. 性能监控
-
-```bash
-# 系统监控
-- 服务器性能
-- 响应时间
-- 错误率
-- 可用性
-
-# 用户反馈
-- 用户满意度
-- 功能请求
-- Bug 报告
-- 改进建议
-```
-
-## 🔄 持续集成
-
-### 1. 自动化发布
-
-```yaml
-# .github/workflows/release.yml
-name: Release
-on:
-  push:
-    tags: ['v*']
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build
-        run: |
-          mkdir build && cd build
-          cmake .. && make -j$(nproc)
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Changes in this Release:
-            ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease: false
-      - name: Upload Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/cardity
-          asset_name: cardity-${{ runner.os }}-${{ runner.arch }}
-          asset_content_type: application/octet-stream
-```
-
-### 2. 包发布自动化
-
-```yaml
-# .github/workflows/publish.yml
-name: Publish Package
-on:
-  push:
-    tags: ['@cardity/*']
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Cardity
-        run: |
-          curl -fsSL https://install.cardity.dev | bash
-      - name: Install dependencies
-        run: cardity install
-      - name: Build
-        run: cardity build
-      - name: Test
-        run: cardity test
-      - name: Publish
-        run: cardity publish
-        env:
-          CARDITY_API_KEY: ${{ secrets.CARDITY_API_KEY }}
-```
-
-## 🎯 成功指标
-
-### 1. 技术指标
-
-```bash
-# 编译器指标
-- 编译速度
-- 内存使用
-- 错误率
-- 支持的语言特性
-
-# 运行时指标
-- 执行速度
-- 内存效率
-- 错误处理
-- 兼容性
-```
-
-### 2. 用户指标
-
-```bash
-# 采用指标
-- 活跃开发者数
-- 协议部署数
-- 包下载量
-- 社区贡献
-
-# 满意度指标
-- 用户评分
-- 推荐率
-- 留存率
-- 反馈质量
-```
-
-### 3. 生态系统指标
-
-```bash
-# 生态健康度
-- 包数量和质量
-- 社区活跃度
-- 合作伙伴数量
-- 集成项目数
-```
-
-## 📈 路线图
-
-### 短期目标 (3-6个月)
-
-- [ ] 发布 v1.0.0 稳定版
-- [ ] 建立包注册表
-- [ ] 发布官方包
-- [ ] 开发 IDE 插件
-- [ ] 建立开发者社区
-
-### 中期目标 (6-12个月)
-
-- [ ] 支持更多语言特性
-- [ ] 优化编译性能
-- [ ] 扩展包生态系统
-- [ ] 增加部署工具
-- [ ] 建立合作伙伴关系
-
-### 长期目标 (1-2年)
-
-- [ ] 成为 Cardinals 协议开发标准
-- [ ] 建立完整的开发者生态
-- [ ] 支持跨链协议开发
-- [ ] 集成更多区块链平台
-- [ ] 建立企业级解决方案
-
-通过这个完整的发布和部署策略，Cardity 将成为 Cardinals 协议开发的首选工具，让开发者能够像使用 Solidity 那样轻松开发 Cardinals 协议。 
