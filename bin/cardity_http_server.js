@@ -208,6 +208,11 @@ async function handle(req, res) {
       return;
     }
 
+    if (url.pathname === '/v1/generation-guide') {
+      sendJson(res, 200, generationGuide(body));
+      return;
+    }
+
     if (url.pathname === '/v1/validate') {
       const payload = runAgentCompile({ ...body, include_manifest: false, include_abi: false, include_protocol: false, carc: false });
       sendJson(res, 200, { schema: 'cardity.validate_result.v1', ok: payload.ok, protocol: payload.protocol, counts: payload.counts });
