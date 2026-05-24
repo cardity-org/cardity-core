@@ -113,7 +113,8 @@ function validateRuntimeAdapter(adapter = {}) {
       'requires_confirm_required',
       'requires_readback_query',
       'requires_idempotency_key',
-      'requires_replay_policy'
+      'requires_replay_policy',
+      'requires_production_write_contract'
     ]) {
       check(
         `adapter.production_write_policy.${field}`,
@@ -124,6 +125,14 @@ function validateRuntimeAdapter(adapter = {}) {
         `Set production_write_policy.${field}=true.`
       );
     }
+    check(
+      'adapter.supported_production_write_contracts',
+      'versions',
+      asArray(adapter.supported_production_write_contracts).includes('cardity.production_write_contract.v1'),
+      'Permissioned writes declare cardity.production_write_contract.v1 support.',
+      'supported_production_write_contracts',
+      'Add cardity.production_write_contract.v1 to supported_production_write_contracts.'
+    );
   }
 
   check(

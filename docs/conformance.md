@@ -94,6 +94,11 @@ Warnings do not fail the report; failed checks set `ok=false`.
 manifest. It checks supported contract versions, capability declarations,
 conformance status, and production write policy.
 
+Production-write checks are included in `cardity review` and
+`cardity conformance`. If an action enables real write execution, Cardity
+requires a valid `cardity.production_write_contract.v1` contract at either
+`production_write_contract` or `agent_contract.production_write_contract`.
+
 ## Runtime Boundary
 
 Downstream Agent runtimes should treat these contracts as stable input. Cardity

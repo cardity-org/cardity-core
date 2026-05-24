@@ -79,6 +79,21 @@ only unless the runtime has a separate explicit permission contract.
 | Audit is required | Every production write emits the declared audit event. |
 | Compensation is explicit | Runtime must know whether rollback is none, manual, or a compensating action. |
 
+## Verification
+
+Cardity checks this contract through security review and conformance:
+
+```bash
+cardity review manifest.json
+cardity conformance manifest.json
+node scripts/verify_production_write_contract.js
+```
+
+If an action declares production write execution through
+`execution_mode: "production_write"`, `production_write_enabled: true`, or
+`agent_contract.production_write_contract`, Cardity expects a valid
+`cardity.production_write_contract.v1` contract.
+
 ## Example
 
 See:

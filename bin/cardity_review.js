@@ -42,6 +42,98 @@ function hasWriteSideEffects(action) {
   );
 }
 
+function getProductionWriteContract(action) {
+  if (!action || typeof action !== 'object') return null;
+  if (action.production_write_contract) return action.production_write_contract;
+  if (action.agent_contract && action.agent_contract.production_write_contract) {
+    return action.agent_contract.production_write_contract;
+  }
+  return null;
+}
+
+function wantsProductionWrite(action) {
+  if (!action || typeof action !== 'object') return false;
+  const agentContract = action.agent_contract || {};
+  return (
+    action.production_write_enabled === true ||
+    action.production_write === true ||
+    ['production_write', 'permissioned'].includes(action.execution_mode) ||
+    agentContract.production_write_enabled === true ||
+    ['production_write', 'permissioned', 'enabled'].includes(agentContract.production_write_mode) ||
+    Boolean(getProductionWriteContract(action))
+  );
+}
+
+function validateProductionWriteContract(contract) {
+  const issues = [];
+
+  function issue(field, message, recommendation) {
+    issues.push({ field, message, recommendation });
+  }
+
+  if (typeof contract === 'string') {
+    if (!contract.trim()) {
+      issue('production_write_contract', 'Production write contract reference is empty.', 'Use cardity.production_write_contract.v1 or an inline contract object.');
+    }
+    return issues;
+  }
+
+  if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
+    issue('production_write_contract', 'Production write contract is missing or invalid.', 'Attach a cardity.production_write_contract.v1 object or schema reference.');
+    return issues;
+  }
+
+  if (contract.schema !== 'cardity.production_write_contract.v1') {
+    issue('schema', 'Production write contract uses the wrong schema.', 'Set schema to cardity.production_write_contract.v1.');
+  }
+
+  for (const field of ['permission', 'confirm_policy', 'confirmation_ui', 'readback', 'idempotency', 'audit', 'replay_policy', 'compensation_policy']) {
+    if (!(field in contract)) {
+      issue(field, `Production write contract is missing ${field}.`, `Add ${field} to the production write contract.`);
+    }
+  }
+
+  if (!contract.permission || !contract.permission.id || !contract.permission.scope || contract.permission.grant_required !== true) {
+    issue('permission', 'Production write permission is incomplete.', 'Declare permission.id, permission.scope, and grant_required=true.');
+  }
+
+  if (!contract.confirm_policy || contract.confirm_policy.required !== true || !contract.confirm_policy.required_before) {
+    issue('confirm_policy', 'Production write confirmation policy is incomplete.', 'Require confirmation before write_commit or readback.');
+  }
+
+  const states = asArray(contract.confirmation_ui && contract.confirmation_ui.states);
+  for (const state of ['draft', 'preparing', 'pending', 'approved', 'verified', 'failed']) {
+    if (!states.includes(state)) {
+      issue('confirmation_ui.states', `Confirmation UI is missing ${state}.`, 'Expose draft/preparing/pending/approved/verified/failed states.');
+    }
+  }
+  if (asArray(contract.confirmation_ui && contract.confirmation_ui.runnable_states).length === 0) {
+    issue('confirmation_ui.runnable_states', 'Confirmation UI has no runnable states.', 'Declare which confirmation states can execute the write.');
+  }
+
+  if (!contract.readback || contract.readback.required !== true || !contract.readback.query || asArray(contract.readback.expected_fields).length === 0) {
+    issue('readback', 'Production write readback is incomplete.', 'Require readback, declare readback.query, and list expected_fields.');
+  }
+
+  if (!contract.idempotency || !contract.idempotency.key || !contract.idempotency.source_id || !contract.idempotency.write_index) {
+    issue('idempotency', 'Production write idempotency is incomplete.', 'Declare idempotency.key, source_id, and write_index.');
+  }
+
+  if (!contract.audit || !contract.audit.event) {
+    issue('audit', 'Production write audit event is missing.', 'Declare audit.event and audit.fields.');
+  }
+
+  if (!contract.replay_policy || !contract.replay_policy.mode || asArray(contract.replay_policy.dedupe_tuple).length === 0) {
+    issue('replay_policy', 'Production write replay policy is incomplete.', 'Declare replay_policy.mode and dedupe_tuple.');
+  }
+
+  if (!contract.compensation_policy || !contract.compensation_policy.mode) {
+    issue('compensation_policy', 'Production write compensation policy is missing.', 'Declare compensation_policy.mode.');
+  }
+
+  return issues;
+}
+
 function protocolName(protocol) {
   if (typeof protocol === 'string') return protocol;
   return (protocol && protocol.name) || 'Cardity Protocol';
@@ -87,8 +179,8 @@ function reviewManifest(manifest) {
     }
 
     if (isCommand || writes) {
+      const plannedOnly = action.dry_run_supported || action.execution_mode === 'planned' || (action.side_effects && action.side_effects.planned);
       if (!action.permission) {
-        const plannedOnly = action.dry_run_supported || action.execution_mode === 'planned' || (action.side_effects && action.side_effects.planned);
         finding(
           plannedOnly ? 'warning' : 'error',
           plannedOnly ? 'COMMAND_PLANNED_ONLY' : 'COMMAND_PERMISSION_MISSING',
@@ -122,6 +214,19 @@ function reviewManifest(manifest) {
       }
       if (action.risk_level === 'high' && !action.audit_event) {
         finding('warning', 'HIGH_RISK_AUDIT_EVENT_MISSING', location, 'High-risk action has no audit event.', 'Set audit_event to the event or audit record produced by the command.');
+      }
+
+      const productionWriteRequested = wantsProductionWrite(action);
+      const productionWriteContract = getProductionWriteContract(action);
+      if (productionWriteRequested) {
+        if (!productionWriteContract) {
+          finding('error', 'PRODUCTION_WRITE_CONTRACT_MISSING', location, 'Action enables production write execution without a production write contract.', 'Attach production_write_contract using cardity.production_write_contract.v1.');
+        }
+        for (const issue of validateProductionWriteContract(productionWriteContract)) {
+          finding('error', 'PRODUCTION_WRITE_CONTRACT_INVALID', `${location}.${issue.field}`, issue.message, issue.recommendation);
+        }
+      } else if (action.permission && !plannedOnly && !productionWriteContract) {
+        finding('warning', 'PRODUCTION_WRITE_CONTRACT_RECOMMENDED', location, 'Permissioned write-like action has no production write contract.', 'Add production_write_contract before enabling real write execution.');
       }
     }
   }
@@ -238,5 +343,8 @@ function renderReviewMarkdown(review) {
 module.exports = {
   REVIEW_SCHEMA,
   reviewManifest,
-  renderReviewMarkdown
+  renderReviewMarkdown,
+  getProductionWriteContract,
+  wantsProductionWrite,
+  validateProductionWriteContract
 };

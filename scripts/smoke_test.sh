@@ -57,6 +57,7 @@ node scripts/verify_agent_manifest_contract.js \
 node scripts/verify_npm_package.js >/dev/null
 node scripts/verify_contract_schemas.js >/dev/null
 node scripts/verify_next_stage_assets.js >/dev/null
+node scripts/verify_production_write_contract.js >/dev/null
 grep -q 'Cardity Playground' src/cloudflare-worker.js
 grep -q 'url.pathname === "/playground"' src/cloudflare-worker.js
 rm -rf "$INIT_OUT"

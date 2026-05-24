@@ -1,4 +1,9 @@
-const { reviewManifest } = require('./cardity_review');
+const {
+  getProductionWriteContract,
+  reviewManifest,
+  validateProductionWriteContract,
+  wantsProductionWrite
+} = require('./cardity_review');
 const { validateRuntimeAdapter } = require('./cardity_adapter');
 
 const CONFORMANCE_SCHEMA = 'cardity.conformance_report.v1';
@@ -156,6 +161,29 @@ function runConformance(manifest, options = {}) {
       `${location}.output_schema`,
       'Add output_schema or returns_read_model.'
     );
+
+    const productionWriteRequested = wantsProductionWrite(action);
+    const productionWriteContract = getProductionWriteContract(action);
+    if (productionWriteRequested) {
+      check(
+        `action.${action.name || 'unnamed'}.production_write_contract`,
+        'action',
+        Boolean(productionWriteContract),
+        `Action ${action.name || '<unnamed>'} declares a production write contract.`,
+        `${location}.production_write_contract`,
+        'Attach cardity.production_write_contract.v1 before enabling production write execution.'
+      );
+      for (const issue of validateProductionWriteContract(productionWriteContract)) {
+        check(
+          `action.${action.name || 'unnamed'}.production_write_contract.${issue.field}`,
+          'action',
+          false,
+          issue.message,
+          `${location}.${issue.field}`,
+          issue.recommendation
+        );
+      }
+    }
   }
 
   check(
@@ -299,6 +327,16 @@ function runConformance(manifest, options = {}) {
       'runtime_adapter.supported_projection_contracts',
       'Add projection_contract_v1_1 to supported_projection_contracts.'
     );
+    if (runtimeAdapter.production_write_policy && runtimeAdapter.production_write_policy.mode === 'permissioned') {
+      check(
+        'runtime_adapter.production_write_contract',
+        'runtime_adapter',
+        asArray(runtimeAdapter.supported_production_write_contracts).includes('cardity.production_write_contract.v1'),
+        'Runtime adapter supports cardity.production_write_contract.v1.',
+        'runtime_adapter.supported_production_write_contracts',
+        'Add cardity.production_write_contract.v1 before enabling permissioned production writes.'
+      );
+    }
     for (const capability of [
       'register_actions',
       'permission_gate',
