@@ -59,6 +59,7 @@ node scripts/verify_contract_schemas.js >/dev/null
 node scripts/verify_next_stage_assets.js >/dev/null
 node scripts/verify_production_write_contract.js >/dev/null
 node scripts/verify_checkpoint_contract.js >/dev/null
+node scripts/verify_cardity_bench_demo.js >/dev/null
 grep -q 'Cardity Playground' src/cloudflare-worker.js
 grep -q 'url.pathname === "/playground"' src/cloudflare-worker.js
 rm -rf "$INIT_OUT"

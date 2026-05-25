@@ -102,6 +102,12 @@ for (const field of checkpoint.required) {
   if (!(field in checkpointExample)) fail(`checkpoint example missing ${field}`);
 }
 
+const benchDemo = readJson("examples/06_cardity_bench_demo.json");
+if (benchDemo.schema !== "cardity.bench_demo.v1") {
+  fail("bench demo has wrong schema");
+}
+if (!exists("docs/cardity_bench_demo.md")) fail("missing Cardity bench demo docs");
+
 const pmtsoulAdapter = readJson("examples/runtime_adapter_pmtsoul_agent_os.json");
 if (pmtsoulAdapter.schema !== "cardity.runtime_adapter_contract.v1") {
   fail("PMTSoul runtime adapter example has wrong schema");

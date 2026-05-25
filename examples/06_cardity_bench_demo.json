@@ -1,0 +1,59 @@
+{
+  "schema": "cardity.bench_demo.v1",
+  "name": "Cardity Contract vs GUI Agent Demo",
+  "purpose": "Compare a fragile GUI-only path with a Cardity contract path for the same long-horizon workflow.",
+  "task": {
+    "id": "catalog_item_update_and_verify",
+    "goal": "Update a catalog item, verify committed state, apply downstream projection, and stop safely if state diverges.",
+    "domain": "generic_enterprise_workflow"
+  },
+  "baseline_gui_agent": {
+    "mode": "gui_only",
+    "expected_failure_modes": [
+      "long_click_path",
+      "stale_ui_state",
+      "missing_post_action_verification",
+      "unrecoverable_downstream_error",
+      "non_deterministic_replay"
+    ],
+    "measurement": {
+      "steps": "browser_or_gui_actions",
+      "success": "all_checkpoints_passed",
+      "auditability": "manual_trace_review",
+      "replayability": "not_guaranteed"
+    }
+  },
+  "cardity_contract_path": {
+    "mode": "agent_native_contract",
+    "contracts": {
+      "action": "cardity.agent_action_contract.v1",
+      "production_write": "cardity.production_write_contract.v1",
+      "checkpoint": "cardity.checkpoint_contract.v1",
+      "projection": "projection_contract_v1_1"
+    },
+    "expected_advantages": [
+      "fewer_runtime_steps",
+      "confirmed_readback",
+      "checkpoint_verification",
+      "idempotent_replay",
+      "audit_ledger",
+      "explicit_recovery_policy"
+    ],
+    "measurement": {
+      "steps": "contract_actions_and_readbacks",
+      "success": "all_checkpoints_passed",
+      "auditability": "ledger_event_present",
+      "replayability": "idempotency_key_and_replay_policy_present"
+    }
+  },
+  "evidence_contracts": {
+    "production_write_contract": "examples/04_production_write_contract_v1.json",
+    "checkpoint_contract": "examples/05_checkpoint_contract_v1.json"
+  },
+  "acceptance_criteria": [
+    "production_write_contract exists and declares permission, readback, idempotency, audit, replay, and compensation",
+    "checkpoint_contract exists and declares checkpoints, verify query, expected state, ledger, and recovery policy",
+    "demo explicitly separates Cardity contract layer from runtime execution",
+    "demo does not require Cardity to drive a GUI or execute production writes"
+  ]
+}

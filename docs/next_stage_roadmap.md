@@ -86,6 +86,24 @@ Goal: make Cardity a standard surface for agent-generated systems.
 | Community Templates | Reusable protocol packages. |
 | WASM Sandbox Runner | Browser/edge-safe validation and simulation subset. |
 
+## Benchmark Narrative
+
+SaaS-Bench-style results support Cardity's boundary: GUI-only agents are fragile
+on long, cross-app workflows, while Cardity provides the contract layer a
+runtime can use before execution. The first repo-local evidence asset is the
+Cardity Bench Demo:
+
+```text
+docs/cardity_bench_demo.md
+examples/06_cardity_bench_demo.json
+scripts/verify_cardity_bench_demo.js
+```
+
+The demo compares a GUI-only path with a Cardity contract path using production
+write, checkpoint, projection, readback, idempotency, replay, audit, and
+recovery contracts. It remains a contract-layer demo; Cardity does not drive a
+browser or execute writes.
+
 ## Immediate P0 Scope
 
 The first implementation batch is intentionally small:
