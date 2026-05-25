@@ -86,6 +86,23 @@ Goal: make Cardity a standard surface for agent-generated systems.
 | Community Templates | Reusable protocol packages. |
 | WASM Sandbox Runner | Browser/edge-safe validation and simulation subset. |
 
+## PMTSoul Workspace Boundary
+
+PMTSoul treats Cardity as the system blueprint layer. For each PMTSoul account,
+PMTSoul can consume a Cardity manifest plus
+`workspace_generation_contract_v1` and generate an isolated ERP/CRM workspace.
+
+Cardity may define:
+
+- tenant/account scope metadata;
+- workspace artifact mapping;
+- role/tool permission bindings;
+- account-level conformance metadata;
+- Cardity-to-runtime reference mappings.
+
+PMTSoul owns runtime execution, tenant isolation, database partitioning, auth,
+UI routing, workflow execution, data persistence, recovery, and audit output.
+
 ## Benchmark Narrative
 
 SaaS-Bench-style results support Cardity's boundary: GUI-only agents are fragile

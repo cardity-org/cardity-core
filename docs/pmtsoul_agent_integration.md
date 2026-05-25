@@ -290,6 +290,7 @@ https://api.cardity.org/schemas/agent_manifest_v1.schema.json
 https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
 https://api.cardity.org/schemas/production_write_contract_v1.schema.json
 https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json
+https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -306,6 +307,13 @@ For long-horizon workflows, PMTSoul can also attach
 `agent_contract.checkpoint_contract`. Cardity review/conformance then checks
 that long-running or cross-app actions declare checkpoint verification queries,
 expected state, ledger metadata, and recovery policy.
+
+For per-account ERP/CRM generation, PMTSoul can consume
+`cardity.workspace_generation_contract.v1`. Cardity uses this only as blueprint
+metadata: tenant/account keys, workspace artifact mapping, role/tool bindings,
+and account-level conformance expectations. PMTSoul owns actual tenant
+isolation, storage partitioning, auth, UI routing, execution, recovery, and
+audit output.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

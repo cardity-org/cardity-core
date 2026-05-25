@@ -33,6 +33,7 @@ https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 | `supported_projection_contracts` | Projection contract versions accepted by the runtime. |
 | `supported_production_write_contracts` | Optional production write contract versions accepted by the runtime. |
 | `supported_checkpoint_contracts` | Optional checkpoint contract versions accepted by the runtime. |
+| `supported_workspace_generation_contracts` | Optional workspace generation contract versions accepted by the runtime. |
 | `capabilities` | Boolean capability map for execution behavior. |
 | `production_write_policy` | Production write boundary. |
 | `conformance.status` | Current Cardity compatibility status. |

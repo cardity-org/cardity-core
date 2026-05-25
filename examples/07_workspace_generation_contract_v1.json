@@ -1,0 +1,89 @@
+{
+  "schema": "cardity.workspace_generation_contract.v1",
+  "tenant_scope": {
+    "account_key": "$ctx.account_id",
+    "workspace_key": "$ctx.workspace_id",
+    "tenant_keys": ["account_id", "workspace_id"],
+    "isolation_policy": {
+      "mode": "metadata_only",
+      "runtime_owned": true,
+      "notes": "Cardity declares tenant scope metadata only. PMTSoul owns actual isolation, storage partitioning, auth, and routing."
+    }
+  },
+  "workspace": {
+    "kind": "erp_crm_workspace",
+    "target_runtime": "pmtsoul-agent-os",
+    "generated_artifacts": ["api", "database", "ui", "workflow", "agent_roles", "permissions", "audit", "recovery"]
+  },
+  "resource_mapping": {
+    "actions": [
+      {
+        "source": "system.ui.actions.publish_product",
+        "target": "workspace.actions.publish_product",
+        "tenant_scoped_by": ["account_id", "workspace_id"]
+      }
+    ],
+    "read_models": [
+      {
+        "source": "system.database.read_models.merchant_products",
+        "target": "workspace.database.read_models.products",
+        "tenant_scoped_by": ["account_id", "workspace_id"]
+      }
+    ],
+    "projections": [
+      {
+        "source": "system.database.projections.products_confirmed_readback",
+        "target": "workspace.projections.products_confirmed_readback",
+        "tenant_scoped_by": ["account_id", "workspace_id"]
+      }
+    ],
+    "queries": [
+      {
+        "source": "system.database.queries.products.list",
+        "target": "workspace.queries.products.list",
+        "tenant_scoped_by": ["account_id", "workspace_id"]
+      }
+    ],
+    "checkpoints": [
+      {
+        "source": "agent_contract.checkpoint_contract.catalog_item_verified",
+        "target": "workspace.checkpoints.catalog_item_verified",
+        "tenant_scoped_by": ["account_id", "workspace_id"]
+      }
+    ]
+  },
+  "role_tool_bindings": [
+    {
+      "role": "account_admin",
+      "allowed_actions": ["publish_product", "edit_store_profile"],
+      "allowed_tools": ["products.list", "store.profile"],
+      "permission_scope": "account"
+    },
+    {
+      "role": "operator",
+      "allowed_actions": ["publish_product"],
+      "allowed_tools": ["products.list"],
+      "permission_scope": "workspace"
+    }
+  ],
+  "account_conformance": {
+    "required": true,
+    "checks": [
+      "tenant_scope_present",
+      "workspace_metadata_present",
+      "actions_mapped",
+      "read_models_mapped",
+      "roles_bound",
+      "permissions_bound",
+      "checkpoints_bound",
+      "audit_replay_metadata_present"
+    ],
+    "metadata_fields": [
+      "cardity.manifest_version",
+      "cardity.workspace_generation_contract_version",
+      "cardity.account_key",
+      "cardity.workspace_key",
+      "cardity.generated_at"
+    ]
+  }
+}

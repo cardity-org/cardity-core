@@ -69,6 +69,11 @@
       "url": "https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json"
     },
     {
+      "id": "workspace_generation_contract_v1",
+      "contract": "cardity.workspace_generation_contract.v1",
+      "url": "https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json"
+    },
+    {
       "id": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json"

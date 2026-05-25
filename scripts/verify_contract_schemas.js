@@ -25,6 +25,7 @@ const schemas = [
   "schemas/agent_action_contract_v1.schema.json",
   "schemas/production_write_contract_v1.schema.json",
   "schemas/checkpoint_contract_v1.schema.json",
+  "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -134,6 +135,21 @@ for (const scope of ["action", "workflow", "module", "system"]) {
 for (const mode of ["retry", "stop", "manual_review", "compensating_action"]) {
   if (!enumValues(checkpointSchema, "/properties/checkpoints/items/properties/on_failure/properties/mode").includes(mode)) {
     fail(`checkpoint schema missing on_failure mode ${mode}`);
+  }
+}
+
+const workspaceGenerationSchema = readJson("schemas/workspace_generation_contract_v1.schema.json");
+for (const field of ["schema", "tenant_scope", "workspace", "resource_mapping", "role_tool_bindings", "account_conformance"]) {
+  if (!workspaceGenerationSchema.required.includes(field)) fail(`workspace generation schema missing required ${field}`);
+}
+for (const artifact of ["api", "database", "ui", "workflow", "agent_roles", "permissions", "audit", "recovery"]) {
+  if (!enumValues(workspaceGenerationSchema, "/properties/workspace/properties/generated_artifacts/items").includes(artifact)) {
+    fail(`workspace generation schema missing artifact ${artifact}`);
+  }
+}
+for (const check of ["tenant_scope_present", "workspace_metadata_present", "actions_mapped", "roles_bound"]) {
+  if (!enumValues(workspaceGenerationSchema, "/properties/account_conformance/properties/checks/items").includes(check)) {
+    fail(`workspace generation schema missing account conformance check ${check}`);
   }
 }
 

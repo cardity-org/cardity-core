@@ -48,6 +48,10 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "supported_workspace_generation_contracts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "capabilities": {
       "type": "object",
       "required": [

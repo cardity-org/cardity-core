@@ -21,6 +21,7 @@ const nextStageSchemaPaths = [
   "schemas/runtime_adapter_contract_v1.schema.json",
   "schemas/production_write_contract_v1.schema.json",
   "schemas/checkpoint_contract_v1.schema.json",
+  "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -100,6 +101,20 @@ if (checkpointExample.schema !== "cardity.checkpoint_contract.v1") {
 }
 for (const field of checkpoint.required) {
   if (!(field in checkpointExample)) fail(`checkpoint example missing ${field}`);
+}
+
+const workspaceGeneration = readJson("schemas/workspace_generation_contract_v1.schema.json");
+for (const field of ["tenant_scope", "workspace", "resource_mapping", "role_tool_bindings", "account_conformance"]) {
+  if (!workspaceGeneration.required.includes(field)) {
+    fail(`workspace generation schema missing required ${field}`);
+  }
+}
+const workspaceGenerationExample = readJson("examples/07_workspace_generation_contract_v1.json");
+if (workspaceGenerationExample.schema !== "cardity.workspace_generation_contract.v1") {
+  fail("workspace generation example has wrong schema");
+}
+for (const field of workspaceGeneration.required) {
+  if (!(field in workspaceGenerationExample)) fail(`workspace generation example missing ${field}`);
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");
