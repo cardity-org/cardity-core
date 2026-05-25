@@ -26,6 +26,7 @@ const schemas = [
   "schemas/production_write_contract_v1.schema.json",
   "schemas/checkpoint_contract_v1.schema.json",
   "schemas/workspace_generation_contract_v1.schema.json",
+  "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -150,6 +151,21 @@ for (const artifact of ["api", "database", "ui", "workflow", "agent_roles", "per
 for (const check of ["tenant_scope_present", "workspace_metadata_present", "actions_mapped", "roles_bound"]) {
   if (!enumValues(workspaceGenerationSchema, "/properties/account_conformance/properties/checks/items").includes(check)) {
     fail(`workspace generation schema missing account conformance check ${check}`);
+  }
+}
+
+const agentOrchestrationSchema = readJson("schemas/agent_orchestration_contract_v1.schema.json");
+for (const field of ["schema", "roles", "authority", "handoffs", "verification", "coordination", "failure_policy"]) {
+  if (!agentOrchestrationSchema.required.includes(field)) fail(`agent orchestration schema missing required ${field}`);
+}
+for (const roleKind of ["planner", "operator", "reviewer", "auditor", "recovery_agent"]) {
+  if (!enumValues(agentOrchestrationSchema, "/properties/roles/items/properties/kind").includes(roleKind)) {
+    fail(`agent orchestration schema missing role kind ${roleKind}`);
+  }
+}
+for (const mode of ["sequential", "parallel", "hybrid"]) {
+  if (!enumValues(agentOrchestrationSchema, "/properties/coordination/properties/mode").includes(mode)) {
+    fail(`agent orchestration schema missing coordination mode ${mode}`);
   }
 }
 

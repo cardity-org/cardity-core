@@ -1,0 +1,109 @@
+{
+  "schema": "cardity.agent_orchestration_contract.v1",
+  "roles": [
+    {
+      "id": "planner",
+      "kind": "planner",
+      "responsibility": "Break the user goal into bounded tasks and required context.",
+      "output_contract": "task_plan_v1"
+    },
+    {
+      "id": "operator",
+      "kind": "operator",
+      "responsibility": "Execute approved low and medium risk actions.",
+      "output_contract": "action_result_v1"
+    },
+    {
+      "id": "reviewer",
+      "kind": "reviewer",
+      "responsibility": "Verify readback and checkpoint results before downstream work continues.",
+      "output_contract": "review_result_v1"
+    },
+    {
+      "id": "auditor",
+      "kind": "auditor",
+      "responsibility": "Record audit trail and explain execution history.",
+      "output_contract": "audit_report_v1"
+    },
+    {
+      "id": "recovery_agent",
+      "kind": "recovery_agent",
+      "responsibility": "Run approved retry, compensation, or manual-review recovery paths.",
+      "output_contract": "recovery_result_v1"
+    }
+  ],
+  "authority": [
+    {
+      "role": "planner",
+      "allowed_actions": ["workflow.plan", "context.request"],
+      "forbidden_actions": ["production_write", "approval.grant"],
+      "can_approve": false
+    },
+    {
+      "role": "operator",
+      "allowed_actions": ["catalog.item.update", "catalog.item.read"],
+      "forbidden_actions": ["approval.grant", "review.self_approve"],
+      "can_approve": false
+    },
+    {
+      "role": "reviewer",
+      "allowed_actions": ["checkpoint.verify", "readback.verify", "approval.recommend"],
+      "forbidden_actions": ["production_write"],
+      "can_approve": true
+    },
+    {
+      "role": "auditor",
+      "allowed_actions": ["audit.record", "audit.explain"],
+      "forbidden_actions": ["production_write", "approval.grant"],
+      "can_approve": false
+    },
+    {
+      "role": "recovery_agent",
+      "allowed_actions": ["workflow.retry", "workflow.compensate", "manual_review.request"],
+      "forbidden_actions": ["production_write.unapproved", "approval.grant"],
+      "can_approve": false
+    }
+  ],
+  "handoffs": [
+    {
+      "from": "planner",
+      "to": "operator",
+      "required_artifacts": ["task_plan", "required_context", "allowed_action_refs"],
+      "readback_required": false,
+      "checkpoint_required": false,
+      "acceptance_criteria": ["all_actions_have_permissions", "required_context_present"]
+    },
+    {
+      "from": "operator",
+      "to": "reviewer",
+      "required_artifacts": ["action_result", "readback_payload", "checkpoint_ref"],
+      "readback_required": true,
+      "checkpoint_required": true,
+      "acceptance_criteria": ["readback_available", "checkpoint_ref_present"]
+    },
+    {
+      "from": "reviewer",
+      "to": "auditor",
+      "required_artifacts": ["review_result", "checkpoint_status", "audit_event"],
+      "readback_required": true,
+      "checkpoint_required": true,
+      "acceptance_criteria": ["checkpoint_passed", "audit_event_present"]
+    }
+  ],
+  "verification": {
+    "high_risk_requires": ["reviewer", "human_approval", "checkpoint", "readback"],
+    "write_requires": ["permission", "confirmation", "readback", "checkpoint", "audit"]
+  },
+  "coordination": {
+    "mode": "hybrid",
+    "max_parallel_agents": 2,
+    "shared_state_lock": ["account_id", "workspace_id", "entity_id"],
+    "conflict_policy": "lock"
+  },
+  "failure_policy": {
+    "on_agent_disagreement": "reviewer_decides",
+    "on_checkpoint_failure": "stop_and_recover",
+    "on_context_missing": "request_context",
+    "recovery_role": "recovery_agent"
+  }
+}

@@ -56,6 +56,16 @@
       "status": "alpha"
     },
     {
+      "name": "agent_orchestration_contract_v1",
+      "contract": "cardity.agent_orchestration_contract.v1",
+      "version": "v1",
+      "file": "agent_orchestration_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/agent_orchestration_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json",
+      "title": "Cardity Agent Orchestration Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",

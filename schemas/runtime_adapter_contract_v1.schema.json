@@ -52,6 +52,10 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "supported_agent_orchestration_contracts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "capabilities": {
       "type": "object",
       "required": [
@@ -76,7 +80,8 @@
         "conformance_gate": { "type": "boolean" },
         "manifest_validation": { "type": "boolean" },
         "workspace_metadata": { "type": "boolean" },
-        "diagnostics_surface": { "type": "boolean" }
+        "diagnostics_surface": { "type": "boolean" },
+        "agent_orchestration": { "type": "boolean" }
       }
     },
     "production_write_policy": {

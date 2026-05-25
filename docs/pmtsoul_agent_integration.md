@@ -291,6 +291,7 @@ https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
 https://api.cardity.org/schemas/production_write_contract_v1.schema.json
 https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json
 https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
+https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -313,6 +314,13 @@ For per-account ERP/CRM generation, PMTSoul can consume
 metadata: tenant/account keys, workspace artifact mapping, role/tool bindings,
 and account-level conformance expectations. PMTSoul owns actual tenant
 isolation, storage partitioning, auth, UI routing, execution, recovery, and
+audit output.
+
+For multi-agent execution, PMTSoul can consume
+`cardity.agent_orchestration_contract.v1` and map it into workspace agent roles,
+tool/action permissions, handoff graph, checkpoint/readback verification, shared
+state locks, and recovery policy. Cardity defines the orchestration contract;
+PMTSoul owns scheduling, queues, state storage, permission enforcement, and
 audit output.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:

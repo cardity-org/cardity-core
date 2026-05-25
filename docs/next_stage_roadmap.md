@@ -103,6 +103,11 @@ Cardity may define:
 PMTSoul owns runtime execution, tenant isolation, database partitioning, auth,
 UI routing, workflow execution, data persistence, recovery, and audit output.
 
+For multi-agent workspaces, Cardity can also emit
+`agent_orchestration_contract_v1`: roles, authority, structured handoffs,
+verification rules, coordination locks, and failure policy. PMTSoul maps that
+contract into runtime scheduling and execution.
+
 ## Benchmark Narrative
 
 SaaS-Bench-style results support Cardity's boundary: GUI-only agents are fragile

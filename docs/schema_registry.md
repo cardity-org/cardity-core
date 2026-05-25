@@ -33,6 +33,7 @@ schemas/registry.json
 | Production write contract v1 | `https://api.cardity.org/schemas/production_write_contract_v1.schema.json` |
 | Checkpoint contract v1 | `https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json` |
 | Workspace generation contract v1 | `https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json` |
+| Agent orchestration contract v1 | `https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json` |
 | Projection contract v1.1 | `https://api.cardity.org/schemas/projection_contract_v1_1.schema.json` |
 | Runtime adapter contract v1 | `https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json` |
 | Conformance report v1 | `https://api.cardity.org/schemas/conformance_report_v1.schema.json` |
@@ -70,6 +71,7 @@ cardity schemas cardity.runtime_adapter_contract.v1
 cardity schemas production_write_contract_v1
 cardity schemas checkpoint_contract_v1
 cardity schemas workspace_generation_contract_v1
+cardity schemas agent_orchestration_contract_v1
 ```
 
 ## MCP

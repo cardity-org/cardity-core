@@ -22,6 +22,7 @@ const nextStageSchemaPaths = [
   "schemas/production_write_contract_v1.schema.json",
   "schemas/checkpoint_contract_v1.schema.json",
   "schemas/workspace_generation_contract_v1.schema.json",
+  "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -115,6 +116,20 @@ if (workspaceGenerationExample.schema !== "cardity.workspace_generation_contract
 }
 for (const field of workspaceGeneration.required) {
   if (!(field in workspaceGenerationExample)) fail(`workspace generation example missing ${field}`);
+}
+
+const agentOrchestration = readJson("schemas/agent_orchestration_contract_v1.schema.json");
+for (const field of ["roles", "authority", "handoffs", "verification", "coordination", "failure_policy"]) {
+  if (!agentOrchestration.required.includes(field)) {
+    fail(`agent orchestration schema missing required ${field}`);
+  }
+}
+const agentOrchestrationExample = readJson("examples/08_agent_orchestration_contract_v1.json");
+if (agentOrchestrationExample.schema !== "cardity.agent_orchestration_contract.v1") {
+  fail("agent orchestration example has wrong schema");
+}
+for (const field of agentOrchestration.required) {
+  if (!(field in agentOrchestrationExample)) fail(`agent orchestration example missing ${field}`);
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");

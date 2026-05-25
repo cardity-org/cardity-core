@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/agent_orchestration_contract_v1.schema.json",
+  "title": "Cardity Agent Orchestration Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "roles", "authority", "handoffs", "verification", "coordination", "failure_policy"],
+  "properties": {
+    "schema": { "const": "cardity.agent_orchestration_contract.v1" },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "kind", "responsibility", "output_contract"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["planner", "operator", "reviewer", "auditor", "recovery_agent"] },
+          "responsibility": { "type": "string", "minLength": 1 },
+          "output_contract": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "authority": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["role", "allowed_actions", "forbidden_actions", "can_approve"],
+        "properties": {
+          "role": { "type": "string", "minLength": 1 },
+          "allowed_actions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "forbidden_actions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "can_approve": { "type": "boolean" }
+        }
+      }
+    },
+    "handoffs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["from", "to", "required_artifacts", "acceptance_criteria"],
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "required_artifacts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "readback_required": { "type": "boolean" },
+          "checkpoint_required": { "type": "boolean" },
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["high_risk_requires", "write_requires"],
+      "properties": {
+        "high_risk_requires": {
+          "type": "array",
+          "items": { "enum": ["reviewer", "human_approval", "checkpoint", "readback"] }
+        },
+        "write_requires": {
+          "type": "array",
+          "items": { "enum": ["permission", "confirmation", "readback", "checkpoint", "audit"] }
+        }
+      }
+    },
+    "coordination": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["mode", "max_parallel_agents", "shared_state_lock", "conflict_policy"],
+      "properties": {
+        "mode": { "enum": ["sequential", "parallel", "hybrid"] },
+        "max_parallel_agents": { "type": "integer", "minimum": 1 },
+        "shared_state_lock": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "conflict_policy": { "enum": ["lock", "stop", "reviewer_decides", "human_review"] }
+      }
+    },
+    "failure_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["on_agent_disagreement", "on_checkpoint_failure", "on_context_missing", "recovery_role"],
+      "properties": {
+        "on_agent_disagreement": { "enum": ["stop", "reviewer_decides", "human_review"] },
+        "on_checkpoint_failure": { "enum": ["stop_and_recover", "retry", "human_review"] },
+        "on_context_missing": { "enum": ["request_context", "stop", "human_review"] },
+        "recovery_role": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

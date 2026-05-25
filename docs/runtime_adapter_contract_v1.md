@@ -34,6 +34,7 @@ https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 | `supported_production_write_contracts` | Optional production write contract versions accepted by the runtime. |
 | `supported_checkpoint_contracts` | Optional checkpoint contract versions accepted by the runtime. |
 | `supported_workspace_generation_contracts` | Optional workspace generation contract versions accepted by the runtime. |
+| `supported_agent_orchestration_contracts` | Optional multi-agent orchestration contract versions accepted by the runtime. |
 | `capabilities` | Boolean capability map for execution behavior. |
 | `production_write_policy` | Production write boundary. |
 | `conformance.status` | Current Cardity compatibility status. |
@@ -55,6 +56,7 @@ https://cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 | `manifest_validation` | Runtime validates manifest schema/contract before generation. |
 | `workspace_metadata` | Runtime stores Cardity contract version metadata in generated workspaces. |
 | `diagnostics_surface` | Runtime exposes Cardity diagnostics/conformance errors to users or logs. |
+| `agent_orchestration` | Runtime can map orchestration contracts to role, handoff, verification, and recovery execution. |
 
 ## Production Write Policy
 
