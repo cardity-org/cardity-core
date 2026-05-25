@@ -289,6 +289,7 @@ https://api.cardity.org/schemas
 https://api.cardity.org/schemas/agent_manifest_v1.schema.json
 https://api.cardity.org/schemas/agent_action_contract_v1.schema.json
 https://api.cardity.org/schemas/production_write_contract_v1.schema.json
+https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -299,6 +300,12 @@ writes with permission id, confirmation policy, confirmation UI state,
 confirmed readback verification, idempotency, audit, replay, compensation,
 long-running task result, and role-scoped tool permission metadata. This remains
 a generic Agent action contract, not an ERP-specific DSL.
+
+For long-horizon workflows, PMTSoul can also attach
+`cardity.checkpoint_contract.v1` at `checkpoint_contract` or
+`agent_contract.checkpoint_contract`. Cardity review/conformance then checks
+that long-running or cross-app actions declare checkpoint verification queries,
+expected state, ledger metadata, and recovery policy.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

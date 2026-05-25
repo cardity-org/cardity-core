@@ -31,6 +31,7 @@ schemas/registry.json
 | Agent OS manifest v1 | `https://api.cardity.org/schemas/agent_manifest_v1.schema.json` |
 | Agent action contract v1 | `https://api.cardity.org/schemas/agent_action_contract_v1.schema.json` |
 | Production write contract v1 | `https://api.cardity.org/schemas/production_write_contract_v1.schema.json` |
+| Checkpoint contract v1 | `https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json` |
 | Projection contract v1.1 | `https://api.cardity.org/schemas/projection_contract_v1_1.schema.json` |
 | Runtime adapter contract v1 | `https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json` |
 | Conformance report v1 | `https://api.cardity.org/schemas/conformance_report_v1.schema.json` |
@@ -66,6 +67,7 @@ cardity schemas runtime_adapter_contract_v1
 cardity schemas runtime_adapter_contract_v1.schema.json
 cardity schemas cardity.runtime_adapter_contract.v1
 cardity schemas production_write_contract_v1
+cardity schemas checkpoint_contract_v1
 ```
 
 ## MCP
@@ -106,6 +108,7 @@ PMTSoul Agent OS should store these URLs alongside generated workspace metadata:
     "manifest_schema_url": "https://api.cardity.org/schemas/agent_manifest_v1.schema.json",
     "action_contract_schema_url": "https://api.cardity.org/schemas/agent_action_contract_v1.schema.json",
     "production_write_contract_schema_url": "https://api.cardity.org/schemas/production_write_contract_v1.schema.json",
+    "checkpoint_contract_schema_url": "https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json",
     "projection_contract_schema_url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json",
     "runtime_adapter_schema_url": "https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json"
   }

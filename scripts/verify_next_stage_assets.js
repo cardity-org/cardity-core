@@ -20,6 +20,7 @@ const nextStageSchemaPaths = [
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
   "schemas/production_write_contract_v1.schema.json",
+  "schemas/checkpoint_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -85,6 +86,20 @@ if (productionWriteExample.schema !== "cardity.production_write_contract.v1") {
 }
 for (const field of productionWrite.required) {
   if (!(field in productionWriteExample)) fail(`production write example missing ${field}`);
+}
+
+const checkpoint = readJson("schemas/checkpoint_contract_v1.schema.json");
+for (const field of ["scope", "checkpoints", "ledger", "recovery_policy"]) {
+  if (!checkpoint.required.includes(field)) {
+    fail(`checkpoint schema missing required ${field}`);
+  }
+}
+const checkpointExample = readJson("examples/05_checkpoint_contract_v1.json");
+if (checkpointExample.schema !== "cardity.checkpoint_contract.v1") {
+  fail("checkpoint example has wrong schema");
+}
+for (const field of checkpoint.required) {
+  if (!(field in checkpointExample)) fail(`checkpoint example missing ${field}`);
 }
 
 const pmtsoulAdapter = readJson("examples/runtime_adapter_pmtsoul_agent_os.json");

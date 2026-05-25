@@ -44,6 +44,10 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "supported_checkpoint_contracts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "capabilities": {
       "type": "object",
       "required": [

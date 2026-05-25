@@ -58,6 +58,7 @@ node scripts/verify_npm_package.js >/dev/null
 node scripts/verify_contract_schemas.js >/dev/null
 node scripts/verify_next_stage_assets.js >/dev/null
 node scripts/verify_production_write_contract.js >/dev/null
+node scripts/verify_checkpoint_contract.js >/dev/null
 grep -q 'Cardity Playground' src/cloudflare-worker.js
 grep -q 'url.pathname === "/playground"' src/cloudflare-worker.js
 rm -rf "$INIT_OUT"
@@ -84,6 +85,7 @@ node bin/cardity.js unpack "$PACKAGE_OUT" --out-dir "$PACKAGE_UNPACK_DIR" >/dev/
 node bin/cardity.js schemas runtime_adapter_contract_v1 --json >/tmp/cardity_schema_registry_smoke.json
 node bin/cardity.js schemas explain_result_v1 --json >/tmp/cardity_explain_schema_registry_smoke.json
 node bin/cardity.js schemas production_write_contract_v1 --json >/tmp/cardity_production_write_schema_registry_smoke.json
+node bin/cardity.js schemas checkpoint_contract_v1 --json >/tmp/cardity_checkpoint_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
 node bin/cardity.js registry --json > "$ECOSYSTEM_REGISTRY_OUT"
 node bin/cardity.js registry templates member_points --json > "$ECOSYSTEM_TEMPLATE_OUT"

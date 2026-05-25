@@ -19,6 +19,7 @@ Cardity release.
 | Agent OS manifest v1 | `schemas/agent_manifest_v1.schema.json` |
 | Agent action contract v1 | `schemas/agent_action_contract_v1.schema.json` |
 | Production write contract v1 | `schemas/production_write_contract_v1.schema.json` |
+| Checkpoint contract v1 | `schemas/checkpoint_contract_v1.schema.json` |
 | Projection contract v1.1 | `schemas/projection_contract_v1_1.schema.json` |
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
@@ -45,6 +46,7 @@ https://api.cardity.org/schemas
 | `examples/03_merchant_erp_agent.car` | Downstream ERP reference protocol. |
 | `examples/03_merchant_erp_projection_v1_1.json` | Full v1.1 read-model, projection, query, action, module, and external-service baseline. |
 | `examples/04_production_write_contract_v1.json` | Generic production write contract example for permissioned command execution. |
+| `examples/05_checkpoint_contract_v1.json` | Generic long-horizon checkpoint contract example for state verification and recovery. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 | `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
@@ -98,6 +100,11 @@ Production-write checks are included in `cardity review` and
 `cardity conformance`. If an action enables real write execution, Cardity
 requires a valid `cardity.production_write_contract.v1` contract at either
 `production_write_contract` or `agent_contract.production_write_contract`.
+
+Checkpoint checks are also included. If an action declares `long_horizon: true`,
+`checkpoint_required: true`, or `agent_contract.checkpoint_required: true`,
+Cardity requires a valid `cardity.checkpoint_contract.v1` contract at either
+`checkpoint_contract` or `agent_contract.checkpoint_contract`.
 
 ## Runtime Boundary
 

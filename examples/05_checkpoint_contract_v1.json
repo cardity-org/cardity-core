@@ -1,0 +1,61 @@
+{
+  "schema": "cardity.checkpoint_contract.v1",
+  "scope": "workflow",
+  "checkpoints": [
+    {
+      "id": "catalog_item_verified",
+      "after": "catalog_item_update",
+      "verify": {
+        "query": {
+          "name": "catalog.item.detail",
+          "input": {
+            "workspace_id": "$ctx.workspace_id",
+            "item_id": "$input.item_id"
+          }
+        },
+        "expected_fields": ["item_id", "name", "price", "updated_at"],
+        "status_field": "$readback.verification_status",
+        "pass_values": ["verified"]
+      },
+      "expected_state": {
+        "item_id": "$input.item_id",
+        "price": "$input.price"
+      },
+      "on_failure": {
+        "mode": "manual_review",
+        "max_attempts": 1,
+        "recovery_hint": "Stop the workflow and request human review before downstream actions consume stale state."
+      }
+    },
+    {
+      "id": "downstream_projection_verified",
+      "after": "catalog_projection_apply",
+      "verify": {
+        "query": "catalog.item.list",
+        "expected_fields": ["item_id", "projection_version", "write_index"],
+        "status_field": "$checkpoint.status",
+        "pass_values": ["pass"]
+      },
+      "expected_state": {
+        "projection_version": "v1",
+        "write_index": "$event.write_index"
+      },
+      "on_failure": {
+        "mode": "retry",
+        "max_attempts": 2,
+        "recovery_hint": "Retry projection readback before allowing the next workflow step."
+      }
+    }
+  ],
+  "ledger": {
+    "event": "WorkflowCheckpointRecorded",
+    "append_fields": ["$run.id", "$checkpoint.id", "$checkpoint.status", "$checkpoint.observed_at"],
+    "source_run_id": "$run.id",
+    "checkpoint_index": "$checkpoint.index"
+  },
+  "recovery_policy": {
+    "mode": "manual",
+    "on_unrecoverable": "manual_review",
+    "compensation_action": null
+  }
+}

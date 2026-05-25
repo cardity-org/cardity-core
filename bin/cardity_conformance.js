@@ -1,7 +1,10 @@
 const {
+  getCheckpointContract,
   getProductionWriteContract,
   reviewManifest,
+  validateCheckpointContract,
   validateProductionWriteContract,
+  wantsCheckpointContract,
   wantsProductionWrite
 } = require('./cardity_review');
 const { validateRuntimeAdapter } = require('./cardity_adapter');
@@ -176,6 +179,29 @@ function runConformance(manifest, options = {}) {
       for (const issue of validateProductionWriteContract(productionWriteContract)) {
         check(
           `action.${action.name || 'unnamed'}.production_write_contract.${issue.field}`,
+          'action',
+          false,
+          issue.message,
+          `${location}.${issue.field}`,
+          issue.recommendation
+        );
+      }
+    }
+
+    const checkpointRequested = wantsCheckpointContract(action);
+    const checkpointContract = getCheckpointContract(action);
+    if (checkpointRequested) {
+      check(
+        `action.${action.name || 'unnamed'}.checkpoint_contract`,
+        'action',
+        Boolean(checkpointContract),
+        `Action ${action.name || '<unnamed>'} declares a checkpoint contract.`,
+        `${location}.checkpoint_contract`,
+        'Attach cardity.checkpoint_contract.v1 for long-horizon state verification.'
+      );
+      for (const issue of validateCheckpointContract(checkpointContract)) {
+        check(
+          `action.${action.name || 'unnamed'}.checkpoint_contract.${issue.field}`,
           'action',
           false,
           issue.message,

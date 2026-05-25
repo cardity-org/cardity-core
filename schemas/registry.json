@@ -36,6 +36,16 @@
       "status": "alpha"
     },
     {
+      "name": "checkpoint_contract_v1",
+      "contract": "cardity.checkpoint_contract.v1",
+      "version": "v1",
+      "file": "checkpoint_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/checkpoint_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json",
+      "title": "Cardity Checkpoint Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",

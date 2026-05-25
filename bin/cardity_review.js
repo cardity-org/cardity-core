@@ -134,6 +134,96 @@ function validateProductionWriteContract(contract) {
   return issues;
 }
 
+function getCheckpointContract(action) {
+  if (!action || typeof action !== 'object') return null;
+  if (action.checkpoint_contract) return action.checkpoint_contract;
+  if (action.agent_contract && action.agent_contract.checkpoint_contract) {
+    return action.agent_contract.checkpoint_contract;
+  }
+  return null;
+}
+
+function wantsCheckpointContract(action) {
+  if (!action || typeof action !== 'object') return false;
+  const agentContract = action.agent_contract || {};
+  return (
+    action.long_horizon === true ||
+    action.checkpoint_required === true ||
+    agentContract.long_horizon === true ||
+    agentContract.checkpoint_required === true ||
+    Boolean(getCheckpointContract(action))
+  );
+}
+
+function validateCheckpointContract(contract) {
+  const issues = [];
+
+  function issue(field, message, recommendation) {
+    issues.push({ field, message, recommendation });
+  }
+
+  if (typeof contract === 'string') {
+    if (!contract.trim()) {
+      issue('checkpoint_contract', 'Checkpoint contract reference is empty.', 'Use cardity.checkpoint_contract.v1 or an inline contract object.');
+    }
+    return issues;
+  }
+
+  if (!contract || typeof contract !== 'object' || Array.isArray(contract)) {
+    issue('checkpoint_contract', 'Checkpoint contract is missing or invalid.', 'Attach a cardity.checkpoint_contract.v1 object or schema reference.');
+    return issues;
+  }
+
+  if (contract.schema !== 'cardity.checkpoint_contract.v1') {
+    issue('schema', 'Checkpoint contract uses the wrong schema.', 'Set schema to cardity.checkpoint_contract.v1.');
+  }
+
+  for (const field of ['scope', 'checkpoints', 'ledger', 'recovery_policy']) {
+    if (!(field in contract)) {
+      issue(field, `Checkpoint contract is missing ${field}.`, `Add ${field} to the checkpoint contract.`);
+    }
+  }
+
+  if (!['action', 'workflow', 'module', 'system'].includes(contract.scope)) {
+    issue('scope', 'Checkpoint contract scope is invalid.', 'Use scope action, workflow, module, or system.');
+  }
+
+  const checkpoints = asArray(contract.checkpoints);
+  if (checkpoints.length === 0) {
+    issue('checkpoints', 'Checkpoint contract has no checkpoints.', 'Add at least one checkpoint with verify and expected_state.');
+  }
+  for (const checkpoint of checkpoints) {
+    const checkpointId = checkpoint && checkpoint.id ? checkpoint.id : '<unnamed>';
+    if (!checkpoint || typeof checkpoint !== 'object') {
+      issue('checkpoints', 'Checkpoint entry is invalid.', 'Use checkpoint objects.');
+      continue;
+    }
+    for (const field of ['id', 'after', 'verify', 'expected_state', 'on_failure']) {
+      if (!(field in checkpoint)) {
+        issue(`checkpoints.${checkpointId}.${field}`, `Checkpoint ${checkpointId} is missing ${field}.`, `Add ${field} to the checkpoint.`);
+      }
+    }
+    const verify = checkpoint.verify || {};
+    if (!verify.query || asArray(verify.expected_fields).length === 0 || !verify.status_field) {
+      issue(`checkpoints.${checkpointId}.verify`, `Checkpoint ${checkpointId} verification is incomplete.`, 'Declare verify.query, verify.expected_fields, and verify.status_field.');
+    }
+    const onFailure = checkpoint.on_failure || {};
+    if (!['retry', 'stop', 'manual_review', 'compensating_action'].includes(onFailure.mode)) {
+      issue(`checkpoints.${checkpointId}.on_failure.mode`, `Checkpoint ${checkpointId} failure mode is invalid.`, 'Use retry, stop, manual_review, or compensating_action.');
+    }
+  }
+
+  if (!contract.ledger || !contract.ledger.event || asArray(contract.ledger.append_fields).length === 0 || !contract.ledger.source_run_id) {
+    issue('ledger', 'Checkpoint ledger is incomplete.', 'Declare ledger.event, append_fields, source_run_id, and checkpoint_index.');
+  }
+
+  if (!contract.recovery_policy || !contract.recovery_policy.mode || !contract.recovery_policy.on_unrecoverable) {
+    issue('recovery_policy', 'Checkpoint recovery policy is incomplete.', 'Declare recovery_policy.mode and on_unrecoverable.');
+  }
+
+  return issues;
+}
+
 function protocolName(protocol) {
   if (typeof protocol === 'string') return protocol;
   return (protocol && protocol.name) || 'Cardity Protocol';
@@ -227,6 +317,19 @@ function reviewManifest(manifest) {
         }
       } else if (action.permission && !plannedOnly && !productionWriteContract) {
         finding('warning', 'PRODUCTION_WRITE_CONTRACT_RECOMMENDED', location, 'Permissioned write-like action has no production write contract.', 'Add production_write_contract before enabling real write execution.');
+      }
+
+      const checkpointRequested = wantsCheckpointContract(action);
+      const checkpointContract = getCheckpointContract(action);
+      if (checkpointRequested) {
+        if (!checkpointContract) {
+          finding('error', 'CHECKPOINT_CONTRACT_MISSING', location, 'Action requires long-horizon checkpoint verification without a checkpoint contract.', 'Attach checkpoint_contract using cardity.checkpoint_contract.v1.');
+        }
+        for (const issue of validateCheckpointContract(checkpointContract)) {
+          finding('error', 'CHECKPOINT_CONTRACT_INVALID', `${location}.${issue.field}`, issue.message, issue.recommendation);
+        }
+      } else if (writes && action.readback_required && !checkpointContract) {
+        finding('warning', 'CHECKPOINT_CONTRACT_RECOMMENDED', location, 'Write-like action has readback but no checkpoint contract.', 'Add checkpoint_contract for long-horizon workflows that need state verification and recovery.');
       }
     }
   }
@@ -346,5 +449,8 @@ module.exports = {
   renderReviewMarkdown,
   getProductionWriteContract,
   wantsProductionWrite,
-  validateProductionWriteContract
+  validateProductionWriteContract,
+  getCheckpointContract,
+  wantsCheckpointContract,
+  validateCheckpointContract
 };

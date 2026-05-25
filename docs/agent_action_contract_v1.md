@@ -48,6 +48,7 @@ runtime-facing execution safety metadata.
 | `readback_query` | yes | Query contract or post-commit route used to fetch readback state. Use `null` when not applicable. |
 | `idempotency_key` | yes | Expression used to deduplicate command execution, usually `$run.id`. Use `null` for pure queries. |
 | `production_write_contract` | no | Optional inline contract or schema reference for `cardity.production_write_contract.v1`. |
+| `checkpoint_contract` | no | Optional inline contract or schema reference for `cardity.checkpoint_contract.v1`. |
 | `risk_level` | yes | Planner-facing risk hint, usually `low`, `medium`, or `high`. |
 | `side_effects` | yes | Declared reads, writes, emitted events, or external effects. |
 | `audit_event` | yes | Event name a runtime can use for audit trails. Use `null` when not applicable. |
@@ -191,6 +192,11 @@ For real writes, runtimes should also require the optional
 That contract standardizes permission id, confirmation UI state, confirmed
 readback verification, idempotency, audit, replay, compensation, long-running
 task status, and role-scoped tool permissions.
+
+For long-horizon workflows, actions may also attach `checkpoint_contract`.
+That contract standardizes step-level verification, expected state, ledger
+events, and recovery behavior so runtimes can avoid trusting a long GUI or tool
+trace without state checks.
 
 ## Stable Baseline
 

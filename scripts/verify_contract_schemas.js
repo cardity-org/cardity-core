@@ -24,6 +24,7 @@ const schemas = [
   "schemas/agent_manifest_v1.schema.json",
   "schemas/agent_action_contract_v1.schema.json",
   "schemas/production_write_contract_v1.schema.json",
+  "schemas/checkpoint_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -118,6 +119,21 @@ for (const state of ["draft", "preparing", "pending", "approved", "verified", "f
 for (const mode of ["none", "manual", "compensating_action"]) {
   if (!enumValues(productionWriteSchema, "/properties/compensation_policy/properties/mode").includes(mode)) {
     fail(`production write schema missing compensation mode ${mode}`);
+  }
+}
+
+const checkpointSchema = readJson("schemas/checkpoint_contract_v1.schema.json");
+for (const field of ["schema", "scope", "checkpoints", "ledger", "recovery_policy"]) {
+  if (!checkpointSchema.required.includes(field)) fail(`checkpoint schema missing required ${field}`);
+}
+for (const scope of ["action", "workflow", "module", "system"]) {
+  if (!enumValues(checkpointSchema, "/properties/scope").includes(scope)) {
+    fail(`checkpoint schema missing scope ${scope}`);
+  }
+}
+for (const mode of ["retry", "stop", "manual_review", "compensating_action"]) {
+  if (!enumValues(checkpointSchema, "/properties/checkpoints/items/properties/on_failure/properties/mode").includes(mode)) {
+    fail(`checkpoint schema missing on_failure mode ${mode}`);
   }
 }
 
