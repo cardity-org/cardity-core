@@ -292,6 +292,7 @@ https://api.cardity.org/schemas/production_write_contract_v1.schema.json
 https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json
 https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
 https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json
+https://api.cardity.org/schemas/company_operating_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -309,6 +310,25 @@ For long-horizon workflows, PMTSoul can also attach
 that long-running or cross-app actions declare checkpoint verification queries,
 expected state, ledger metadata, and recovery policy.
 
+The first practical PMTSoul target is long-running ERP/CRM actions where each
+stage needs an auditable state check:
+
+| PMTSoul action type | Checkpoint flow |
+|---|---|
+| Product publishing | Upload assets -> agent parse -> draft product -> user confirm -> publish -> readback. |
+| Storefront editing | Generate config -> publish storefront -> visit verification -> audit. |
+| Market research/full-init | Multi-agent work -> stage deliverables -> checkpoint ledger -> summary. |
+| Knowledge/document management | Write document -> index -> readback warning -> retry or review. |
+| Poster/media generation | Prompt/copy -> render -> media object -> deliverable. |
+
+PMTSoul should write checkpoint results into its own audit, ledger, SSE, and
+deliverables pipeline. Cardity does not schedule workers, store tenant data, or
+execute writes. The reference manifest is:
+
+```text
+examples/09_pmtsoul_long_horizon_checkpoint_manifest.json
+```
+
 For per-account ERP/CRM generation, PMTSoul can consume
 `cardity.workspace_generation_contract.v1`. Cardity uses this only as blueprint
 metadata: tenant/account keys, workspace artifact mapping, role/tool bindings,
@@ -316,12 +336,72 @@ and account-level conformance expectations. PMTSoul owns actual tenant
 isolation, storage partitioning, auth, UI routing, execution, recovery, and
 audit output.
 
+PMTSoul should treat each account as its own ERP/CRM workspace. All generated
+read models and runtime artifacts for CRM buyers, orders, tasks, documents,
+media, campaigns, storefront, and deliverables should carry
+`enterprise_id + account_id`. Enterprise management views may aggregate across
+accounts only through PMTSoul-owned policy checks; Cardity only declares the
+scope metadata.
+
+The generic workspace contract now exposes optional mapping buckets for
+deliverables, documents, media, and integrations. PMTSoul can map social and ads
+modules through `resource_mapping.integrations` while keeping the Cardity layer
+business-domain neutral.
+
+For PMTSoul control-plane persistence, Cardity also includes a reference account
+conformance fixture:
+
+```text
+examples/10_pmtsoul_account_conformance_fixture.json
+```
+
+The fixture maps generic Cardity fields to PMTSoul-side objects:
+
+| PMTSoul object | Cardity source |
+|---|---|
+| `control_account_workspaces` | `tenant_scope`, `workspace`, isolation policy, contract snapshot. |
+| `control_workspace_resources` | `resource_mapping` for tables, routes, UI modules, checkpoints, deliverables, documents, media, integrations. |
+| `control_employee_skill_bindings` | `role_tool_bindings`. |
+| `control_account_conformance_runs` | `account_conformance` checks and report output. |
+
+This is a fixture for PMTSoul's bootstrap and CI gates. Cardity does not create
+these tables or write PMTSoul control-plane rows.
+
 For multi-agent execution, PMTSoul can consume
 `cardity.agent_orchestration_contract.v1` and map it into workspace agent roles,
 tool/action permissions, handoff graph, checkpoint/readback verification, shared
 state locks, and recovery policy. Cardity defines the orchestration contract;
 PMTSoul owns scheduling, queues, state storage, permission enforcement, and
 audit output.
+
+Cardity also includes a PMTSoul runtime fixture for this mapping:
+
+```text
+examples/11_pmtsoul_agent_orchestration_runtime_fixture.json
+```
+
+The fixture maps orchestration into `control_employees`,
+`control_employee_authority`, `control_employee_skill_bindings`,
+`control_agent_handoff_graph`, account/workspace locks, approval gates, recovery
+policy, and `control_audit_events`. The hard rules are: planner cannot
+production write, operator cannot approve its own write, and high-risk actions
+require reviewer or human approval plus checkpoint and readback.
+
+For company-level operating design, PMTSoul can consume
+`cardity.company_operating_contract.v1`. This contract sits above workspace and
+orchestration contracts. It describes company systems, digital employee
+references, system ownership, reviewer policy, employee evaluation,
+HR/capability gap handling, audit events, and account-level conformance.
+Cardity does not define PMTSoul employee names or concrete PMTSoul systems. The
+generic example is:
+
+```text
+examples/12_company_operating_contract_v1.json
+```
+
+Cardity defines the company blueprint. PMTSoul owns Control Plane rows, runtime
+execution, SkillHub capability enforcement, memory proposal/materialization,
+audit, SSE, and recovery.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

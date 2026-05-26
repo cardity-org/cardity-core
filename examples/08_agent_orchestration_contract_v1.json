@@ -97,7 +97,7 @@
   "coordination": {
     "mode": "hybrid",
     "max_parallel_agents": 2,
-    "shared_state_lock": ["account_id", "workspace_id", "entity_id"],
+    "shared_state_lock": ["enterprise_id", "account_id", "workspace_id", "entity_id"],
     "conflict_policy": "lock"
   },
   "failure_policy": {

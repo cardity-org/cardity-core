@@ -1,0 +1,301 @@
+{
+  "schema": "cardity.agent_manifest.v1",
+  "protocol": "PMTSoulLongHorizonCheckpointReference",
+  "events": [],
+  "methods": [],
+  "permissions": [
+    {
+      "name": "merchant.product.publish.plan",
+      "description": "Plan and verify a merchant product publishing workflow. PMTSoul keeps execution dry-run or permission-gated."
+    }
+  ],
+  "system": {
+    "api": {
+      "routes": []
+    },
+    "database": {
+      "tables": [],
+      "read_models": [],
+      "queries": [],
+      "projections": []
+    },
+    "ui": {
+      "actions": [
+        {
+          "name": "merchant_product_publish_long_horizon",
+          "kind": "command",
+          "execution_mode": "planned",
+          "intent_names": [
+            "publish merchant product",
+            "prepare product listing",
+            "verify product publishing workflow"
+          ],
+          "intent_examples": [
+            "Upload product assets, generate a listing draft, ask the user to confirm, publish, and verify readback.",
+            "Prepare a product publishing plan with checkpoints before PMTSoul executes any real write."
+          ],
+          "disambiguation_keys": [
+            "merchant_id",
+            "workspace_id",
+            "product_id"
+          ],
+          "required_context": [
+            "$ctx.merchant_id",
+            "$ctx.workspace_id",
+            "$ctx.actor_id",
+            "$run.id"
+          ],
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "merchant_id": { "type": "string" },
+              "workspace_id": { "type": "string" },
+              "product_id": { "type": "string" },
+              "asset_batch_id": { "type": "string" },
+              "publish_channel": { "type": "string" }
+            },
+            "required": [
+              "merchant_id",
+              "workspace_id",
+              "product_id",
+              "asset_batch_id",
+              "publish_channel"
+            ]
+          },
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "product_id": { "type": "string" },
+              "checkpoint_status": { "type": "string" },
+              "deliverable_id": { "type": "string" }
+            },
+            "required": [
+              "status",
+              "product_id",
+              "checkpoint_status"
+            ]
+          },
+          "permission": "merchant.product.publish.plan",
+          "confirm_required": true,
+          "dry_run_supported": true,
+          "readback_required": true,
+          "readback_query": "products.detail",
+          "idempotency_key": "$run.id + ':' + $input.product_id + ':' + $input.publish_channel",
+          "risk_level": "medium",
+          "side_effects": {
+            "planned": true,
+            "writes": [
+              "product_publish_plan",
+              "checkpoint_ledger",
+              "deliverable_reference"
+            ],
+            "emits": [
+              "MerchantProductPublishCheckpointRecorded"
+            ],
+            "external": []
+          },
+          "audit_event": "MerchantProductPublishCheckpointRecorded",
+          "replay_policy": {
+            "mode": "idempotent_command",
+            "idempotency_key": "$run.id + ':' + $input.product_id + ':' + $input.publish_channel",
+            "on_replay": "return_prior_result"
+          },
+          "long_horizon": true,
+          "checkpoint_required": true,
+          "agent_contract": {
+            "checkpoint_contract": {
+              "schema": "cardity.checkpoint_contract.v1",
+              "scope": "action",
+              "runtime_mapping": {
+                "dispatcher": "write each checkpoint result to PMTSoul checkpoint ledger",
+                "audit_stream": [
+                  "erp.skill.progress",
+                  "erp.console.event"
+                ],
+                "deliverables": [
+                  "action_id",
+                  "checkpoint_id",
+                  "artifact_id",
+                  "verification_status"
+                ]
+              },
+              "reference_scenarios": [
+                "product_publish",
+                "storefront_edit_publish",
+                "market_research_full_init",
+                "knowledge_document_indexing",
+                "poster_media_generation"
+              ],
+              "checkpoints": [
+                {
+                  "id": "asset_batch_verified",
+                  "after": "asset_upload",
+                  "verify": {
+                    "query": {
+                      "name": "media.asset_batch.detail",
+                      "input": {
+                        "merchant_id": "$ctx.merchant_id",
+                        "asset_batch_id": "$input.asset_batch_id"
+                      }
+                    },
+                    "expected_fields": [
+                      "asset_batch_id",
+                      "asset_count",
+                      "verification_status"
+                    ],
+                    "status_field": "$readback.verification_status",
+                    "pass_values": [
+                      "verified"
+                    ]
+                  },
+                  "expected_state": {
+                    "asset_batch_id": "$input.asset_batch_id",
+                    "merchant_id": "$ctx.merchant_id"
+                  },
+                  "on_failure": {
+                    "mode": "retry",
+                    "max_attempts": 2,
+                    "recovery_hint": "Retry asset readback before allowing listing generation."
+                  }
+                },
+                {
+                  "id": "product_draft_verified",
+                  "after": "agent_listing_generation",
+                  "verify": {
+                    "query": {
+                      "name": "products.detail",
+                      "input": {
+                        "merchant_id": "$ctx.merchant_id",
+                        "product_id": "$input.product_id"
+                      }
+                    },
+                    "expected_fields": [
+                      "product_id",
+                      "title",
+                      "price",
+                      "draft_status",
+                      "verification_status"
+                    ],
+                    "status_field": "$readback.verification_status",
+                    "pass_values": [
+                      "verified"
+                    ]
+                  },
+                  "expected_state": {
+                    "product_id": "$input.product_id",
+                    "draft_status": "ready_for_confirmation"
+                  },
+                  "on_failure": {
+                    "mode": "manual_review",
+                    "max_attempts": 1,
+                    "recovery_hint": "Stop before confirmation if generated listing fields cannot be read back."
+                  }
+                },
+                {
+                  "id": "user_confirmation_recorded",
+                  "after": "user_confirmation",
+                  "verify": {
+                    "query": {
+                      "name": "confirmations.detail",
+                      "input": {
+                        "run_id": "$run.id",
+                        "action_id": "$action.id"
+                      }
+                    },
+                    "expected_fields": [
+                      "confirmation_id",
+                      "state",
+                      "confirmed_by",
+                      "confirmed_at"
+                    ],
+                    "status_field": "$readback.state",
+                    "pass_values": [
+                      "approved"
+                    ]
+                  },
+                  "expected_state": {
+                    "action_id": "$action.id",
+                    "state": "approved"
+                  },
+                  "on_failure": {
+                    "mode": "stop",
+                    "max_attempts": 0,
+                    "recovery_hint": "Do not publish until PMTSoul records an approved confirmation."
+                  }
+                },
+                {
+                  "id": "publish_readback_verified",
+                  "after": "publish_commit",
+                  "verify": {
+                    "query": {
+                      "name": "products.detail",
+                      "input": {
+                        "merchant_id": "$ctx.merchant_id",
+                        "product_id": "$input.product_id"
+                      }
+                    },
+                    "expected_fields": [
+                      "product_id",
+                      "publish_channel",
+                      "published_at",
+                      "verification_status"
+                    ],
+                    "status_field": "$readback.verification_status",
+                    "pass_values": [
+                      "verified"
+                    ]
+                  },
+                  "expected_state": {
+                    "product_id": "$input.product_id",
+                    "publish_channel": "$input.publish_channel"
+                  },
+                  "on_failure": {
+                    "mode": "manual_review",
+                    "max_attempts": 1,
+                    "recovery_hint": "Hold downstream storefront or campaign actions until publish readback is verified."
+                  }
+                }
+              ],
+              "ledger": {
+                "event": "MerchantProductPublishCheckpointRecorded",
+                "append_fields": [
+                  "$run.id",
+                  "$action.id",
+                  "$checkpoint.id",
+                  "$checkpoint.status",
+                  "$checkpoint.observed_at",
+                  "$deliverable.id"
+                ],
+                "source_run_id": "$run.id",
+                "checkpoint_index": "$checkpoint.index"
+              },
+              "recovery_policy": {
+                "mode": "manual",
+                "on_unrecoverable": "manual_review",
+                "compensation_action": null
+              }
+            }
+          }
+        }
+      ]
+    },
+    "workflows": [],
+    "modules": [
+      {
+        "name": "merchant_product_publishing",
+        "intent_names": [
+          "merchant product publishing",
+          "long horizon product workflow"
+        ]
+      }
+    ],
+    "external": {
+      "navigation": [],
+      "services": []
+    }
+  },
+  "agent": {
+    "tools": []
+  }
+}

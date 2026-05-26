@@ -10,6 +10,10 @@ const checkpointContract = JSON.parse(fs.readFileSync(
   path.join(root, "examples/05_checkpoint_contract_v1.json"),
   "utf8"
 ));
+const pmtsoulLongHorizonManifest = JSON.parse(fs.readFileSync(
+  path.join(root, "examples/09_pmtsoul_long_horizon_checkpoint_manifest.json"),
+  "utf8"
+));
 
 function fail(message) {
   throw new Error(message);
@@ -126,6 +130,32 @@ const checkpointFailures = validConformance.checks.filter((check) => (
 ));
 if (checkpointFailures.length > 0) {
   fail("expected valid checkpoint contract to pass conformance checks");
+}
+
+const pmtsoulAction = pmtsoulLongHorizonManifest.system.ui.actions.find((action) => (
+  action.name === "merchant_product_publish_long_horizon"
+));
+if (!pmtsoulAction) {
+  fail("expected PMTSoul long-horizon reference action");
+}
+const pmtsoulCheckpoint = pmtsoulAction.agent_contract && pmtsoulAction.agent_contract.checkpoint_contract;
+if (!pmtsoulCheckpoint || pmtsoulCheckpoint.schema !== "cardity.checkpoint_contract.v1") {
+  fail("expected PMTSoul action to attach cardity.checkpoint_contract.v1");
+}
+for (const scenario of [
+  "product_publish",
+  "storefront_edit_publish",
+  "market_research_full_init",
+  "knowledge_document_indexing",
+  "poster_media_generation"
+]) {
+  if (!pmtsoulCheckpoint.reference_scenarios.includes(scenario)) {
+    fail(`expected PMTSoul checkpoint reference scenario ${scenario}`);
+  }
+}
+const pmtsoulConformance = runConformance(pmtsoulLongHorizonManifest);
+if (!pmtsoulConformance.ok) {
+  fail("expected PMTSoul long-horizon checkpoint reference manifest to pass conformance");
 }
 
 console.log("Checkpoint contract verification passed");

@@ -1,0 +1,203 @@
+{
+  "schema": "cardity.agent_orchestration_runtime_fixture.v1",
+  "name": "PMTSoul Agent Orchestration Runtime Fixture",
+  "target_runtime": "pmtsoul-agent-os",
+  "source_contract": "examples/08_agent_orchestration_contract_v1.json",
+  "purpose": "Map Cardity agent orchestration contracts into PMTSoul account-scoped digital employee runtime configuration.",
+  "scope_keys": [
+    "enterprise_id",
+    "account_id",
+    "workspace_id"
+  ],
+  "control_plane_objects": [
+    {
+      "name": "control_employees",
+      "consumes": [
+        "roles"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "employee_id",
+        "role_kind",
+        "responsibility",
+        "output_contract",
+        "agent_orchestration_contract_snapshot"
+      ],
+      "example_role_mapping": {
+        "planner": "Kim",
+        "operator": "domain_employee",
+        "reviewer": "Chen_or_Kim",
+        "auditor": "Chen",
+        "recovery_agent": "Kim_or_Ren"
+      }
+    },
+    {
+      "name": "control_employee_authority",
+      "consumes": [
+        "authority"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "employee_id",
+        "allowed_actions",
+        "forbidden_actions",
+        "can_approve"
+      ]
+    },
+    {
+      "name": "control_employee_skill_bindings",
+      "consumes": [
+        "authority.allowed_actions",
+        "tool_permissions"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "employee_id",
+        "skill_id",
+        "tool_name",
+        "permission_scope",
+        "runtime_whitelist"
+      ]
+    },
+    {
+      "name": "control_agent_handoff_graph",
+      "consumes": [
+        "handoffs"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "from_employee",
+        "to_employee",
+        "required_artifacts",
+        "acceptance_criteria",
+        "checkpoint_id",
+        "action_id"
+      ]
+    },
+    {
+      "name": "control_agent_state_locks",
+      "consumes": [
+        "coordination.shared_state_lock",
+        "coordination.conflict_policy"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "entity_id",
+        "lock_key",
+        "lock_owner",
+        "conflict_policy"
+      ]
+    },
+    {
+      "name": "control_agent_approval_gates",
+      "consumes": [
+        "verification.high_risk_requires",
+        "verification.write_requires"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "action_id",
+        "policy_require_confirm",
+        "reviewer_required",
+        "checkpoint_required",
+        "readback_required"
+      ]
+    },
+    {
+      "name": "control_agent_recovery_policy",
+      "consumes": [
+        "failure_policy"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "recovery_role",
+        "on_checkpoint_failure",
+        "on_context_missing",
+        "on_agent_disagreement"
+      ]
+    },
+    {
+      "name": "control_audit_events",
+      "consumes": [
+        "handoffs",
+        "verification",
+        "failure_policy"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "from_employee",
+        "to_employee",
+        "artifact",
+        "acceptance_criteria",
+        "checkpoint_id",
+        "action_id",
+        "event_type"
+      ]
+    }
+  ],
+  "hard_rules": [
+    {
+      "id": "planner_no_production_write",
+      "description": "Planner roles must not execute production writes.",
+      "source": "authority.planner.forbidden_actions"
+    },
+    {
+      "id": "operator_no_self_approval",
+      "description": "Operator roles must not approve their own writes.",
+      "source": "authority.operator.can_approve"
+    },
+    {
+      "id": "high_risk_requires_review_checkpoint_readback",
+      "description": "High-risk actions require reviewer or human approval plus checkpoint and readback.",
+      "source": "verification.high_risk_requires"
+    }
+  ],
+  "runtime_boundaries": {
+    "cardity_owns": [
+      "roles contract",
+      "authority contract",
+      "handoff contract",
+      "verification contract",
+      "coordination contract",
+      "failure policy contract",
+      "reference runtime fixture"
+    ],
+    "pmtsoul_owns": [
+      "digital employee records",
+      "employee runtime set",
+      "skill whitelist enforcement",
+      "tool execution",
+      "durable confirmation",
+      "state locks",
+      "memory and context storage",
+      "audit events",
+      "SSE workspace console",
+      "recovery execution"
+    ]
+  },
+  "acceptance_criteria": [
+    "agent_orchestration_contract snapshot is persisted per account workspace",
+    "roles map to account-scoped PMTSoul digital employees",
+    "authority maps to employee skill whitelist and forbidden actions",
+    "handoffs persist structured artifacts, checkpoint_id, action_id, and acceptance criteria",
+    "shared state locks include enterprise_id, account_id, workspace_id, and entity_id",
+    "high-risk writes require reviewer or human approval, checkpoint, and readback",
+    "Cardity remains contract-only and does not schedule PMTSoul employees"
+  ]
+}

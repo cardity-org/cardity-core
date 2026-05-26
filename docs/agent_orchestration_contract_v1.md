@@ -41,17 +41,30 @@ those boundaries explicit before runtime execution.
 PMTSoul can map this contract into each generated account workspace:
 
 ```text
-roles -> agent roles
-authority -> tool/action permissions
-handoffs -> handoff graph
-verification -> checkpoint/readback graph
-coordination -> runtime scheduling policy
-failure_policy -> retry, recovery, and human escalation
+roles -> control_employees
+authority -> control_employee_authority / employee scope_authority
+tool permissions -> control_employee_skill_bindings + runtime whitelist
+handoffs -> control_agent_handoff_graph
+verification -> checkpoint, readback, conformance, and approval gates
+coordination.shared_state_lock -> account/workspace scoped lock table
+failure_policy -> recovery employee and retry/rollback policy
+audit trail -> control_audit_events + workspace console SSE
 ```
+
+The reference PMTSoul runtime fixture is:
+
+```text
+examples/11_pmtsoul_agent_orchestration_runtime_fixture.json
+```
+
+It keeps the boundary explicit: Cardity defines roles, authority, handoffs,
+verification, coordination, and failure policy; PMTSoul owns employee records,
+runtime sets, skill whitelists, scheduling, memory, locks, durable confirmation,
+audit, SSE, and recovery execution.
 
 ## Local Verification
 
 ```bash
 node scripts/verify_agent_orchestration_contract.js
+node scripts/verify_agent_orchestration_runtime_fixture.js
 ```
-

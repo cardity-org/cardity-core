@@ -68,7 +68,7 @@ for (const handoff of example.handoffs) {
   }
 }
 
-for (const requirement of ["reviewer", "checkpoint", "readback"]) {
+for (const requirement of ["reviewer", "human_approval", "checkpoint", "readback"]) {
   if (!example.verification.high_risk_requires.includes(requirement)) {
     fail(`high risk verification missing ${requirement}`);
   }

@@ -5,7 +5,12 @@
   "task": {
     "id": "catalog_item_update_and_verify",
     "goal": "Update a catalog item, verify committed state, apply downstream projection, and stop safely if state diverges.",
-    "domain": "generic_enterprise_workflow"
+    "domain": "generic_enterprise_workflow",
+    "pmtsoul_reference": {
+      "workspace_model": "isolated_erp_crm_per_account",
+      "tenant_scope": ["enterprise_id", "account_id"],
+      "aggregation_boundary": "enterprise views may aggregate account-scoped rows only through runtime-owned policy checks"
+    }
   },
   "baseline_gui_agent": {
     "mode": "gui_only",
@@ -29,6 +34,7 @@
       "action": "cardity.agent_action_contract.v1",
       "production_write": "cardity.production_write_contract.v1",
       "checkpoint": "cardity.checkpoint_contract.v1",
+      "workspace_generation": "cardity.workspace_generation_contract.v1",
       "projection": "projection_contract_v1_1"
     },
     "expected_advantages": [
@@ -43,16 +49,55 @@
       "steps": "contract_actions_and_readbacks",
       "success": "all_checkpoints_passed",
       "auditability": "ledger_event_present",
-      "replayability": "idempotency_key_and_replay_policy_present"
+      "replayability": "idempotency_key_and_replay_policy_present",
+      "tenant_isolation": "enterprise_id_and_account_id_present_on_read_models_and_actions"
     }
   },
+  "pmtsoul_demo_actions": [
+    {
+      "name": "create_or_update_sku",
+      "contracts": ["production_write", "confirmed_readback"]
+    },
+    {
+      "name": "generate_market_research_report",
+      "contracts": ["checkpoint", "deliverable"]
+    },
+    {
+      "name": "publish_storefront",
+      "contracts": ["checkpoint", "readback"]
+    },
+    {
+      "name": "generate_poster",
+      "contracts": ["checkpoint", "media_deliverable"]
+    },
+    {
+      "name": "classify_crm_buyer",
+      "contracts": ["projection", "read_model"]
+    },
+    {
+      "name": "draft_or_send_email",
+      "contracts": ["production_write", "policy_confirm"]
+    }
+  ],
+  "report_fields": [
+    "gui_only_step_count",
+    "cardity_contract_step_count",
+    "checkpoint_pass_fail",
+    "readback_verified",
+    "audit_event_count",
+    "deliverables",
+    "replay_or_resume_supported",
+    "cross_account_data_leak_detected"
+  ],
   "evidence_contracts": {
     "production_write_contract": "examples/04_production_write_contract_v1.json",
-    "checkpoint_contract": "examples/05_checkpoint_contract_v1.json"
+    "checkpoint_contract": "examples/05_checkpoint_contract_v1.json",
+    "workspace_generation_contract": "examples/07_workspace_generation_contract_v1.json"
   },
   "acceptance_criteria": [
     "production_write_contract exists and declares permission, readback, idempotency, audit, replay, and compensation",
     "checkpoint_contract exists and declares checkpoints, verify query, expected state, ledger, and recovery policy",
+    "workspace_generation_contract declares enterprise_id and account_id tenant scope for account-isolated ERP/CRM workspaces",
     "demo explicitly separates Cardity contract layer from runtime execution",
     "demo does not require Cardity to drive a GUI or execute production writes"
   ]

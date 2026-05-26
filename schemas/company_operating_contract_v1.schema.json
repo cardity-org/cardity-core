@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/company_operating_contract_v1.schema.json",
+  "title": "Cardity Company Operating Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "company",
+    "operating_model",
+    "systems",
+    "digital_employees",
+    "ownership_matrix",
+    "governance",
+    "evaluation",
+    "hiring",
+    "conformance",
+    "runtime_boundary"
+  ],
+  "properties": {
+    "schema": { "const": "cardity.company_operating_contract.v1" },
+    "company": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "name", "scope_keys"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "scope_keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "business_domains": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "operating_model": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["control_plane", "runtime", "capability_catalog", "workbench"],
+      "properties": {
+        "control_plane": { "type": "string", "minLength": 1 },
+        "runtime": { "type": "string", "minLength": 1 },
+        "capability_catalog": { "type": "string", "minLength": 1 },
+        "workbench": { "type": "string", "minLength": 1 }
+      }
+    },
+    "systems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "kind", "purpose", "contract_refs"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "purpose": { "type": "string", "minLength": 1 },
+          "contract_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "scope_keys": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "digital_employees": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "kind", "responsibilities", "skill_whitelist", "scope_authority"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "display_name": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "responsibilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "skill_whitelist": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "scope_authority": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "memory_scopes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "ownership_matrix": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["system_id", "responsibilities", "owners", "reviewers", "checkpoints"],
+        "properties": {
+          "system_id": { "type": "string", "minLength": 1 },
+          "responsibilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "owners": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "reviewers": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "checkpoints": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope_policy", "permission_policy", "audit_policy"],
+      "properties": {
+        "scope_policy": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["required_scope_keys", "cross_tenant_policy"],
+          "properties": {
+            "required_scope_keys": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "cross_tenant_policy": { "enum": ["reject", "review", "allow"] }
+          }
+        },
+        "permission_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "audit_policy": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["required_events"],
+          "properties": {
+            "required_events": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["reviewer_roles", "metrics", "cadence"],
+      "properties": {
+        "reviewer_roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "cadence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "hiring": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["hr_roles", "capability_gap_policy"],
+      "properties": {
+        "hr_roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "capability_gap_policy": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["trigger", "output"],
+          "properties": {
+            "trigger": { "type": "string", "minLength": 1 },
+            "output": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["checks"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "runtime_boundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["cardity_owns", "runtime_owns"],
+      "properties": {
+        "cardity_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

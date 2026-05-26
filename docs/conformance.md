@@ -21,6 +21,7 @@ Cardity release.
 | Production write contract v1 | `schemas/production_write_contract_v1.schema.json` |
 | Checkpoint contract v1 | `schemas/checkpoint_contract_v1.schema.json` |
 | Projection contract v1.1 | `schemas/projection_contract_v1_1.schema.json` |
+| Company operating contract v1 | `schemas/company_operating_contract_v1.schema.json` |
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 | Security review v1 | `schemas/security_review_v1.schema.json` |
@@ -47,6 +48,10 @@ https://api.cardity.org/schemas
 | `examples/03_merchant_erp_projection_v1_1.json` | Full v1.1 read-model, projection, query, action, module, and external-service baseline. |
 | `examples/04_production_write_contract_v1.json` | Generic production write contract example for permissioned command execution. |
 | `examples/05_checkpoint_contract_v1.json` | Generic long-horizon checkpoint contract example for state verification and recovery. |
+| `examples/07_workspace_generation_contract_v1.json` | Account-scoped workspace generation contract with enterprise/account/workspace scope metadata. |
+| `examples/10_pmtsoul_account_conformance_fixture.json` | PMTSoul control-plane fixture for account-level workspace conformance runs. |
+| `examples/11_pmtsoul_agent_orchestration_runtime_fixture.json` | PMTSoul runtime fixture for mapping agent orchestration into digital employee control objects. |
+| `examples/12_company_operating_contract_v1.json` | Generic company protocol for systems, digital employees, evaluation, hiring, and governance. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 | `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
@@ -75,6 +80,11 @@ node scripts/verify_projection_contract.js examples/03_merchant_erp_projection_v
 node scripts/verify_agent_manifest_contract.js examples/03_merchant_erp_projection_v1_1.json
 node scripts/verify_contract_schemas.js
 node scripts/verify_next_stage_assets.js
+node scripts/verify_workspace_generation_contract.js
+node scripts/verify_account_conformance_fixture.js
+node scripts/verify_agent_orchestration_contract.js
+node scripts/verify_agent_orchestration_runtime_fixture.js
+node scripts/verify_company_operating_contract.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js visualize examples/02_member_points_agent.car
 node bin/cardity.js visualize examples/02_member_points_agent.car --html -o /tmp/cardity_visualizer.html

@@ -28,9 +28,9 @@ https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
 
 | Block | Purpose |
 |---|---|
-| `tenant_scope` | Account/workspace keys and metadata-only isolation policy. |
-| `workspace` | Target runtime and artifact kinds to generate. |
-| `resource_mapping` | How Cardity actions/read models/projections/queries/checkpoints map into runtime workspace resources. |
+| `tenant_scope` | Enterprise/account/workspace keys and metadata-only isolation policy. |
+| `workspace` | Target runtime and artifact kinds to generate, such as API, database, UI, audit, recovery, deliverables, documents, media, and integrations. |
+| `resource_mapping` | How Cardity actions/read models/projections/queries/checkpoints and optional deliverables/documents/media/integrations map into runtime workspace resources. |
 | `role_tool_bindings` | Generic role-to-action/tool permission bindings. |
 | `account_conformance` | Per-account checks and metadata fields a runtime should preserve. |
 
@@ -54,6 +54,25 @@ PMTSoul remains responsible for:
 - data persistence;
 - recovery and audit output.
 
+For PMTSoul ERP/CRM, Cardity reference examples use `enterprise_id`,
+`account_id`, and `workspace_id` as tenant metadata. Cardity only declares these
+keys. PMTSoul must enforce that read models, CRM buyers, orders, tasks,
+documents, media, campaigns, storefronts, and deliverables remain scoped by
+`enterprise_id + account_id`, with enterprise-level aggregation handled by
+PMTSoul policy.
+
+The contract also has generic account-level conformance checks for
+`enterprise_scope_present`, `account_scope_present`, `resources_tenant_scoped`,
+`role_tool_permissions_bound`, `deliverables_tenant_scoped`,
+`audit_tenant_scoped`, and `cross_account_leak_check`. These checks are
+metadata for the runtime conformance gate; Cardity does not inspect PMTSoul D1
+rows directly.
+
+PMTSoul can use `examples/10_pmtsoul_account_conformance_fixture.json` as a
+control-plane mapping fixture for `control_account_workspaces`,
+`control_workspace_resources`, `control_employee_skill_bindings`, and
+`control_account_conformance_runs`.
+
 Cardity remains responsible for:
 
 - generic contract schemas;
@@ -61,4 +80,3 @@ Cardity remains responsible for:
 - schema registry;
 - conformance checks;
 - reference mapping examples.
-

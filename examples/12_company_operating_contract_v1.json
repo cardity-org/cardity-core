@@ -1,0 +1,180 @@
+{
+  "schema": "cardity.company_operating_contract.v1",
+  "company": {
+    "id": "example-company-workspace",
+    "name": "Example Company Workspace",
+    "scope_keys": ["enterprise_id", "account_id", "workspace_id"],
+    "business_domains": ["public_site", "operations", "customer_work"]
+  },
+  "operating_model": {
+    "control_plane": "runtime_control_plane",
+    "runtime": "agent_runtime",
+    "capability_catalog": "capability_registry",
+    "workbench": "account_workspace"
+  },
+  "systems": [
+    {
+      "id": "public_site",
+      "kind": "public_surface",
+      "purpose": "Public pages, content updates, publishing, and readback.",
+      "contract_refs": [
+        "cardity.workspace_generation_contract.v1",
+        "cardity.production_write_contract.v1",
+        "cardity.checkpoint_contract.v1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "workspace_id", "site_id", "version_id"]
+    },
+    {
+      "id": "operations_workspace",
+      "kind": "internal_system",
+      "purpose": "Account-scoped operating resources, tasks, actions, and audit.",
+      "contract_refs": [
+        "cardity.agent_manifest.v1",
+        "cardity.workspace_generation_contract.v1",
+        "projection_contract_v1_1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "workspace_id"]
+    },
+    {
+      "id": "customer_workspace",
+      "kind": "customer_system",
+      "purpose": "Customer records, inquiries, messages, follow-up, and relationship workflows.",
+      "contract_refs": [
+        "cardity.agent_manifest.v1",
+        "projection_contract_v1_1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "workspace_id"]
+    }
+  ],
+  "digital_employees": [
+    {
+      "id": "employee_planner",
+      "kind": "planner",
+      "responsibilities": ["planning", "routing", "capability gap review"],
+      "skill_whitelist": ["capability.plan", "capability.route"],
+      "scope_authority": { "propose": ["plan", "hiring_need"], "approve": ["plan"], "execute": [] },
+      "memory_scopes": ["company", "workspace", "handoff"]
+    },
+    {
+      "id": "employee_engineering",
+      "kind": "operator",
+      "responsibilities": ["implementation", "deployment", "readback", "recovery"],
+      "skill_whitelist": ["site.build", "site.publish", "runtime.readback"],
+      "scope_authority": { "propose": ["implementation"], "execute": ["draft_change", "readback"], "approve": [] },
+      "memory_scopes": ["workspace", "system"]
+    },
+    {
+      "id": "employee_content",
+      "kind": "operator",
+      "responsibilities": ["copy", "content updates", "campaign drafts", "customer messages"],
+      "skill_whitelist": ["content.rewrite", "campaign.plan", "message.draft"],
+      "scope_authority": { "propose": ["content"], "execute": ["draft_content"], "approve": [] },
+      "memory_scopes": ["workspace", "brand"]
+    },
+    {
+      "id": "employee_reviewer",
+      "kind": "reviewer",
+      "responsibilities": ["quality review", "risk review", "readback verification", "audit review"],
+      "skill_whitelist": ["review.verify", "audit.explain"],
+      "scope_authority": { "propose": ["review"], "execute": ["verify"], "approve": ["medium_risk", "high_risk"] },
+      "memory_scopes": ["workspace", "audit"]
+    }
+  ],
+  "ownership_matrix": [
+    {
+      "system_id": "public_site",
+      "responsibilities": ["content", "implementation", "publish", "readback"],
+      "owners": ["employee_engineering", "employee_content"],
+      "reviewers": ["employee_planner", "employee_reviewer"],
+      "checkpoints": ["draft_created", "preview_verified", "publish_confirmed", "production_readback_verified"]
+    },
+    {
+      "system_id": "operations_workspace",
+      "responsibilities": ["actions", "tasks", "audit", "recovery"],
+      "owners": ["employee_planner", "employee_engineering"],
+      "reviewers": ["employee_reviewer"],
+      "checkpoints": ["action_confirmed", "readback_verified", "audit_recorded"]
+    },
+    {
+      "system_id": "customer_workspace",
+      "responsibilities": ["customer follow-up", "message drafts", "relationship workflows"],
+      "owners": ["employee_content", "employee_planner"],
+      "reviewers": ["employee_reviewer"],
+      "checkpoints": ["draft_verified", "send_confirmed", "conversation_readback_verified"]
+    }
+  ],
+  "governance": {
+    "scope_policy": {
+      "required_scope_keys": ["enterprise_id", "account_id", "workspace_id"],
+      "cross_tenant_policy": "reject"
+    },
+    "permission_policy": {
+      "planner_no_production_write": true,
+      "operator_no_self_approval": true,
+      "high_risk_requires_reviewer_or_human_approval": true,
+      "writes_require_confirm_readback_audit": true
+    },
+    "audit_policy": {
+      "required_events": [
+        "employee.handoff.created",
+        "checkpoint.recorded",
+        "policy.require_confirm",
+        "readback.verified",
+        "employee.evaluation.recorded",
+        "hiring.need.proposed"
+      ]
+    }
+  },
+  "evaluation": {
+    "reviewer_roles": ["employee_reviewer"],
+    "metrics": ["task_success_rate", "checkpoint_failure_rate", "readback_pass_rate", "handoff_quality", "policy_violation_count", "user_acceptance_rate"],
+    "cadence": "per_run_and_periodic_rollup"
+  },
+  "hiring": {
+    "hr_roles": ["employee_planner"],
+    "capability_gap_policy": {
+      "trigger": "Repeated out-of-scope tasks, missing skill coverage, high fallback rate, or repeated checkpoint failures.",
+      "output": "Propose a new digital employee role, required skills, authority, reviewer, and conformance checks."
+    }
+  },
+  "memory": {
+    "layers": ["company", "account", "workspace", "employee", "workflow"],
+    "write_policy": "proposal_then_materialize",
+    "privacy_policy": "no secrets, credentials, tokens, or raw private prompt data in company memory"
+  },
+  "conformance": {
+    "checks": [
+      "company_scope_present",
+      "systems_have_owners",
+      "employees_have_skill_whitelist",
+      "employees_have_scope_authority",
+      "owners_reference_existing_employees",
+      "reviewers_reference_existing_employees",
+      "hr_roles_reference_existing_employees",
+      "high_risk_policy_present",
+      "audit_events_declared",
+      "runtime_boundary_preserved"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "company operating blueprint",
+      "system ownership matrix",
+      "employee responsibility contract",
+      "evaluation and hiring contract",
+      "conformance expectations"
+    ],
+    "runtime_owns": [
+      "control plane records",
+      "workspace persistence",
+      "employee runtime set",
+      "skill execution",
+      "memory proposal/materialization",
+      "locks",
+      "durable confirmation",
+      "audit events",
+      "workbench rendering",
+      "recovery execution"
+    ]
+  }
+}

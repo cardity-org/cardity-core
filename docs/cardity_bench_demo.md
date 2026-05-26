@@ -43,6 +43,11 @@ Update catalog item
   -> stop or recover if state diverges
 ```
 
+For PMTSoul, the same demo should be interpreted as a per-account ERP/CRM
+runtime path, not GUI automation. Every generated workspace is account-isolated,
+and account-scoped data must carry `enterprise_id + account_id`. Enterprise
+views may aggregate only through PMTSoul-owned policy checks.
+
 ## Evidence Assets
 
 | Asset | Purpose |
@@ -50,6 +55,7 @@ Update catalog item
 | `examples/06_cardity_bench_demo.json` | Machine-readable demo plan and acceptance criteria. |
 | `examples/04_production_write_contract_v1.json` | Permission, confirmation, readback, idempotency, audit, replay, and compensation. |
 | `examples/05_checkpoint_contract_v1.json` | Step verification, expected state, checkpoint ledger, and recovery policy. |
+| `examples/07_workspace_generation_contract_v1.json` | Enterprise/account/workspace scope metadata for generated ERP/CRM workspaces. |
 | `scripts/verify_cardity_bench_demo.js` | Local verification that the demo remains contract-layer only. |
 
 ## Metrics
@@ -62,6 +68,23 @@ Update catalog item
 | Recovery | Ad hoc. | `recovery_policy` and `compensation_policy`. |
 | Replay | Not guaranteed. | Idempotency and replay policy. |
 | Audit | Trace review. | Ledger and audit events. |
+| Tenant safety | Hard to prove from UI traces. | `enterprise_id + account_id` scope on actions/read models. |
+
+## PMTSoul Reference Actions
+
+| Demo action | Contract path |
+|---|---|
+| Create or update SKU | `production_write` + confirmed readback. |
+| Generate market research report | `checkpoint` + deliverable. |
+| Publish storefront | `checkpoint` + readback. |
+| Generate poster/media | `checkpoint` + media deliverable. |
+| Classify CRM buyer | Projection + read model. |
+| Draft or send email | `production_write` + policy confirmation. |
+
+The demo report should include GUI-only step count, Cardity contract step
+count, checkpoint pass/fail, readback verification, audit event count,
+deliverables, replay/resume support, and whether any cross-account data leak was
+detected.
 
 ## Non-Goals
 
@@ -75,4 +98,3 @@ Update catalog item
 ```bash
 node scripts/verify_cardity_bench_demo.js
 ```
-

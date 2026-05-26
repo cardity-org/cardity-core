@@ -27,6 +27,7 @@ const schemas = [
   "schemas/checkpoint_contract_v1.schema.json",
   "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/agent_orchestration_contract_v1.schema.json",
+  "schemas/company_operating_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -143,12 +144,15 @@ const workspaceGenerationSchema = readJson("schemas/workspace_generation_contrac
 for (const field of ["schema", "tenant_scope", "workspace", "resource_mapping", "role_tool_bindings", "account_conformance"]) {
   if (!workspaceGenerationSchema.required.includes(field)) fail(`workspace generation schema missing required ${field}`);
 }
-for (const artifact of ["api", "database", "ui", "workflow", "agent_roles", "permissions", "audit", "recovery"]) {
+for (const artifact of ["api", "database", "ui", "workflow", "agent_roles", "permissions", "audit", "recovery", "deliverables", "documents", "media", "integrations"]) {
   if (!enumValues(workspaceGenerationSchema, "/properties/workspace/properties/generated_artifacts/items").includes(artifact)) {
     fail(`workspace generation schema missing artifact ${artifact}`);
   }
 }
-for (const check of ["tenant_scope_present", "workspace_metadata_present", "actions_mapped", "roles_bound"]) {
+if (!workspaceGenerationSchema.properties.tenant_scope.properties.enterprise_key) {
+  fail("workspace generation schema missing tenant_scope.enterprise_key");
+}
+for (const check of ["tenant_scope_present", "workspace_metadata_present", "actions_mapped", "roles_bound", "enterprise_scope_present", "account_scope_present", "resources_tenant_scoped", "cross_account_leak_check"]) {
   if (!enumValues(workspaceGenerationSchema, "/properties/account_conformance/properties/checks/items").includes(check)) {
     fail(`workspace generation schema missing account conformance check ${check}`);
   }
@@ -167,6 +171,14 @@ for (const mode of ["sequential", "parallel", "hybrid"]) {
   if (!enumValues(agentOrchestrationSchema, "/properties/coordination/properties/mode").includes(mode)) {
     fail(`agent orchestration schema missing coordination mode ${mode}`);
   }
+}
+
+const companyOperatingSchema = readJson("schemas/company_operating_contract_v1.schema.json");
+for (const field of ["schema", "company", "operating_model", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "hiring", "conformance", "runtime_boundary"]) {
+  if (!companyOperatingSchema.required.includes(field)) fail(`company operating schema missing required ${field}`);
+}
+if (companyOperatingSchema.properties.schema.const !== "cardity.company_operating_contract.v1") {
+  fail("company operating schema has wrong const");
 }
 
 const securityReviewSchema = readJson("schemas/security_review_v1.schema.json");

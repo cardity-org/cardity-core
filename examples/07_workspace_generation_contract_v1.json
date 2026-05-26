@@ -1,54 +1,96 @@
 {
   "schema": "cardity.workspace_generation_contract.v1",
   "tenant_scope": {
+    "enterprise_key": "$ctx.enterprise_id",
     "account_key": "$ctx.account_id",
     "workspace_key": "$ctx.workspace_id",
-    "tenant_keys": ["account_id", "workspace_id"],
+    "tenant_keys": ["enterprise_id", "account_id", "workspace_id"],
     "isolation_policy": {
       "mode": "metadata_only",
       "runtime_owned": true,
-      "notes": "Cardity declares tenant scope metadata only. PMTSoul owns actual isolation, storage partitioning, auth, and routing."
+      "notes": "Cardity declares tenant scope metadata only. PMTSoul owns actual enterprise/account isolation, storage partitioning, auth, and routing."
     }
   },
   "workspace": {
     "kind": "erp_crm_workspace",
     "target_runtime": "pmtsoul-agent-os",
-    "generated_artifacts": ["api", "database", "ui", "workflow", "agent_roles", "permissions", "audit", "recovery"]
+    "generated_artifacts": [
+      "api",
+      "database",
+      "ui",
+      "workflow",
+      "agent_roles",
+      "permissions",
+      "audit",
+      "recovery",
+      "deliverables",
+      "documents",
+      "media",
+      "integrations"
+    ]
   },
   "resource_mapping": {
     "actions": [
       {
         "source": "system.ui.actions.publish_product",
         "target": "workspace.actions.publish_product",
-        "tenant_scoped_by": ["account_id", "workspace_id"]
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
       }
     ],
     "read_models": [
       {
         "source": "system.database.read_models.merchant_products",
         "target": "workspace.database.read_models.products",
-        "tenant_scoped_by": ["account_id", "workspace_id"]
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
       }
     ],
     "projections": [
       {
         "source": "system.database.projections.products_confirmed_readback",
         "target": "workspace.projections.products_confirmed_readback",
-        "tenant_scoped_by": ["account_id", "workspace_id"]
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
       }
     ],
     "queries": [
       {
         "source": "system.database.queries.products.list",
         "target": "workspace.queries.products.list",
-        "tenant_scoped_by": ["account_id", "workspace_id"]
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
       }
     ],
     "checkpoints": [
       {
         "source": "agent_contract.checkpoint_contract.catalog_item_verified",
         "target": "workspace.checkpoints.catalog_item_verified",
-        "tenant_scoped_by": ["account_id", "workspace_id"]
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
+      }
+    ],
+    "deliverables": [
+      {
+        "source": "system.deliverables.product_publish_summary",
+        "target": "workspace.deliverables.product_publish_summary",
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
+      }
+    ],
+    "documents": [
+      {
+        "source": "system.documents.knowledge_article",
+        "target": "workspace.documents.knowledge_article",
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
+      }
+    ],
+    "media": [
+      {
+        "source": "system.media.generated_poster",
+        "target": "workspace.media.generated_poster",
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
+      }
+    ],
+    "integrations": [
+      {
+        "source": "system.external.services.social_or_ads_channel",
+        "target": "workspace.integrations.social_or_ads_channel",
+        "tenant_scoped_by": ["enterprise_id", "account_id", "workspace_id"]
       }
     ]
   },
@@ -76,11 +118,20 @@
       "roles_bound",
       "permissions_bound",
       "checkpoints_bound",
-      "audit_replay_metadata_present"
+      "audit_replay_metadata_present",
+      "enterprise_scope_present",
+      "account_scope_present",
+      "workspace_scope_present",
+      "resources_tenant_scoped",
+      "role_tool_permissions_bound",
+      "deliverables_tenant_scoped",
+      "audit_tenant_scoped",
+      "cross_account_leak_check"
     ],
     "metadata_fields": [
       "cardity.manifest_version",
       "cardity.workspace_generation_contract_version",
+      "cardity.enterprise_key",
       "cardity.account_key",
       "cardity.workspace_key",
       "cardity.generated_at"

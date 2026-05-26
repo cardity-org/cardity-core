@@ -68,3 +68,22 @@ cardity conformance manifest.json
 node scripts/verify_checkpoint_contract.js
 ```
 
+## PMTSoul Runtime Mapping
+
+PMTSoul can use this contract for long-running ERP/CRM actions without letting
+Cardity execute the workflow. Cardity only declares the checkpoints; PMTSoul
+owns dispatch, ledger writes, SSE/audit events, deliverables, retry, recovery,
+and human escalation.
+
+| PMTSoul layer | Contract mapping |
+|---|---|
+| Action manifest | Set `long_horizon: true` and attach `agent_contract.checkpoint_contract`. |
+| Runtime dispatcher | Append one checkpoint ledger row per stage. |
+| Audit/SSE | Emit progress through `erp.skill.progress` or `erp.console.event`. |
+| Deliverables | Store `action_id`, `checkpoint_id`, artifact id, and verification status. |
+| Conformance gate | Fail long-horizon actions that omit a valid checkpoint contract. |
+
+Useful first scenarios are product publishing, storefront publishing, market
+research/full-init, knowledge indexing, and media/poster generation. See
+`examples/09_pmtsoul_long_horizon_checkpoint_manifest.json` for a reference
+manifest.

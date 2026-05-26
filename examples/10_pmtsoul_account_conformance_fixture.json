@@ -1,0 +1,167 @@
+{
+  "schema": "cardity.account_conformance_fixture.v1",
+  "name": "PMTSoul Account Workspace Conformance Fixture",
+  "target_runtime": "pmtsoul-agent-os",
+  "source_contract": "examples/07_workspace_generation_contract_v1.json",
+  "purpose": "Describe how a runtime can persist and verify one generated account-scoped workspace from a Cardity workspace generation contract.",
+  "scope_keys": [
+    "enterprise_id",
+    "account_id",
+    "workspace_id"
+  ],
+  "control_plane_objects": [
+    {
+      "name": "control_account_workspaces",
+      "consumes": [
+        "tenant_scope",
+        "workspace.kind",
+        "workspace.target_runtime",
+        "tenant_scope.isolation_policy"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "target_runtime",
+        "workspace_generation_contract_snapshot",
+        "isolation_policy",
+        "created_at"
+      ],
+      "conformance_checks": [
+        "enterprise_scope_present",
+        "account_scope_present",
+        "workspace_scope_present",
+        "workspace_metadata_present"
+      ]
+    },
+    {
+      "name": "control_workspace_resources",
+      "consumes": [
+        "resource_mapping.actions",
+        "resource_mapping.read_models",
+        "resource_mapping.projections",
+        "resource_mapping.queries",
+        "resource_mapping.checkpoints",
+        "resource_mapping.deliverables",
+        "resource_mapping.documents",
+        "resource_mapping.media",
+        "resource_mapping.integrations"
+      ],
+      "resource_types": [
+        "api_route",
+        "d1_table",
+        "read_model",
+        "query",
+        "ui_module",
+        "checkpoint",
+        "r2_bucket_path",
+        "deliverable",
+        "document",
+        "media",
+        "integration"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "resource_type",
+        "source",
+        "target",
+        "tenant_scoped_by"
+      ],
+      "conformance_checks": [
+        "actions_mapped",
+        "read_models_mapped",
+        "checkpoints_bound",
+        "resources_tenant_scoped",
+        "deliverables_tenant_scoped",
+        "cross_account_leak_check"
+      ]
+    },
+    {
+      "name": "control_employee_skill_bindings",
+      "consumes": [
+        "role_tool_bindings"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "role",
+        "allowed_actions",
+        "allowed_tools",
+        "permission_scope",
+        "employee_runtime_set_id"
+      ],
+      "conformance_checks": [
+        "roles_bound",
+        "permissions_bound",
+        "role_tool_permissions_bound"
+      ]
+    },
+    {
+      "name": "control_account_conformance_runs",
+      "consumes": [
+        "account_conformance"
+      ],
+      "required_fields": [
+        "enterprise_id",
+        "account_id",
+        "workspace_id",
+        "contract_version",
+        "status",
+        "checks",
+        "errors",
+        "warnings",
+        "started_at",
+        "finished_at"
+      ],
+      "conformance_checks": [
+        "tenant_scope_present",
+        "audit_replay_metadata_present",
+        "audit_tenant_scoped"
+      ]
+    }
+  ],
+  "runtime_boundaries": {
+    "cardity_owns": [
+      "contract schema",
+      "workspace generation blueprint",
+      "reference conformance fixture"
+    ],
+    "pmtsoul_owns": [
+      "D1 writes",
+      "R2 paths",
+      "workspace bootstrap",
+      "employee runtime set",
+      "skill whitelist enforcement",
+      "SSE/audit events",
+      "checkpoint ledger",
+      "replay storage",
+      "admin console display"
+    ]
+  },
+  "minimum_report_fields": [
+    "enterprise_id",
+    "account_id",
+    "workspace_id",
+    "contract_version",
+    "status",
+    "checks_total",
+    "checks_passed",
+    "checks_failed",
+    "warnings",
+    "cross_account_leak_detected",
+    "generated_resources_count",
+    "role_bindings_count",
+    "audit_event_count"
+  ],
+  "acceptance_criteria": [
+    "workspace_generation_contract snapshot is persisted for each account workspace",
+    "all generated resources carry enterprise_id, account_id, and workspace_id",
+    "employee skill bindings are scoped to the account workspace",
+    "account-level conformance runs before workspace is marked ready",
+    "conformance result is persisted to audit or admin control plane",
+    "Cardity remains contract-only and does not execute PMTSoul runtime writes"
+  ]
+}

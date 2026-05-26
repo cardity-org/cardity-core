@@ -23,6 +23,7 @@ const nextStageSchemaPaths = [
   "schemas/checkpoint_contract_v1.schema.json",
   "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/agent_orchestration_contract_v1.schema.json",
+  "schemas/company_operating_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -130,6 +131,22 @@ if (agentOrchestrationExample.schema !== "cardity.agent_orchestration_contract.v
 }
 for (const field of agentOrchestration.required) {
   if (!(field in agentOrchestrationExample)) fail(`agent orchestration example missing ${field}`);
+}
+
+const companyOperating = readJson("schemas/company_operating_contract_v1.schema.json");
+for (const field of ["company", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "hiring", "conformance"]) {
+  if (!companyOperating.required.includes(field)) {
+    fail(`company operating schema missing required ${field}`);
+  }
+}
+const companyOperatingExample = readJson("examples/12_company_operating_contract_v1.json");
+if (companyOperatingExample.schema !== "cardity.company_operating_contract.v1") {
+  fail("company operating example has wrong schema");
+}
+for (const key of ["enterprise_id", "account_id", "workspace_id"]) {
+  if (!companyOperatingExample.company.scope_keys.includes(key)) {
+    fail(`company operating example missing scope key ${key}`);
+  }
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");
