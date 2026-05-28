@@ -95,6 +95,12 @@ node bin/cardity.js conformance examples/02_member_points_agent.car --runtime-ad
 node bin/cardity.js adapter examples/runtime_adapter_pmtsoul_agent_os.json
 ```
 
+Company operating snapshots should use the canonical top-level blocks from
+`cardity.company_operating_contract.v1`. The schema remains forward-compatible
+with `additionalProperties: true`, but runtime conformance may be stricter and
+reject top-level modules that are not part of the canonical company contract
+shape, such as `hiring`, `memory`, or `knowledge_base`.
+
 ## Conformance Report
 
 `cardity conformance` produces Markdown by default and JSON with `--json`.

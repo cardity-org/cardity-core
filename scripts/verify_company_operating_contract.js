@@ -14,11 +14,7 @@ function fail(message) {
 
 const schema = readJson("schemas/company_operating_contract_v1.schema.json");
 const example = readJson("examples/12_company_operating_contract_v1.json");
-
-if (schema.properties.schema.const !== "cardity.company_operating_contract.v1") {
-  fail("company operating schema has wrong const");
-}
-for (const field of [
+const canonicalTopLevelFields = [
   "schema",
   "company",
   "operating_model",
@@ -29,9 +25,25 @@ for (const field of [
   "evaluation",
   "conformance",
   "runtime_boundary"
-]) {
+];
+const nonCanonicalTopLevelFields = ["hiring", "memory", "knowledge_base"];
+
+if (schema.properties.schema.const !== "cardity.company_operating_contract.v1") {
+  fail("company operating schema has wrong const");
+}
+for (const field of canonicalTopLevelFields) {
   if (!schema.required.includes(field)) fail(`company operating schema missing required ${field}`);
   if (!(field in example)) fail(`company operating example missing ${field}`);
+}
+for (const field of nonCanonicalTopLevelFields) {
+  if (schema.required.includes(field)) fail(`company operating schema should not require top-level ${field}`);
+  if (schema.properties[field]) fail(`company operating schema should not define top-level ${field}`);
+  if (field in example) fail(`company operating example should not include top-level ${field}`);
+}
+for (const field of Object.keys(example)) {
+  if (!canonicalTopLevelFields.includes(field)) {
+    fail(`company operating example includes non-canonical top-level ${field}`);
+  }
 }
 
 if (example.schema !== "cardity.company_operating_contract.v1") {

@@ -2,7 +2,7 @@
 
 Company operating contract v1 describes how a generated company workspace is
 organized: systems, digital employees, responsibilities, ownership, evaluation,
-memory, audit, and conformance.
+audit, and conformance.
 
 It is a contract layer. Cardity does not name product-specific employees, manage
 employees, run tasks, mutate memory, deploy sites, or write runtime
@@ -33,6 +33,25 @@ The contract follows a generic Agent OS model:
 | `evaluation` | Evaluation policy that references reviewer employee ids from `digital_employees`. |
 | `conformance` | Runtime checks before the company workspace is considered valid. |
 | `runtime_boundary` | What Cardity defines vs what the runtime executes. |
+
+## Canonical Top-Level Policy
+
+The canonical top-level blocks are exactly:
+
+```text
+schema, company, operating_model, systems, digital_employees,
+ownership_matrix, governance, evaluation, conformance, runtime_boundary
+```
+
+The JSON Schema keeps `additionalProperties: true` for forward compatibility,
+but runtimes should not treat arbitrary extra top-level keys as canonical
+Cardity modules. Stricter runtime conformance may reject non-canonical
+top-level blocks in persisted snapshots.
+
+Capability gaps, hiring proposals, memory, knowledge bases, documents, and
+emails are not top-level company operating modules. They should be modeled as
+employee responsibilities, system ownership, permission/audit policy, or
+runtime-owned metadata.
 
 ## Public Site Example
 

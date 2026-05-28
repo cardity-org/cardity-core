@@ -130,11 +130,6 @@
     "metrics": ["task_success_rate", "checkpoint_failure_rate", "readback_pass_rate", "handoff_quality", "policy_violation_count", "user_acceptance_rate"],
     "cadence": "per_run_and_periodic_rollup"
   },
-  "memory": {
-    "layers": ["company", "account", "workspace", "employee", "workflow"],
-    "write_policy": "proposal_then_materialize",
-    "privacy_policy": "no secrets, credentials, tokens, or raw private prompt data in company memory"
-  },
   "conformance": {
     "checks": [
       "company_scope_present",
@@ -162,7 +157,7 @@
       "workspace persistence",
       "employee runtime set",
       "skill execution",
-      "memory proposal/materialization",
+      "company memory and knowledge-base persistence",
       "locks",
       "durable confirmation",
       "audit events",

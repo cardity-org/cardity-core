@@ -134,17 +134,28 @@ for (const field of agentOrchestration.required) {
 }
 
 const companyOperating = readJson("schemas/company_operating_contract_v1.schema.json");
-for (const field of ["company", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "conformance"]) {
+const companyOperatingCanonicalFields = ["schema", "company", "operating_model", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "conformance", "runtime_boundary"];
+for (const field of companyOperatingCanonicalFields) {
   if (!companyOperating.required.includes(field)) {
     fail(`company operating schema missing required ${field}`);
   }
 }
-if (companyOperating.required.includes("hiring")) {
-  fail("company operating schema should not require top-level hiring");
+for (const field of ["hiring", "memory", "knowledge_base"]) {
+  if (companyOperating.required.includes(field)) {
+    fail(`company operating schema should not require top-level ${field}`);
+  }
+  if (companyOperating.properties[field]) {
+    fail(`company operating schema should not define top-level ${field}`);
+  }
 }
 const companyOperatingExample = readJson("examples/12_company_operating_contract_v1.json");
 if (companyOperatingExample.schema !== "cardity.company_operating_contract.v1") {
   fail("company operating example has wrong schema");
+}
+for (const field of Object.keys(companyOperatingExample)) {
+  if (!companyOperatingCanonicalFields.includes(field)) {
+    fail(`company operating example includes non-canonical top-level ${field}`);
+  }
 }
 for (const key of ["enterprise_id", "account_id", "workspace_id"]) {
   if (!companyOperatingExample.company.scope_keys.includes(key)) {

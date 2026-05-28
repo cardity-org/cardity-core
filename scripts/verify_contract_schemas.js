@@ -174,11 +174,17 @@ for (const mode of ["sequential", "parallel", "hybrid"]) {
 }
 
 const companyOperatingSchema = readJson("schemas/company_operating_contract_v1.schema.json");
-for (const field of ["schema", "company", "operating_model", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "conformance", "runtime_boundary"]) {
+const companyOperatingCanonicalFields = ["schema", "company", "operating_model", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "conformance", "runtime_boundary"];
+for (const field of companyOperatingCanonicalFields) {
   if (!companyOperatingSchema.required.includes(field)) fail(`company operating schema missing required ${field}`);
 }
-if (companyOperatingSchema.required.includes("hiring")) {
-  fail("company operating schema should not require top-level hiring");
+for (const field of ["hiring", "memory", "knowledge_base"]) {
+  if (companyOperatingSchema.required.includes(field)) {
+    fail(`company operating schema should not require top-level ${field}`);
+  }
+  if (companyOperatingSchema.properties[field]) {
+    fail(`company operating schema should not define top-level ${field}`);
+  }
 }
 if (companyOperatingSchema.properties.schema.const !== "cardity.company_operating_contract.v1") {
   fail("company operating schema has wrong const");

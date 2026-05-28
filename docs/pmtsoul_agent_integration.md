@@ -400,8 +400,9 @@ examples/12_company_operating_contract_v1.json
 ```
 
 Cardity defines the company blueprint. PMTSoul owns Control Plane rows, runtime
-execution, SkillHub capability enforcement, memory proposal/materialization,
-audit, SSE, and recovery.
+execution, SkillHub capability enforcement, company memory and knowledge-base
+persistence, audit, SSE, and recovery. Memory and knowledge-base behavior should
+not be persisted as Cardity top-level company contract modules.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

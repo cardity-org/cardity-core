@@ -185,10 +185,6 @@
         "cadence": { "type": "string", "minLength": 1 }
       }
     },
-    "memory": {
-      "type": "object",
-      "additionalProperties": true
-    },
     "conformance": {
       "type": "object",
       "additionalProperties": true,
