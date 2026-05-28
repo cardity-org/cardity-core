@@ -24,6 +24,7 @@ const nextStageSchemaPaths = [
   "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/company_operating_contract_v1.schema.json",
+  "schemas/capability_runtime_tool_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -177,6 +178,25 @@ for (const key of ["enterprise_id", "account_id", "company_id"]) {
   }
 }
 if (!exists("docs/ai_company_bootstrap_reference.md")) fail("missing AI company bootstrap docs");
+
+const capabilityRuntimeTool = readJson("schemas/capability_runtime_tool_contract_v1.schema.json");
+for (const field of ["scope", "visibility_policy", "capability_tools", "conformance", "runtime_boundary"]) {
+  if (!capabilityRuntimeTool.required.includes(field)) {
+    fail(`capability runtime tool schema missing required ${field}`);
+  }
+}
+const capabilityRuntimeToolExample = readJson("examples/14_capability_runtime_tool_contract_v1.json");
+if (capabilityRuntimeToolExample.schema !== "cardity.capability_runtime_tool_contract.v1") {
+  fail("capability runtime tool example has wrong schema");
+}
+for (const skillSlug of ["web.site.build", "web.site.iterate", "marketing.seo.optimize", "marketing.poster.design", "visual.brand_system_maintain", "sales.outreach_draft"]) {
+  if (!capabilityRuntimeToolExample.capability_tools.find((item) => item.skill_slug === skillSlug)) {
+    fail(`capability runtime tool example missing ${skillSlug}`);
+  }
+}
+if (!exists("docs/capability_runtime_tool_contract_v1.md")) {
+  fail("missing capability runtime tool contract docs");
+}
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");
 if (benchDemo.schema !== "cardity.bench_demo.v1") {

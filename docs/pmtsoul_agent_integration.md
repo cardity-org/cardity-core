@@ -293,6 +293,7 @@ https://api.cardity.org/schemas/checkpoint_contract_v1.schema.json
 https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
 https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json
 https://api.cardity.org/schemas/company_operating_contract_v1.schema.json
+https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -403,6 +404,15 @@ Cardity defines the company blueprint. PMTSoul owns Control Plane rows, runtime
 execution, SkillHub capability enforcement, company memory and knowledge-base
 persistence, audit, SSE, and recovery. Memory and knowledge-base behavior should
 not be persisted as Cardity top-level company contract modules.
+
+For employee capability visibility, PMTSoul can consume
+`cardity.capability_runtime_tool_contract.v1`. This contract maps
+`employee_role + skill_slug` to allowed runtime tools, forbidden runtime tools,
+employee whitelists, risk level, confirmation requirement, and audit event. It
+lets PMTSoul keep native tools such as site builders, SEO optimizers, poster
+renderers, and draft writers visible only to the intended employee capabilities.
+PMTSoul still owns actual tool registration, credential checks, execution,
+runtime permission enforcement, and audit persistence.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

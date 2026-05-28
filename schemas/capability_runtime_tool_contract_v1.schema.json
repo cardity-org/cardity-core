@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json",
+  "title": "Cardity Capability Runtime Tool Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema", "scope", "visibility_policy", "capability_tools", "conformance", "runtime_boundary"],
+  "properties": {
+    "schema": { "const": "cardity.capability_runtime_tool_contract.v1" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope_keys", "runtime"],
+      "properties": {
+        "scope_keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime": { "type": "string", "minLength": 1 }
+      }
+    },
+    "visibility_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["default_visibility", "deny_unknown_tools", "deny_unlisted_employee_ids", "terminal_tool_policy"],
+      "properties": {
+        "default_visibility": { "enum": ["hidden", "visible_if_allowed"] },
+        "deny_unknown_tools": { "type": "boolean" },
+        "deny_unlisted_employee_ids": { "type": "boolean" },
+        "terminal_tool_policy": { "enum": ["forbidden", "restricted", "allowed_by_policy"] }
+      }
+    },
+    "capability_tools": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "employee_role",
+          "skill_slug",
+          "allowed_runtime_tools",
+          "forbidden_runtime_tools",
+          "allowed_employee_ids",
+          "risk_level",
+          "requires_confirm",
+          "audit_event"
+        ],
+        "properties": {
+          "employee_role": { "type": "string", "minLength": 1 },
+          "skill_slug": { "type": "string", "minLength": 1 },
+          "allowed_runtime_tools": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "forbidden_runtime_tools": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "allowed_employee_ids": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "risk_level": { "enum": ["low", "medium", "high", "critical"] },
+          "requires_confirm": { "type": "boolean" },
+          "audit_event": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["checks"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "runtime_boundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["cardity_owns", "runtime_owns"],
+      "properties": {
+        "cardity_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

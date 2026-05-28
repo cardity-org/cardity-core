@@ -28,6 +28,7 @@ const schemas = [
   "schemas/workspace_generation_contract_v1.schema.json",
   "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/company_operating_contract_v1.schema.json",
+  "schemas/capability_runtime_tool_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -188,6 +189,21 @@ for (const field of ["hiring", "memory", "knowledge_base"]) {
 }
 if (companyOperatingSchema.properties.schema.const !== "cardity.company_operating_contract.v1") {
   fail("company operating schema has wrong const");
+}
+
+const capabilityRuntimeToolSchema = readJson("schemas/capability_runtime_tool_contract_v1.schema.json");
+for (const field of ["schema", "scope", "visibility_policy", "capability_tools", "conformance", "runtime_boundary"]) {
+  if (!capabilityRuntimeToolSchema.required.includes(field)) {
+    fail(`capability runtime tool schema missing required ${field}`);
+  }
+}
+if (capabilityRuntimeToolSchema.properties.schema.const !== "cardity.capability_runtime_tool_contract.v1") {
+  fail("capability runtime tool schema has wrong const");
+}
+for (const risk of ["low", "medium", "high", "critical"]) {
+  if (!enumValues(capabilityRuntimeToolSchema, "/properties/capability_tools/items/properties/risk_level").includes(risk)) {
+    fail(`capability runtime tool schema missing risk level ${risk}`);
+  }
 }
 
 const securityReviewSchema = readJson("schemas/security_review_v1.schema.json");

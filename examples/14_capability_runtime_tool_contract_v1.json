@@ -1,0 +1,105 @@
+{
+  "schema": "cardity.capability_runtime_tool_contract.v1",
+  "scope": {
+    "scope_keys": ["enterprise_id", "account_id", "company_id"],
+    "runtime": "agent_os_runtime"
+  },
+  "visibility_policy": {
+    "default_visibility": "hidden",
+    "deny_unknown_tools": true,
+    "deny_unlisted_employee_ids": true,
+    "terminal_tool_policy": "forbidden"
+  },
+  "capability_tools": [
+    {
+      "employee_role": "site_operator",
+      "skill_slug": "web.site.build",
+      "allowed_runtime_tools": ["native.site.plan", "native.site.build", "native.site.preview"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*"],
+      "allowed_employee_ids": ["employee_site_operator"],
+      "risk_level": "medium",
+      "requires_confirm": true,
+      "audit_event": "runtime_tool.visibility.granted"
+    },
+    {
+      "employee_role": "site_operator",
+      "skill_slug": "web.site.iterate",
+      "allowed_runtime_tools": ["native.site.read", "native.site.patch", "native.site.preview", "runtime.readback"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*"],
+      "allowed_employee_ids": ["employee_site_operator"],
+      "risk_level": "medium",
+      "requires_confirm": true,
+      "audit_event": "runtime_tool.visibility.granted"
+    },
+    {
+      "employee_role": "growth_operator",
+      "skill_slug": "marketing.seo.optimize",
+      "allowed_runtime_tools": ["native.seo.audit", "native.seo.suggest", "native.site.metadata_patch"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*"],
+      "allowed_employee_ids": ["employee_growth_operator"],
+      "risk_level": "medium",
+      "requires_confirm": true,
+      "audit_event": "runtime_tool.visibility.granted"
+    },
+    {
+      "employee_role": "growth_operator",
+      "skill_slug": "marketing.poster.design",
+      "allowed_runtime_tools": ["native.media.poster_draft", "native.media.render_preview", "native.media.asset_store"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*"],
+      "allowed_employee_ids": ["employee_growth_operator"],
+      "risk_level": "low",
+      "requires_confirm": false,
+      "audit_event": "runtime_tool.visibility.granted"
+    },
+    {
+      "employee_role": "brand_operator",
+      "skill_slug": "visual.brand_system_maintain",
+      "allowed_runtime_tools": ["native.brand.read", "native.brand.patch", "native.media.asset_store"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*"],
+      "allowed_employee_ids": ["employee_brand_operator", "employee_site_operator"],
+      "risk_level": "medium",
+      "requires_confirm": true,
+      "audit_event": "runtime_tool.visibility.granted"
+    },
+    {
+      "employee_role": "growth_operator",
+      "skill_slug": "sales.outreach_draft",
+      "allowed_runtime_tools": ["native.crm.lead_read", "native.message.draft", "native.mailbox.readback"],
+      "forbidden_runtime_tools": ["terminal.exec", "shell.exec", "database.raw_write", "erp.*", "native.mailbox.send"],
+      "allowed_employee_ids": ["employee_growth_operator"],
+      "risk_level": "medium",
+      "requires_confirm": true,
+      "audit_event": "runtime_tool.visibility.granted"
+    }
+  ],
+  "conformance": {
+    "checks": [
+      "default_visibility_hidden",
+      "unknown_tools_denied",
+      "terminal_tools_forbidden",
+      "employee_ids_whitelisted",
+      "forbidden_tools_declared",
+      "risk_level_declared",
+      "confirmation_policy_declared",
+      "audit_event_declared"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "capability to runtime tool visibility contract",
+      "allowed and forbidden runtime tool declarations",
+      "employee whitelist contract",
+      "risk and confirmation metadata",
+      "conformance expectations"
+    ],
+    "runtime_owns": [
+      "actual tool registration",
+      "tool execution",
+      "employee identity resolution",
+      "credential checks",
+      "runtime permission enforcement",
+      "audit event persistence",
+      "UI tool visibility"
+    ]
+  }
+}

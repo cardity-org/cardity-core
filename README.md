@@ -467,6 +467,7 @@ api.cardity.org/*
 - [Agent protocol layer](docs/agent_protocol_layer.md)
 - [Agent action contract v1](docs/agent_action_contract_v1.md)
 - [Projection contract v1.1](docs/projection_contract_v1_1.md)
+- [Capability runtime tool contract v1](docs/capability_runtime_tool_contract_v1.md)
 - [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
 - [Schema registry](docs/schema_registry.md)
 - [Ecosystem registry](docs/cardity_registry.md)
@@ -485,6 +486,7 @@ api.cardity.org/*
 - [Merchant ERP projection contract v1.1 example](examples/03_merchant_erp_projection_v1_1.json)
 - [Company operating contract example](examples/12_company_operating_contract_v1.json)
 - [AI company bootstrap reference](examples/13_ai_company_bootstrap_contract_v1.json)
+- [Capability runtime tool contract example](examples/14_capability_runtime_tool_contract_v1.json)
 
 Legacy Dogecoin/Cardinals deployment, package, inscription, and SDK tools remain
 in the repository for compatibility. They are no longer the primary README

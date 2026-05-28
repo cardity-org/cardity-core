@@ -22,6 +22,7 @@ Cardity release.
 | Checkpoint contract v1 | `schemas/checkpoint_contract_v1.schema.json` |
 | Projection contract v1.1 | `schemas/projection_contract_v1_1.schema.json` |
 | Company operating contract v1 | `schemas/company_operating_contract_v1.schema.json` |
+| Capability runtime tool contract v1 | `schemas/capability_runtime_tool_contract_v1.schema.json` |
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 | Security review v1 | `schemas/security_review_v1.schema.json` |
@@ -53,6 +54,7 @@ https://api.cardity.org/schemas
 | `examples/11_pmtsoul_agent_orchestration_runtime_fixture.json` | PMTSoul runtime fixture for mapping agent orchestration into digital employee control objects. |
 | `examples/12_company_operating_contract_v1.json` | Generic company protocol for systems, digital employees, evaluation, capability-gap responsibility, and governance. |
 | `examples/13_ai_company_bootstrap_contract_v1.json` | Generic account-level AI company bootstrap contract using canonical company operating fields only. |
+| `examples/14_capability_runtime_tool_contract_v1.json` | Generic employee capability to runtime tool visibility contract. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 | `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
@@ -86,6 +88,7 @@ node scripts/verify_account_conformance_fixture.js
 node scripts/verify_agent_orchestration_contract.js
 node scripts/verify_agent_orchestration_runtime_fixture.js
 node scripts/verify_company_operating_contract.js
+node scripts/verify_capability_runtime_tool_contract.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js visualize examples/02_member_points_agent.car
 node bin/cardity.js visualize examples/02_member_points_agent.car --html -o /tmp/cardity_visualizer.html
