@@ -14,6 +14,7 @@ function fail(message) {
 
 const schema = readJson("schemas/company_operating_contract_v1.schema.json");
 const example = readJson("examples/12_company_operating_contract_v1.json");
+const bootstrapExample = readJson("examples/13_ai_company_bootstrap_contract_v1.json");
 const canonicalTopLevelFields = [
   "schema",
   "company",
@@ -28,59 +29,80 @@ const canonicalTopLevelFields = [
 ];
 const nonCanonicalTopLevelFields = ["hiring", "memory", "knowledge_base"];
 
+function validateCanonicalShape(contract, label) {
+  for (const field of canonicalTopLevelFields) {
+    if (!(field in contract)) fail(`${label} missing ${field}`);
+  }
+  for (const field of nonCanonicalTopLevelFields) {
+    if (field in contract) fail(`${label} should not include top-level ${field}`);
+  }
+  for (const field of Object.keys(contract)) {
+    if (!canonicalTopLevelFields.includes(field)) {
+      fail(`${label} includes non-canonical top-level ${field}`);
+    }
+  }
+  if (contract.schema !== "cardity.company_operating_contract.v1") {
+    fail(`${label} has wrong schema`);
+  }
+}
+
+function validateScope(contract, label, requiredScopeKeys) {
+  for (const key of requiredScopeKeys) {
+    if (!contract.company.scope_keys.includes(key)) fail(`${label} missing scope key ${key}`);
+    if (!contract.governance.scope_policy.required_scope_keys.includes(key)) {
+      fail(`${label} governance missing required scope key ${key}`);
+    }
+  }
+  if (contract.governance.scope_policy.cross_tenant_policy !== "reject") {
+    fail(`${label} must reject cross-tenant operations`);
+  }
+}
+
+function validateEmployeeRefs(contract, label) {
+  const employees = new Set(contract.digital_employees.map((employee) => employee.id));
+  for (const employee of contract.digital_employees) {
+    if (!Array.isArray(employee.skill_whitelist)) fail(`${label}.${employee.id} missing skill_whitelist`);
+    if (!employee.scope_authority || typeof employee.scope_authority !== "object") {
+      fail(`${label}.${employee.id} missing scope_authority`);
+    }
+  }
+
+  function requireEmployeeRefs(refs, refLabel) {
+    for (const ref of refs) {
+      if (!employees.has(ref)) fail(`${label}.${refLabel} references unknown digital employee ${ref}`);
+    }
+  }
+
+  for (const item of contract.ownership_matrix) {
+    requireEmployeeRefs(item.owners, `${item.system_id}.owners`);
+    requireEmployeeRefs(item.reviewers, `${item.system_id}.reviewers`);
+  }
+  requireEmployeeRefs(contract.evaluation.reviewer_roles, "evaluation.reviewer_roles");
+
+  return employees;
+}
+
 if (schema.properties.schema.const !== "cardity.company_operating_contract.v1") {
   fail("company operating schema has wrong const");
 }
 for (const field of canonicalTopLevelFields) {
   if (!schema.required.includes(field)) fail(`company operating schema missing required ${field}`);
-  if (!(field in example)) fail(`company operating example missing ${field}`);
 }
 for (const field of nonCanonicalTopLevelFields) {
   if (schema.required.includes(field)) fail(`company operating schema should not require top-level ${field}`);
   if (schema.properties[field]) fail(`company operating schema should not define top-level ${field}`);
-  if (field in example) fail(`company operating example should not include top-level ${field}`);
-}
-for (const field of Object.keys(example)) {
-  if (!canonicalTopLevelFields.includes(field)) {
-    fail(`company operating example includes non-canonical top-level ${field}`);
-  }
 }
 
-if (example.schema !== "cardity.company_operating_contract.v1") {
-  fail("company operating example has wrong schema");
-}
-for (const key of ["enterprise_id", "account_id", "workspace_id"]) {
-  if (!example.company.scope_keys.includes(key)) fail(`company example missing scope key ${key}`);
-  if (!example.governance.scope_policy.required_scope_keys.includes(key)) {
-    fail(`company governance missing required scope key ${key}`);
-  }
-}
-if (example.governance.scope_policy.cross_tenant_policy !== "reject") {
-  fail("company operating example must reject cross-tenant operations");
-}
-
+validateCanonicalShape(example, "company operating example");
+validateScope(example, "company operating example", ["enterprise_id", "account_id", "workspace_id"]);
 const systems = new Set(example.systems.map((system) => system.id));
 for (const system of ["public_site", "operations_workspace", "customer_workspace"]) {
   if (!systems.has(system)) fail(`company operating example missing system ${system}`);
 }
-
-const employees = new Set(example.digital_employees.map((employee) => employee.id));
+const employees = validateEmployeeRefs(example, "company operating example");
 for (const employee of ["employee_planner", "employee_engineering", "employee_content", "employee_reviewer"]) {
   if (!employees.has(employee)) fail(`company operating example missing employee ${employee}`);
 }
-for (const employee of example.digital_employees) {
-  if (!Array.isArray(employee.skill_whitelist)) fail(`${employee.id} missing skill_whitelist`);
-  if (!employee.scope_authority || typeof employee.scope_authority !== "object") {
-    fail(`${employee.id} missing scope_authority`);
-  }
-}
-
-function requireEmployeeRefs(refs, label) {
-  for (const ref of refs) {
-    if (!employees.has(ref)) fail(`${label} references unknown digital employee ${ref}`);
-  }
-}
-
 const publicSite = example.ownership_matrix.find((item) => item.system_id === "public_site");
 if (!publicSite) fail("company operating example missing public_site ownership matrix");
 for (const owner of ["employee_engineering", "employee_content"]) {
@@ -92,15 +114,9 @@ if (!publicSite.reviewers.includes("employee_reviewer")) {
 if (!publicSite.checkpoints.includes("production_readback_verified")) {
   fail("public_site ownership missing production readback checkpoint");
 }
-for (const item of example.ownership_matrix) {
-  requireEmployeeRefs(item.owners, `${item.system_id}.owners`);
-  requireEmployeeRefs(item.reviewers, `${item.system_id}.reviewers`);
-}
-
 if (!example.evaluation.reviewer_roles.includes("employee_reviewer")) {
   fail("company evaluation missing reviewer employee");
 }
-requireEmployeeRefs(example.evaluation.reviewer_roles, "evaluation.reviewer_roles");
 const capabilityGapEmployee = example.digital_employees.find((employee) => (
   employee.responsibilities.includes("capability gap review")
   || (employee.scope_authority.propose || []).includes("capability_gap")
@@ -118,6 +134,23 @@ if (!example.runtime_boundary.cardity_owns.includes("company operating blueprint
 }
 if (!example.runtime_boundary.runtime_owns.includes("employee runtime set")) {
   fail("company runtime boundary missing runtime employee ownership");
+}
+
+validateCanonicalShape(bootstrapExample, "AI company bootstrap example");
+validateScope(bootstrapExample, "AI company bootstrap example", ["enterprise_id", "account_id", "company_id"]);
+validateEmployeeRefs(bootstrapExample, "AI company bootstrap example");
+for (const system of ["public_site", "company_mailbox", "company_context_index", "growth_pipeline"]) {
+  if (!bootstrapExample.systems.find((item) => item.id === system)) {
+    fail(`AI company bootstrap example missing system ${system}`);
+  }
+}
+if (bootstrapExample.governance.permission_policy.startup_mode !== "manual_start") {
+  fail("AI company bootstrap example must declare manual_start startup mode");
+}
+for (const field of ["company entity creation", "email provisioning", "manual_start task execution"]) {
+  if (!bootstrapExample.runtime_boundary.runtime_owns.includes(field)) {
+    fail(`AI company bootstrap example runtime boundary missing ${field}`);
+  }
 }
 
 console.log("Company operating contract verification passed");

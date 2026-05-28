@@ -1,0 +1,191 @@
+{
+  "schema": "cardity.company_operating_contract.v1",
+  "company": {
+    "id": "example-ai-company",
+    "name": "Example AI Company",
+    "scope_keys": ["enterprise_id", "account_id", "company_id"],
+    "business_domains": ["public_site", "customer_development", "operations"]
+  },
+  "operating_model": {
+    "control_plane": "account_control_plane",
+    "runtime": "agent_runtime",
+    "capability_catalog": "skill_catalog",
+    "workbench": "company_workbench"
+  },
+  "systems": [
+    {
+      "id": "public_site",
+      "kind": "public_surface",
+      "purpose": "Company website, positioning, publishing, and production readback.",
+      "contract_refs": [
+        "cardity.workspace_generation_contract.v1",
+        "cardity.production_write_contract.v1",
+        "cardity.checkpoint_contract.v1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "company_id", "site_id"]
+    },
+    {
+      "id": "company_mailbox",
+      "kind": "communication_system",
+      "purpose": "Company-owned outbound and inbound communication records.",
+      "contract_refs": [
+        "cardity.agent_manifest.v1",
+        "cardity.production_write_contract.v1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "company_id", "mailbox_id"]
+    },
+    {
+      "id": "company_context_index",
+      "kind": "runtime_context_system",
+      "purpose": "Runtime-owned company context, deliverable index, and approved memory references.",
+      "contract_refs": [
+        "cardity.agent_manifest.v1",
+        "projection_contract_v1_1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "company_id"]
+    },
+    {
+      "id": "growth_pipeline",
+      "kind": "customer_system",
+      "purpose": "Qualified leads, customer follow-up, and early growth workflows.",
+      "contract_refs": [
+        "cardity.agent_manifest.v1",
+        "projection_contract_v1_1",
+        "cardity.checkpoint_contract.v1"
+      ],
+      "scope_keys": ["enterprise_id", "account_id", "company_id", "pipeline_id"]
+    }
+  ],
+  "digital_employees": [
+    {
+      "id": "employee_orchestrator",
+      "kind": "planner",
+      "responsibilities": ["bootstrap planning", "task routing", "capability gap review"],
+      "skill_whitelist": ["bootstrap.plan", "task.route", "capability.review"],
+      "scope_authority": { "propose": ["bootstrap_plan", "capability_gap"], "approve": ["plan"], "execute": [] },
+      "memory_scopes": ["company", "handoff"]
+    },
+    {
+      "id": "employee_site_operator",
+      "kind": "operator",
+      "responsibilities": ["website draft", "website publish", "production readback"],
+      "skill_whitelist": ["site.draft", "site.publish", "runtime.readback"],
+      "scope_authority": { "propose": ["site_change"], "execute": ["draft_change", "readback"], "approve": [] },
+      "memory_scopes": ["company", "system"]
+    },
+    {
+      "id": "employee_growth_operator",
+      "kind": "operator",
+      "responsibilities": ["market research", "positioning", "lead qualification", "message drafts"],
+      "skill_whitelist": ["research.market", "lead.qualify", "message.draft"],
+      "scope_authority": { "propose": ["research", "message"], "execute": ["draft_message"], "approve": [] },
+      "memory_scopes": ["company", "customer"]
+    },
+    {
+      "id": "employee_reviewer",
+      "kind": "reviewer",
+      "responsibilities": ["quality review", "policy review", "readback verification", "audit review"],
+      "skill_whitelist": ["review.verify", "policy.check", "audit.explain"],
+      "scope_authority": { "propose": ["review"], "execute": ["verify"], "approve": ["medium_risk", "high_risk"] },
+      "memory_scopes": ["company", "audit"]
+    }
+  ],
+  "ownership_matrix": [
+    {
+      "system_id": "public_site",
+      "responsibilities": ["positioning", "content", "publish", "readback"],
+      "owners": ["employee_site_operator", "employee_growth_operator"],
+      "reviewers": ["employee_orchestrator", "employee_reviewer"],
+      "checkpoints": ["site_draft_created", "preview_verified", "publish_confirmed", "production_readback_verified"]
+    },
+    {
+      "system_id": "company_mailbox",
+      "responsibilities": ["welcome message", "reply tracking", "outbound drafts"],
+      "owners": ["employee_growth_operator"],
+      "reviewers": ["employee_reviewer"],
+      "checkpoints": ["message_draft_verified", "send_confirmed", "mailbox_readback_recorded"]
+    },
+    {
+      "system_id": "company_context_index",
+      "responsibilities": ["context intake", "deliverable indexing", "approved memory references"],
+      "owners": ["employee_orchestrator"],
+      "reviewers": ["employee_reviewer"],
+      "checkpoints": ["context_candidate_recorded", "context_approved", "index_readback_verified"]
+    },
+    {
+      "system_id": "growth_pipeline",
+      "responsibilities": ["research", "qualified leads", "follow-up drafts"],
+      "owners": ["employee_growth_operator", "employee_orchestrator"],
+      "reviewers": ["employee_reviewer"],
+      "checkpoints": ["research_deliverable_created", "lead_list_reviewed", "follow_up_draft_verified"]
+    }
+  ],
+  "governance": {
+    "scope_policy": {
+      "required_scope_keys": ["enterprise_id", "account_id", "company_id"],
+      "cross_tenant_policy": "reject"
+    },
+    "permission_policy": {
+      "startup_mode": "manual_start",
+      "planner_no_production_write": true,
+      "operator_no_self_approval": true,
+      "writes_require_confirm_readback_audit": true,
+      "external_email_send_requires_approval": true,
+      "public_publish_requires_readback": true
+    },
+    "audit_policy": {
+      "required_events": [
+        "company.bootstrap.created",
+        "employee.handoff.created",
+        "checkpoint.recorded",
+        "policy.require_confirm",
+        "readback.verified",
+        "deliverable.created",
+        "employee.evaluation.recorded",
+        "capability_gap.proposed"
+      ]
+    }
+  },
+  "evaluation": {
+    "reviewer_roles": ["employee_reviewer"],
+    "metrics": ["bootstrap_completion_rate", "checkpoint_failure_rate", "readback_pass_rate", "handoff_quality", "policy_violation_count"],
+    "cadence": "per_bootstrap_run_and_daily_rollup"
+  },
+  "conformance": {
+    "checks": [
+      "company_scope_present",
+      "canonical_top_level_only",
+      "systems_have_owners",
+      "employees_have_skill_whitelist",
+      "employees_have_scope_authority",
+      "owners_reference_existing_employees",
+      "reviewers_reference_existing_employees",
+      "manual_start_policy_present",
+      "audit_events_declared",
+      "runtime_boundary_preserved"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "company operating blueprint",
+      "system ownership matrix",
+      "employee responsibility contract",
+      "governance and evaluation contract",
+      "conformance expectations"
+    ],
+    "runtime_owns": [
+      "company entity creation",
+      "email provisioning",
+      "welcome email delivery",
+      "website materialization",
+      "market research deliverables",
+      "user profile generation",
+      "company memory persistence",
+      "mailbox records",
+      "manual_start task execution",
+      "audit events",
+      "workbench rendering",
+      "recovery execution"
+    ]
+  }
+}

@@ -162,6 +162,21 @@ for (const key of ["enterprise_id", "account_id", "workspace_id"]) {
     fail(`company operating example missing scope key ${key}`);
   }
 }
+const aiCompanyBootstrapExample = readJson("examples/13_ai_company_bootstrap_contract_v1.json");
+if (aiCompanyBootstrapExample.schema !== "cardity.company_operating_contract.v1") {
+  fail("AI company bootstrap example has wrong schema");
+}
+for (const field of Object.keys(aiCompanyBootstrapExample)) {
+  if (!companyOperatingCanonicalFields.includes(field)) {
+    fail(`AI company bootstrap example includes non-canonical top-level ${field}`);
+  }
+}
+for (const key of ["enterprise_id", "account_id", "company_id"]) {
+  if (!aiCompanyBootstrapExample.company.scope_keys.includes(key)) {
+    fail(`AI company bootstrap example missing scope key ${key}`);
+  }
+}
+if (!exists("docs/ai_company_bootstrap_reference.md")) fail("missing AI company bootstrap docs");
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");
 if (benchDemo.schema !== "cardity.bench_demo.v1") {

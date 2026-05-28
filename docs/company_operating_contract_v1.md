@@ -74,6 +74,18 @@ Reference examples must not invent product-specific employee names that do not
 exist in the target runtime. If a new employee is needed, the contract should
 produce a capability-gap or new-employee proposal first.
 
+## AI Company Bootstrap Reference
+
+`examples/13_ai_company_bootstrap_contract_v1.json` shows an account-level AI
+company after bootstrap. It uses `enterprise_id`, `account_id`, and `company_id`
+scope keys and keeps runtime materialization outside the Cardity snapshot.
+
+Runtime-owned bootstrap resources such as company email, welcome email, public
+site materialization, market research, user profile generation, mailbox records,
+manual-start tasks, and memory indexes are represented through systems,
+employee responsibilities, audit events, and `runtime_boundary`, not as
+additional Cardity top-level modules.
+
 ## Local Verification
 
 ```bash

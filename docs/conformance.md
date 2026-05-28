@@ -52,6 +52,7 @@ https://api.cardity.org/schemas
 | `examples/10_pmtsoul_account_conformance_fixture.json` | PMTSoul control-plane fixture for account-level workspace conformance runs. |
 | `examples/11_pmtsoul_agent_orchestration_runtime_fixture.json` | PMTSoul runtime fixture for mapping agent orchestration into digital employee control objects. |
 | `examples/12_company_operating_contract_v1.json` | Generic company protocol for systems, digital employees, evaluation, capability-gap responsibility, and governance. |
+| `examples/13_ai_company_bootstrap_contract_v1.json` | Generic account-level AI company bootstrap contract using canonical company operating fields only. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 | `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
