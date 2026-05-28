@@ -29,6 +29,7 @@ const schemas = [
   "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/company_operating_contract_v1.schema.json",
   "schemas/capability_runtime_tool_contract_v1.schema.json",
+  "schemas/workspace_conversation_scope_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -203,6 +204,21 @@ if (capabilityRuntimeToolSchema.properties.schema.const !== "cardity.capability_
 for (const risk of ["low", "medium", "high", "critical"]) {
   if (!enumValues(capabilityRuntimeToolSchema, "/properties/capability_tools/items/properties/risk_level").includes(risk)) {
     fail(`capability runtime tool schema missing risk level ${risk}`);
+  }
+}
+
+const workspaceConversationScopeSchema = readJson("schemas/workspace_conversation_scope_contract_v1.schema.json");
+for (const field of ["schema", "scope", "canonical_fields", "routing_rules", "endpoint_contracts", "repair_policy", "frontend_rules", "conformance", "runtime_boundary"]) {
+  if (!workspaceConversationScopeSchema.required.includes(field)) {
+    fail(`workspace conversation scope schema missing required ${field}`);
+  }
+}
+if (workspaceConversationScopeSchema.properties.schema.const !== "cardity.workspace_conversation_scope_contract.v1") {
+  fail("workspace conversation scope schema has wrong const");
+}
+for (const scope of ["chat", "workspace"]) {
+  if (!enumValues(workspaceConversationScopeSchema, "/properties/scope/properties/conversation_scopes/items").includes(scope)) {
+    fail(`workspace conversation scope schema missing scope ${scope}`);
   }
 }
 

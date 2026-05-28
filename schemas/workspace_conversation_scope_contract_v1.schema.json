@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json",
+  "title": "Cardity Workspace Conversation Scope Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "scope",
+    "canonical_fields",
+    "routing_rules",
+    "endpoint_contracts",
+    "repair_policy",
+    "frontend_rules",
+    "conformance",
+    "runtime_boundary"
+  ],
+  "properties": {
+    "schema": { "const": "cardity.workspace_conversation_scope_contract.v1" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope_keys", "conversation_scopes"],
+      "properties": {
+        "scope_keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "conversation_scopes": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "enum": ["chat", "workspace"] }
+        }
+      }
+    },
+    "canonical_fields": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["conversation_scope", "origin", "source", "mode", "workspace_chat_facade"],
+      "properties": {
+        "conversation_scope": { "enum": ["chat", "workspace"] },
+        "origin": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["chat", "workspace"] },
+        "workspace_chat_facade": { "type": "boolean" }
+      }
+    },
+    "routing_rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "conversation_scope", "required_fields", "forbidden_in_scope"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "conversation_scope": { "enum": ["chat", "workspace"] },
+          "required_fields": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "forbidden_in_scope": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "endpoint_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["endpoint", "method", "returns_scope", "filter_policy"],
+        "properties": {
+          "endpoint": { "type": "string", "minLength": 1 },
+          "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+          "returns_scope": { "enum": ["chat", "workspace", "none"] },
+          "filter_policy": { "type": "string", "minLength": 1 },
+          "mutation_allowed": { "type": "boolean" }
+        }
+      }
+    },
+    "repair_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["legacy_conversation_policy", "lazy_repair_allowed", "backfill_allowed", "repair_audit_event"],
+      "properties": {
+        "legacy_conversation_policy": { "enum": ["reject", "lazy_repair", "backfill_then_filter"] },
+        "lazy_repair_allowed": { "type": "boolean" },
+        "backfill_allowed": { "type": "boolean" },
+        "repair_audit_event": { "type": "string", "minLength": 1 }
+      }
+    },
+    "frontend_rules": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["must_use_canonical_scope", "forbid_id_pattern_scope_inference"],
+      "properties": {
+        "must_use_canonical_scope": { "type": "boolean" },
+        "forbid_id_pattern_scope_inference": { "type": "boolean" }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["checks"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "runtime_boundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["cardity_owns", "runtime_owns"],
+      "properties": {
+        "cardity_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

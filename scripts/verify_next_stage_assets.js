@@ -25,6 +25,7 @@ const nextStageSchemaPaths = [
   "schemas/agent_orchestration_contract_v1.schema.json",
   "schemas/company_operating_contract_v1.schema.json",
   "schemas/capability_runtime_tool_contract_v1.schema.json",
+  "schemas/workspace_conversation_scope_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -196,6 +197,31 @@ for (const skillSlug of ["web.site.build", "web.site.iterate", "marketing.seo.op
 }
 if (!exists("docs/capability_runtime_tool_contract_v1.md")) {
   fail("missing capability runtime tool contract docs");
+}
+
+const workspaceConversationScope = readJson("schemas/workspace_conversation_scope_contract_v1.schema.json");
+for (const field of ["scope", "canonical_fields", "routing_rules", "endpoint_contracts", "repair_policy", "frontend_rules", "conformance", "runtime_boundary"]) {
+  if (!workspaceConversationScope.required.includes(field)) {
+    fail(`workspace conversation scope schema missing required ${field}`);
+  }
+}
+const workspaceConversationScopeExample = readJson("examples/15_workspace_conversation_scope_contract_v1.json");
+if (workspaceConversationScopeExample.schema !== "cardity.workspace_conversation_scope_contract.v1") {
+  fail("workspace conversation scope example has wrong schema");
+}
+for (const scope of ["chat", "workspace"]) {
+  if (!workspaceConversationScopeExample.scope.conversation_scopes.includes(scope)) {
+    fail(`workspace conversation scope example missing ${scope}`);
+  }
+}
+if (!workspaceConversationScopeExample.endpoint_contracts.find((endpoint) => endpoint.endpoint === "/api/sessions" && endpoint.returns_scope === "chat")) {
+  fail("workspace conversation scope example missing chat sessions endpoint");
+}
+if (!workspaceConversationScopeExample.endpoint_contracts.find((endpoint) => endpoint.endpoint === "/api/v1/workspace/conversation" && endpoint.returns_scope === "workspace")) {
+  fail("workspace conversation scope example missing workspace endpoint");
+}
+if (!exists("docs/workspace_conversation_scope_contract_v1.md")) {
+  fail("missing workspace conversation scope contract docs");
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");

@@ -294,6 +294,7 @@ https://api.cardity.org/schemas/workspace_generation_contract_v1.schema.json
 https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json
 https://api.cardity.org/schemas/company_operating_contract_v1.schema.json
 https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json
+https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -413,6 +414,15 @@ lets PMTSoul keep native tools such as site builders, SEO optimizers, poster
 renderers, and draft writers visible only to the intended employee capabilities.
 PMTSoul still owns actual tool registration, credential checks, execution,
 runtime permission enforcement, and audit persistence.
+
+For workspace chat isolation, PMTSoul can consume
+`cardity.workspace_conversation_scope_contract.v1`. This contract defines
+canonical `conversation_scope`, `origin`, `source`, `mode`, and
+`workspace_chat_facade` fields; `/api/sessions` chat-only defaults;
+workspace-only conversation endpoints; legacy conversation lazy repair/backfill;
+and frontend rules forbidding id-pattern scope inference. PMTSoul still owns
+conversation persistence, endpoint filtering, SSE scope filtering, repair
+execution, and audit storage.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

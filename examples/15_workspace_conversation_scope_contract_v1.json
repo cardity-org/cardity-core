@@ -1,0 +1,91 @@
+{
+  "schema": "cardity.workspace_conversation_scope_contract.v1",
+  "scope": {
+    "scope_keys": ["enterprise_id", "account_id", "workspace_id", "conversation_id"],
+    "conversation_scopes": ["chat", "workspace"]
+  },
+  "canonical_fields": {
+    "conversation_scope": "workspace",
+    "origin": "workspace",
+    "source": "workspace_chat",
+    "mode": "workspace",
+    "workspace_chat_facade": true
+  },
+  "routing_rules": [
+    {
+      "id": "ordinary_chat_conversation",
+      "conversation_scope": "chat",
+      "required_fields": ["conversation_scope", "origin", "source", "mode"],
+      "forbidden_in_scope": ["workspace_chat_facade", "workspace_id"]
+    },
+    {
+      "id": "workspace_conversation",
+      "conversation_scope": "workspace",
+      "required_fields": ["conversation_scope", "origin", "source", "mode", "workspace_chat_facade", "workspace_id"],
+      "forbidden_in_scope": ["chat_only_session"]
+    }
+  ],
+  "endpoint_contracts": [
+    {
+      "endpoint": "/api/sessions",
+      "method": "GET",
+      "returns_scope": "chat",
+      "filter_policy": "default_chat_only_exclude_workspace",
+      "mutation_allowed": false
+    },
+    {
+      "endpoint": "/api/v1/workspace/conversation",
+      "method": "GET",
+      "returns_scope": "workspace",
+      "filter_policy": "workspace_canonical_only",
+      "mutation_allowed": false
+    },
+    {
+      "endpoint": "/api/v1/workspace/conversation",
+      "method": "POST",
+      "returns_scope": "workspace",
+      "filter_policy": "create_or_reuse_workspace_canonical",
+      "mutation_allowed": true
+    }
+  ],
+  "repair_policy": {
+    "legacy_conversation_policy": "lazy_repair",
+    "lazy_repair_allowed": true,
+    "backfill_allowed": true,
+    "repair_audit_event": "conversation.scope.repaired"
+  },
+  "frontend_rules": {
+    "must_use_canonical_scope": true,
+    "forbid_id_pattern_scope_inference": true
+  },
+  "conformance": {
+    "checks": [
+      "canonical_fields_present",
+      "workspace_facade_true_for_workspace_scope",
+      "api_sessions_chat_only",
+      "workspace_endpoint_workspace_only",
+      "legacy_repair_audited",
+      "frontend_uses_canonical_scope",
+      "id_pattern_scope_inference_forbidden"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "conversation scope contract",
+      "canonical scope field declarations",
+      "endpoint scope expectations",
+      "repair policy expectations",
+      "frontend scope inference constraints",
+      "conformance expectations"
+    ],
+    "runtime_owns": [
+      "conversation persistence",
+      "session list filtering",
+      "workspace conversation creation and reuse",
+      "legacy conversation repair and backfill",
+      "audit event persistence",
+      "frontend routing and rendering",
+      "SSE scope filtering"
+    ]
+  }
+}

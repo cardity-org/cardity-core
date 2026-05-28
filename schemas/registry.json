@@ -86,6 +86,16 @@
       "status": "alpha"
     },
     {
+      "name": "workspace_conversation_scope_contract_v1",
+      "contract": "cardity.workspace_conversation_scope_contract.v1",
+      "version": "v1",
+      "file": "workspace_conversation_scope_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json",
+      "title": "Cardity Workspace Conversation Scope Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",
