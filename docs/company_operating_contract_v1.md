@@ -2,7 +2,7 @@
 
 Company operating contract v1 describes how a generated company workspace is
 organized: systems, digital employees, responsibilities, ownership, evaluation,
-hiring, memory, audit, and conformance.
+memory, audit, and conformance.
 
 It is a contract layer. Cardity does not name product-specific employees, manage
 employees, run tasks, mutate memory, deploy sites, or write runtime
@@ -31,7 +31,6 @@ The contract follows a generic Agent OS model:
 | `ownership_matrix` | Which employees own and review each system. |
 | `governance` | Scope, permission, and audit policies. |
 | `evaluation` | Evaluation policy that references reviewer employee ids from `digital_employees`. |
-| `hiring` | Hiring/capability-gap policy that references HR employee ids from `digital_employees`. |
 | `conformance` | Runtime checks before the company workspace is considered valid. |
 | `runtime_boundary` | What Cardity defines vs what the runtime executes. |
 
@@ -46,13 +45,15 @@ responsibilities across runtime-supplied employee ids:
 | Content and positioning | `employee_content` |
 | Approval and orchestration | `employee_planner` |
 | Risk/readback review | `employee_reviewer` |
-| Capability gap and hiring review | an existing employee id such as `employee_planner` |
+| Capability gap review | an existing employee id such as `employee_planner` |
 
-`evaluation.reviewer_roles` and `hiring.hr_roles` do not create separate actor
-pools. They must reference employees already declared in `digital_employees`.
+`evaluation.reviewer_roles` does not create a separate actor pool. It must
+reference employees already declared in `digital_employees`. Capability-gap and
+new-employee proposal work should be expressed as an employee
+responsibility/scope authority, not as a separate top-level actor system.
 Reference examples must not invent product-specific employee names that do not
 exist in the target runtime. If a new employee is needed, the contract should
-produce a hiring/capability-gap proposal first.
+produce a capability-gap or new-employee proposal first.
 
 ## Local Verification
 

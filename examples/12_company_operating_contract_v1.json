@@ -52,7 +52,7 @@
       "kind": "planner",
       "responsibilities": ["planning", "routing", "capability gap review"],
       "skill_whitelist": ["capability.plan", "capability.route"],
-      "scope_authority": { "propose": ["plan", "hiring_need"], "approve": ["plan"], "execute": [] },
+      "scope_authority": { "propose": ["plan", "capability_gap"], "approve": ["plan"], "execute": [] },
       "memory_scopes": ["company", "workspace", "handoff"]
     },
     {
@@ -121,7 +121,7 @@
         "policy.require_confirm",
         "readback.verified",
         "employee.evaluation.recorded",
-        "hiring.need.proposed"
+        "capability_gap.proposed"
       ]
     }
   },
@@ -129,13 +129,6 @@
     "reviewer_roles": ["employee_reviewer"],
     "metrics": ["task_success_rate", "checkpoint_failure_rate", "readback_pass_rate", "handoff_quality", "policy_violation_count", "user_acceptance_rate"],
     "cadence": "per_run_and_periodic_rollup"
-  },
-  "hiring": {
-    "hr_roles": ["employee_planner"],
-    "capability_gap_policy": {
-      "trigger": "Repeated out-of-scope tasks, missing skill coverage, high fallback rate, or repeated checkpoint failures.",
-      "output": "Propose a new digital employee role, required skills, authority, reviewer, and conformance checks."
-    }
   },
   "memory": {
     "layers": ["company", "account", "workspace", "employee", "workflow"],
@@ -150,7 +143,7 @@
       "employees_have_scope_authority",
       "owners_reference_existing_employees",
       "reviewers_reference_existing_employees",
-      "hr_roles_reference_existing_employees",
+      "capability_gap_owner_present",
       "high_risk_policy_present",
       "audit_events_declared",
       "runtime_boundary_preserved"
@@ -161,7 +154,7 @@
       "company operating blueprint",
       "system ownership matrix",
       "employee responsibility contract",
-      "evaluation and hiring contract",
+      "evaluation and capability gap contract",
       "conformance expectations"
     ],
     "runtime_owns": [

@@ -391,7 +391,7 @@ For company-level operating design, PMTSoul can consume
 `cardity.company_operating_contract.v1`. This contract sits above workspace and
 orchestration contracts. It describes company systems, digital employee
 references, system ownership, reviewer policy, employee evaluation,
-HR/capability gap handling, audit events, and account-level conformance.
+capability gap responsibility, audit events, and account-level conformance.
 Cardity does not define PMTSoul employee names or concrete PMTSoul systems. The
 generic example is:
 

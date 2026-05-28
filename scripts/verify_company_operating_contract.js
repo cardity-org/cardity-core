@@ -27,7 +27,6 @@ for (const field of [
   "ownership_matrix",
   "governance",
   "evaluation",
-  "hiring",
   "conformance",
   "runtime_boundary"
 ]) {
@@ -90,11 +89,14 @@ if (!example.evaluation.reviewer_roles.includes("employee_reviewer")) {
   fail("company evaluation missing reviewer employee");
 }
 requireEmployeeRefs(example.evaluation.reviewer_roles, "evaluation.reviewer_roles");
-if (!example.hiring.hr_roles.includes("employee_planner")) {
-  fail("company hiring missing existing planner employee");
+const capabilityGapEmployee = example.digital_employees.find((employee) => (
+  employee.responsibilities.includes("capability gap review")
+  || (employee.scope_authority.propose || []).includes("capability_gap")
+));
+if (!capabilityGapEmployee) {
+  fail("company example missing capability gap responsibility on a digital employee");
 }
-requireEmployeeRefs(example.hiring.hr_roles, "hiring.hr_roles");
-for (const event of ["employee.handoff.created", "checkpoint.recorded", "employee.evaluation.recorded", "hiring.need.proposed"]) {
+for (const event of ["employee.handoff.created", "checkpoint.recorded", "employee.evaluation.recorded", "capability_gap.proposed"]) {
   if (!example.governance.audit_policy.required_events.includes(event)) {
     fail(`company audit policy missing event ${event}`);
   }

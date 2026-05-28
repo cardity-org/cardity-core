@@ -134,10 +134,13 @@ for (const field of agentOrchestration.required) {
 }
 
 const companyOperating = readJson("schemas/company_operating_contract_v1.schema.json");
-for (const field of ["company", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "hiring", "conformance"]) {
+for (const field of ["company", "systems", "digital_employees", "ownership_matrix", "governance", "evaluation", "conformance"]) {
   if (!companyOperating.required.includes(field)) {
     fail(`company operating schema missing required ${field}`);
   }
+}
+if (companyOperating.required.includes("hiring")) {
+  fail("company operating schema should not require top-level hiring");
 }
 const companyOperatingExample = readJson("examples/12_company_operating_contract_v1.json");
 if (companyOperatingExample.schema !== "cardity.company_operating_contract.v1") {
