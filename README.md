@@ -483,6 +483,8 @@ api.cardity.org/*
 - [Member points protocol](examples/02_member_points_agent.car)
 - [Merchant ERP protocol](examples/03_merchant_erp_agent.car)
 - [Merchant ERP projection contract v1.1 example](examples/03_merchant_erp_projection_v1_1.json)
+- [Company operating contract example](examples/12_company_operating_contract_v1.json)
+- [AI company bootstrap reference](examples/13_ai_company_bootstrap_contract_v1.json)
 
 Legacy Dogecoin/Cardinals deployment, package, inscription, and SDK tools remain
 in the repository for compatibility. They are no longer the primary README
