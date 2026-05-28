@@ -94,6 +94,11 @@
       "url": "https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json"
     },
     {
+      "id": "guest_view_access_contract_v1",
+      "contract": "cardity.guest_view_access_contract.v1",
+      "url": "https://api.cardity.org/schemas/guest_view_access_contract_v1.schema.json"
+    },
+    {
       "id": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json"

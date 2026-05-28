@@ -31,6 +31,7 @@ const schemas = [
   "schemas/capability_runtime_tool_contract_v1.schema.json",
   "schemas/workspace_conversation_scope_contract_v1.schema.json",
   "schemas/task_collaboration_event_contract_v1.schema.json",
+  "schemas/guest_view_access_contract_v1.schema.json",
   "schemas/projection_contract_v1_1.schema.json",
   "schemas/diagnostics_v1.schema.json",
   "schemas/runtime_adapter_contract_v1.schema.json",
@@ -236,6 +237,16 @@ for (const event of ["account.task.employee.started", "account.task.employee.pro
   if (!enumValues(taskCollaborationEventSchema, "/properties/collaborator_lanes/items/properties/lifecycle_events/items").includes(event)) {
     fail(`task collaboration event schema missing lifecycle event ${event}`);
   }
+}
+
+const guestViewAccessSchema = readJson("schemas/guest_view_access_contract_v1.schema.json");
+for (const field of ["schema", "scope", "token_policy", "allowed_read_endpoints", "forbidden_actions", "sse_policy", "audit_policy", "conformance", "runtime_boundary"]) {
+  if (!guestViewAccessSchema.required.includes(field)) {
+    fail(`guest view access schema missing required ${field}`);
+  }
+}
+if (guestViewAccessSchema.properties.schema.const !== "cardity.guest_view_access_contract.v1") {
+  fail("guest view access schema has wrong const");
 }
 
 const securityReviewSchema = readJson("schemas/security_review_v1.schema.json");

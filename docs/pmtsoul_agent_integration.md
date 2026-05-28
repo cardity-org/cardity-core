@@ -296,6 +296,7 @@ https://api.cardity.org/schemas/company_operating_contract_v1.schema.json
 https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json
 https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json
 https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json
+https://api.cardity.org/schemas/guest_view_access_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -432,6 +433,14 @@ payload fields, barrier rules, finalization outputs, failure policy, and
 frontend lane status rules. PMTSoul still owns task scheduling, employee
 execution, SSE delivery, barrier enforcement, deliverable storage, summary email
 delivery, task completion writes, and failure recovery.
+
+For invited read-only users, PMTSoul can consume
+`cardity.guest_view_access_contract.v1`. This contract defines scope-bound
+expiring guest tokens, GET-only scope-filtered endpoints, forbidden mutations,
+forbidden chat/send/task approval/task run/tool execution, read-only SSE event
+ranges, and guest access audit events. PMTSoul still owns token issuance,
+validation, expiry, revocation, endpoint enforcement, SSE filtering, audit
+persistence, and guest UI rendering.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

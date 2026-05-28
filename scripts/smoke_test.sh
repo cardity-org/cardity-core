@@ -68,6 +68,7 @@ node scripts/verify_company_operating_contract.js >/dev/null
 node scripts/verify_capability_runtime_tool_contract.js >/dev/null
 node scripts/verify_workspace_conversation_scope_contract.js >/dev/null
 node scripts/verify_task_collaboration_event_contract.js >/dev/null
+node scripts/verify_guest_view_access_contract.js >/dev/null
 grep -q 'Cardity Playground' src/cloudflare-worker.js
 grep -q 'url.pathname === "/playground"' src/cloudflare-worker.js
 rm -rf "$INIT_OUT"
@@ -101,6 +102,7 @@ node bin/cardity.js schemas company_operating_contract_v1 --json >/tmp/cardity_c
 node bin/cardity.js schemas capability_runtime_tool_contract_v1 --json >/tmp/cardity_capability_runtime_tool_schema_registry_smoke.json
 node bin/cardity.js schemas workspace_conversation_scope_contract_v1 --json >/tmp/cardity_workspace_conversation_scope_schema_registry_smoke.json
 node bin/cardity.js schemas task_collaboration_event_contract_v1 --json >/tmp/cardity_task_collaboration_event_schema_registry_smoke.json
+node bin/cardity.js schemas guest_view_access_contract_v1 --json >/tmp/cardity_guest_view_access_schema_registry_smoke.json
 node bin/cardity.js runtimes pmtsoul-agent-os --json >/tmp/cardity_runtime_registry_smoke.json
 node bin/cardity.js registry --json > "$ECOSYSTEM_REGISTRY_OUT"
 node bin/cardity.js registry templates member_points --json > "$ECOSYSTEM_TEMPLATE_OUT"

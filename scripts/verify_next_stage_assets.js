@@ -27,6 +27,7 @@ const nextStageSchemaPaths = [
   "schemas/capability_runtime_tool_contract_v1.schema.json",
   "schemas/workspace_conversation_scope_contract_v1.schema.json",
   "schemas/task_collaboration_event_contract_v1.schema.json",
+  "schemas/guest_view_access_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -242,6 +243,25 @@ for (const event of ["account.task.employee.started", "account.task.employee.pro
 }
 if (!exists("docs/task_collaboration_event_contract_v1.md")) {
   fail("missing task collaboration event contract docs");
+}
+
+const guestViewAccess = readJson("schemas/guest_view_access_contract_v1.schema.json");
+for (const field of ["scope", "token_policy", "allowed_read_endpoints", "forbidden_actions", "sse_policy", "audit_policy", "conformance", "runtime_boundary"]) {
+  if (!guestViewAccess.required.includes(field)) {
+    fail(`guest view access schema missing required ${field}`);
+  }
+}
+const guestViewAccessExample = readJson("examples/17_guest_view_access_contract_v1.json");
+if (guestViewAccessExample.schema !== "cardity.guest_view_access_contract.v1") {
+  fail("guest view access example has wrong schema");
+}
+for (const action of ["mutation", "chat.send", "message.send", "task.approve", "task.run", "tool.execute"]) {
+  if (!guestViewAccessExample.forbidden_actions.find((item) => item.action === action)) {
+    fail(`guest view access example missing forbidden action ${action}`);
+  }
+}
+if (!exists("docs/guest_view_access_contract_v1.md")) {
+  fail("missing guest view access contract docs");
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");

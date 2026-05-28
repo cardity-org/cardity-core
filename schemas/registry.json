@@ -106,6 +106,16 @@
       "status": "alpha"
     },
     {
+      "name": "guest_view_access_contract_v1",
+      "contract": "cardity.guest_view_access_contract.v1",
+      "version": "v1",
+      "file": "guest_view_access_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/guest_view_access_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/guest_view_access_contract_v1.schema.json",
+      "title": "Cardity Guest View Access Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",

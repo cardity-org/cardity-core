@@ -1,0 +1,99 @@
+{
+  "schema": "cardity.guest_view_access_contract.v1",
+  "scope": {
+    "scope_keys": ["enterprise_id", "account_id", "workspace_id", "guest_token_id"],
+    "access_mode": "guest_view_only"
+  },
+  "token_policy": {
+    "token_type": "guest",
+    "expires_required": true,
+    "revocable": true,
+    "scope_bound": true
+  },
+  "allowed_read_endpoints": [
+    {
+      "endpoint": "/api/v1/workspace/public-summary",
+      "method": "GET",
+      "resource": "workspace_summary",
+      "scope_filter_required": true
+    },
+    {
+      "endpoint": "/api/v1/workspace/deliverables",
+      "method": "GET",
+      "resource": "deliverables",
+      "scope_filter_required": true
+    },
+    {
+      "endpoint": "/api/v1/workspace/task-status",
+      "method": "GET",
+      "resource": "task_status",
+      "scope_filter_required": true
+    }
+  ],
+  "forbidden_actions": [
+    { "action": "mutation", "reason": "guest access is view-only" },
+    { "action": "chat.send", "reason": "guests cannot send chat messages" },
+    { "action": "message.send", "reason": "guests cannot send outbound messages" },
+    { "action": "task.approve", "reason": "guests cannot approve tasks" },
+    { "action": "task.run", "reason": "guests cannot start tasks" },
+    { "action": "tool.execute", "reason": "guests cannot execute runtime tools" }
+  ],
+  "sse_policy": {
+    "read_only": true,
+    "allowed_event_types": [
+      "workspace.summary.updated",
+      "deliverable.created",
+      "task.status.updated",
+      "account.task.employee.progress",
+      "account.task.employee.completed"
+    ],
+    "forbidden_event_types": [
+      "policy.require_confirm",
+      "chat.message.created",
+      "message.send.requested",
+      "task.approval.requested",
+      "tool.execution.requested",
+      "credential.required"
+    ],
+    "scope_filter_required": true
+  },
+  "audit_policy": {
+    "required_events": [
+      "guest_token.created",
+      "guest_token.used",
+      "guest_token.revoked",
+      "guest_access.denied"
+    ]
+  },
+  "conformance": {
+    "checks": [
+      "guest_token_scope_bound",
+      "guest_token_expires",
+      "guest_token_revocable",
+      "read_endpoints_scope_filtered",
+      "mutations_forbidden",
+      "chat_send_forbidden",
+      "task_approve_forbidden",
+      "sse_read_only_scope_filtered",
+      "guest_audit_events_declared"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "guest view-only access contract",
+      "allowed read endpoint declarations",
+      "forbidden action declarations",
+      "SSE visibility expectations",
+      "audit and conformance expectations"
+    ],
+    "runtime_owns": [
+      "guest token issuance",
+      "token validation",
+      "token expiry and revocation",
+      "endpoint enforcement",
+      "SSE filtering",
+      "audit event persistence",
+      "workspace UI rendering"
+    ]
+  }
+}

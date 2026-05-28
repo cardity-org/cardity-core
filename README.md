@@ -470,6 +470,7 @@ api.cardity.org/*
 - [Capability runtime tool contract v1](docs/capability_runtime_tool_contract_v1.md)
 - [Workspace conversation scope contract v1](docs/workspace_conversation_scope_contract_v1.md)
 - [Task collaboration event contract v1](docs/task_collaboration_event_contract_v1.md)
+- [Guest view access contract v1](docs/guest_view_access_contract_v1.md)
 - [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
 - [Schema registry](docs/schema_registry.md)
 - [Ecosystem registry](docs/cardity_registry.md)
@@ -491,6 +492,7 @@ api.cardity.org/*
 - [Capability runtime tool contract example](examples/14_capability_runtime_tool_contract_v1.json)
 - [Workspace conversation scope contract example](examples/15_workspace_conversation_scope_contract_v1.json)
 - [Task collaboration event contract example](examples/16_task_collaboration_event_contract_v1.json)
+- [Guest view access contract example](examples/17_guest_view_access_contract_v1.json)
 
 Legacy Dogecoin/Cardinals deployment, package, inscription, and SDK tools remain
 in the repository for compatibility. They are no longer the primary README
