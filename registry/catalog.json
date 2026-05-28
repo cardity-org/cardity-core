@@ -89,6 +89,11 @@
       "url": "https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json"
     },
     {
+      "id": "task_collaboration_event_contract_v1",
+      "contract": "cardity.task_collaboration_event_contract.v1",
+      "url": "https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json"
+    },
+    {
       "id": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json"

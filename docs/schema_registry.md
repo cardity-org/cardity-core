@@ -37,6 +37,7 @@ schemas/registry.json
 | Company operating contract v1 | `https://api.cardity.org/schemas/company_operating_contract_v1.schema.json` |
 | Capability runtime tool contract v1 | `https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json` |
 | Workspace conversation scope contract v1 | `https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json` |
+| Task collaboration event contract v1 | `https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json` |
 | Projection contract v1.1 | `https://api.cardity.org/schemas/projection_contract_v1_1.schema.json` |
 | Runtime adapter contract v1 | `https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json` |
 | Conformance report v1 | `https://api.cardity.org/schemas/conformance_report_v1.schema.json` |
@@ -78,6 +79,7 @@ cardity schemas agent_orchestration_contract_v1
 cardity schemas company_operating_contract_v1
 cardity schemas capability_runtime_tool_contract_v1
 cardity schemas workspace_conversation_scope_contract_v1
+cardity schemas task_collaboration_event_contract_v1
 ```
 
 ## MCP
@@ -123,6 +125,7 @@ PMTSoul Agent OS should store these URLs alongside generated workspace metadata:
     "company_operating_contract_schema_url": "https://api.cardity.org/schemas/company_operating_contract_v1.schema.json",
     "capability_runtime_tool_contract_schema_url": "https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json",
     "workspace_conversation_scope_contract_schema_url": "https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json",
+    "task_collaboration_event_contract_schema_url": "https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json",
     "projection_contract_schema_url": "https://api.cardity.org/schemas/projection_contract_v1_1.schema.json",
     "runtime_adapter_schema_url": "https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json"
   }

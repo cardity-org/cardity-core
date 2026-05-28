@@ -26,6 +26,7 @@ const nextStageSchemaPaths = [
   "schemas/company_operating_contract_v1.schema.json",
   "schemas/capability_runtime_tool_contract_v1.schema.json",
   "schemas/workspace_conversation_scope_contract_v1.schema.json",
+  "schemas/task_collaboration_event_contract_v1.schema.json",
   "schemas/security_review_v1.schema.json",
   "schemas/protocol_diff_v1.schema.json",
   "schemas/conformance_report_v1.schema.json",
@@ -222,6 +223,25 @@ if (!workspaceConversationScopeExample.endpoint_contracts.find((endpoint) => end
 }
 if (!exists("docs/workspace_conversation_scope_contract_v1.md")) {
   fail("missing workspace conversation scope contract docs");
+}
+
+const taskCollaborationEvent = readJson("schemas/task_collaboration_event_contract_v1.schema.json");
+for (const field of ["scope", "task_lead", "collaborator_lanes", "event_contracts", "barrier", "finalization", "failure_policy", "frontend_rules", "conformance", "runtime_boundary"]) {
+  if (!taskCollaborationEvent.required.includes(field)) {
+    fail(`task collaboration event schema missing required ${field}`);
+  }
+}
+const taskCollaborationEventExample = readJson("examples/16_task_collaboration_event_contract_v1.json");
+if (taskCollaborationEventExample.schema !== "cardity.task_collaboration_event_contract.v1") {
+  fail("task collaboration event example has wrong schema");
+}
+for (const event of ["account.task.employee.started", "account.task.employee.progress", "account.task.employee.handoff", "account.task.employee.completed"]) {
+  if (!taskCollaborationEventExample.event_contracts.find((item) => item.event === event)) {
+    fail(`task collaboration event example missing ${event}`);
+  }
+}
+if (!exists("docs/task_collaboration_event_contract_v1.md")) {
+  fail("missing task collaboration event contract docs");
 }
 
 const benchDemo = readJson("examples/06_cardity_bench_demo.json");

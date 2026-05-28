@@ -1,0 +1,113 @@
+{
+  "schema": "cardity.task_collaboration_event_contract.v1",
+  "scope": {
+    "scope_keys": ["enterprise_id", "account_id", "workspace_id", "task_id"]
+  },
+  "task_lead": {
+    "task_lead_employee_id": "employee_task_lead",
+    "responsibilities": ["coordinate lanes", "wait for barrier", "consolidate outputs", "finalize task"]
+  },
+  "collaborator_lanes": [
+    {
+      "lane_id": "research_lane",
+      "employee_id": "employee_research",
+      "lifecycle_events": [
+        "account.task.employee.started",
+        "account.task.employee.progress",
+        "account.task.employee.handoff",
+        "account.task.employee.completed",
+        "account.task.employee.failed",
+        "account.task.employee.cancelled"
+      ]
+    },
+    {
+      "lane_id": "content_lane",
+      "employee_id": "employee_content",
+      "lifecycle_events": [
+        "account.task.employee.started",
+        "account.task.employee.progress",
+        "account.task.employee.handoff",
+        "account.task.employee.completed",
+        "account.task.employee.failed",
+        "account.task.employee.cancelled"
+      ]
+    }
+  ],
+  "event_contracts": [
+    {
+      "event": "account.task.employee.started",
+      "required_payload_fields": ["task_id", "employee_id", "lane_id", "task_lead_employee_id", "started_at"]
+    },
+    {
+      "event": "account.task.employee.progress",
+      "required_payload_fields": ["task_id", "employee_id", "lane_id", "task_lead_employee_id", "progress", "status"]
+    },
+    {
+      "event": "account.task.employee.handoff",
+      "required_payload_fields": ["task_id", "employee_id", "lane_id", "task_lead_employee_id", "artifact", "acceptance_criteria"]
+    },
+    {
+      "event": "account.task.employee.completed",
+      "required_payload_fields": ["task_id", "employee_id", "lane_id", "task_lead_employee_id", "result", "completed_at"]
+    },
+    {
+      "event": "account.task.employee.failed",
+      "required_payload_fields": ["task_id", "employee_id", "lane_id", "task_lead_employee_id", "error", "failed_at"]
+    }
+  ],
+  "barrier": {
+    "type": "all_collaborators_completed",
+    "wait_for": ["research_lane", "content_lane"],
+    "task_lead_action_after_barrier": "consolidate_collaborator_outputs"
+  },
+  "finalization": {
+    "required_outputs": [
+      "consolidated_result",
+      "deliverable_or_document",
+      "workspace_summary",
+      "llm_summary_email",
+      "task_completed_event"
+    ]
+  },
+  "failure_policy": {
+    "lane_failure_policy": "manual_review",
+    "partial_consolidation_allowed": true,
+    "cancel_policy": "manual_review"
+  },
+  "frontend_rules": {
+    "show_lane_status": true,
+    "forbid_natural_language_progress_parsing": true
+  },
+  "conformance": {
+    "checks": [
+      "task_lead_declared",
+      "collaborator_lanes_declared",
+      "lane_events_have_required_payload",
+      "barrier_waits_for_collaborators",
+      "task_lead_finalization_outputs_declared",
+      "failure_policy_declared",
+      "frontend_uses_structured_lane_events"
+    ]
+  },
+  "runtime_boundary": {
+    "cardity_owns": [
+      "task collaboration event contract",
+      "task lead and collaborator lane declarations",
+      "event payload requirements",
+      "barrier and finalization expectations",
+      "failure policy expectations",
+      "frontend structured event requirements"
+    ],
+    "runtime_owns": [
+      "task scheduling",
+      "employee execution",
+      "event persistence",
+      "SSE delivery",
+      "barrier enforcement",
+      "deliverable and document storage",
+      "summary email delivery",
+      "task completion write",
+      "failure recovery"
+    ]
+  }
+}

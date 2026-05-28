@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardity.org/schemas/task_collaboration_event_contract_v1.schema.json",
+  "title": "Cardity Task Collaboration Event Contract v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "scope",
+    "task_lead",
+    "collaborator_lanes",
+    "event_contracts",
+    "barrier",
+    "finalization",
+    "failure_policy",
+    "frontend_rules",
+    "conformance",
+    "runtime_boundary"
+  ],
+  "properties": {
+    "schema": { "const": "cardity.task_collaboration_event_contract.v1" },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope_keys"],
+      "properties": {
+        "scope_keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "task_lead": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["task_lead_employee_id", "responsibilities"],
+      "properties": {
+        "task_lead_employee_id": { "type": "string", "minLength": 1 },
+        "responsibilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "collaborator_lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["lane_id", "employee_id", "lifecycle_events"],
+        "properties": {
+          "lane_id": { "type": "string", "minLength": 1 },
+          "employee_id": { "type": "string", "minLength": 1 },
+          "lifecycle_events": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "account.task.employee.started",
+                "account.task.employee.progress",
+                "account.task.employee.handoff",
+                "account.task.employee.completed",
+                "account.task.employee.failed",
+                "account.task.employee.cancelled"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "event_contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["event", "required_payload_fields"],
+        "properties": {
+          "event": { "type": "string", "minLength": 1 },
+          "required_payload_fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "barrier": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["type", "wait_for", "task_lead_action_after_barrier"],
+      "properties": {
+        "type": { "enum": ["all_collaborators_completed", "quorum", "manual_release"] },
+        "wait_for": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "task_lead_action_after_barrier": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finalization": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["required_outputs"],
+      "properties": {
+        "required_outputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "failure_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["lane_failure_policy", "partial_consolidation_allowed", "cancel_policy"],
+      "properties": {
+        "lane_failure_policy": { "enum": ["block_barrier", "allow_partial", "manual_review"] },
+        "partial_consolidation_allowed": { "type": "boolean" },
+        "cancel_policy": { "enum": ["cancel_all_lanes", "cancel_failed_lane_only", "manual_review"] }
+      }
+    },
+    "frontend_rules": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["show_lane_status", "forbid_natural_language_progress_parsing"],
+      "properties": {
+        "show_lane_status": { "type": "boolean" },
+        "forbid_natural_language_progress_parsing": { "type": "boolean" }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["checks"],
+      "properties": {
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "runtime_boundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["cardity_owns", "runtime_owns"],
+      "properties": {
+        "cardity_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_owns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

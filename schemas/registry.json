@@ -96,6 +96,16 @@
       "status": "alpha"
     },
     {
+      "name": "task_collaboration_event_contract_v1",
+      "contract": "cardity.task_collaboration_event_contract.v1",
+      "version": "v1",
+      "file": "task_collaboration_event_contract_v1.schema.json",
+      "schema_id": "https://cardity.org/schemas/task_collaboration_event_contract_v1.schema.json",
+      "url": "https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json",
+      "title": "Cardity Task Collaboration Event Contract v1",
+      "status": "alpha"
+    },
+    {
       "name": "projection_contract_v1_1",
       "contract": "projection_contract_v1_1",
       "version": "v1.1",

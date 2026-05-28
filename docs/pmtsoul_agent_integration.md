@@ -295,6 +295,7 @@ https://api.cardity.org/schemas/agent_orchestration_contract_v1.schema.json
 https://api.cardity.org/schemas/company_operating_contract_v1.schema.json
 https://api.cardity.org/schemas/capability_runtime_tool_contract_v1.schema.json
 https://api.cardity.org/schemas/workspace_conversation_scope_contract_v1.schema.json
+https://api.cardity.org/schemas/task_collaboration_event_contract_v1.schema.json
 https://api.cardity.org/schemas/projection_contract_v1_1.schema.json
 https://api.cardity.org/schemas/runtime_adapter_contract_v1.schema.json
 ```
@@ -423,6 +424,14 @@ workspace-only conversation endpoints; legacy conversation lazy repair/backfill;
 and frontend rules forbidding id-pattern scope inference. PMTSoul still owns
 conversation persistence, endpoint filtering, SSE scope filtering, repair
 execution, and audit storage.
+
+For multi-employee task execution, PMTSoul can consume
+`cardity.task_collaboration_event_contract.v1`. This contract defines the task
+lead, collaborator lanes, structured lane lifecycle events, required event
+payload fields, barrier rules, finalization outputs, failure policy, and
+frontend lane status rules. PMTSoul still owns task scheduling, employee
+execution, SSE delivery, barrier enforcement, deliverable storage, summary email
+delivery, task completion writes, and failure recovery.
 
 PMTSoul is also listed in the Cardity runtime compatibility registry:
 

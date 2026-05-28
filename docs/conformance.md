@@ -24,6 +24,7 @@ Cardity release.
 | Company operating contract v1 | `schemas/company_operating_contract_v1.schema.json` |
 | Capability runtime tool contract v1 | `schemas/capability_runtime_tool_contract_v1.schema.json` |
 | Workspace conversation scope contract v1 | `schemas/workspace_conversation_scope_contract_v1.schema.json` |
+| Task collaboration event contract v1 | `schemas/task_collaboration_event_contract_v1.schema.json` |
 | Diagnostics v1 | `schemas/diagnostics_v1.schema.json` |
 | Runtime adapter contract v1 | `schemas/runtime_adapter_contract_v1.schema.json` |
 | Security review v1 | `schemas/security_review_v1.schema.json` |
@@ -57,6 +58,7 @@ https://api.cardity.org/schemas
 | `examples/13_ai_company_bootstrap_contract_v1.json` | Generic account-level AI company bootstrap contract using canonical company operating fields only. |
 | `examples/14_capability_runtime_tool_contract_v1.json` | Generic employee capability to runtime tool visibility contract. |
 | `examples/15_workspace_conversation_scope_contract_v1.json` | Generic chat vs workspace conversation scope contract. |
+| `examples/16_task_collaboration_event_contract_v1.json` | Generic task lead and collaborator lane event contract. |
 | `examples/runtime_adapter_cardity_mock.json` | Minimal runtime adapter declaration for conformance checks. |
 | `examples/runtime_adapter_pmtsoul_agent_os.json` | PMTSoul Agent OS adapter declaration for the first Cardity-compatible runtime baseline. |
 
@@ -92,6 +94,7 @@ node scripts/verify_agent_orchestration_runtime_fixture.js
 node scripts/verify_company_operating_contract.js
 node scripts/verify_capability_runtime_tool_contract.js
 node scripts/verify_workspace_conversation_scope_contract.js
+node scripts/verify_task_collaboration_event_contract.js
 node bin/cardity.js explain examples/01_counter.car --diagram
 node bin/cardity.js visualize examples/02_member_points_agent.car
 node bin/cardity.js visualize examples/02_member_points_agent.car --html -o /tmp/cardity_visualizer.html
