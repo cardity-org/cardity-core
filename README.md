@@ -471,6 +471,7 @@ api.cardity.org/*
 - [Workspace conversation scope contract v1](docs/workspace_conversation_scope_contract_v1.md)
 - [Task collaboration event contract v1](docs/task_collaboration_event_contract_v1.md)
 - [Guest view access contract v1](docs/guest_view_access_contract_v1.md)
+- [Workflow protocol boundary](docs/workflow_protocol_boundary.md)
 - [Runtime adapter contract v1](docs/runtime_adapter_contract_v1.md)
 - [Schema registry](docs/schema_registry.md)
 - [Ecosystem registry](docs/cardity_registry.md)

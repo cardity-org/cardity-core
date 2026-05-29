@@ -108,6 +108,19 @@ For multi-agent workspaces, Cardity can also emit
 verification rules, coordination locks, and failure policy. PMTSoul maps that
 contract into runtime scheduling and execution.
 
+## Workflow Protocol Boundary
+
+Cardity's workflow direction is a future composition protocol, not a workflow
+runtime. Cardity may eventually define `cardity.workflow_protocol_contract.v1`
+as a declarative DAG of allowed capabilities, policy gates, human gates,
+checkpoints, readback, audit, replay, and failure policy. It must not execute
+JavaScript/Python/shell workflows, persist real run state, schedule agents, send
+emails, mutate ERP data, or bypass downstream runtime policy.
+
+See [Workflow protocol boundary](workflow_protocol_boundary.md). The immediate
+priority is downstream validation of the existing P0/P1 contracts before adding
+this larger composition contract.
+
 ## Benchmark Narrative
 
 SaaS-Bench-style results support Cardity's boundary: GUI-only agents are fragile
