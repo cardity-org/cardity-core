@@ -27,6 +27,16 @@ how Cardity can describe the operating contract that a runtime materializes.
 - Running manual-start tasks.
 - Persisting mailbox records, audit events, recovery state, and workbench UI.
 
+## Workflow Sample Relationship
+
+A downstream runtime may wrap this bootstrap flow in its own workflow envelope
+and runner adapter. For example, PMTSoul uses company bootstrap as a real
+runtime-owned workflow sample: the envelope, runner adapter, gate/readback
+hardening, persisted run state, and replay evidence all stay in PMTSoul.
+
+That sample can inform a future `cardity.workflow_protocol_contract.v1`, but it
+does not make Cardity a workflow runtime.
+
 ## Canonical Boundary
 
 The example uses only canonical top-level

@@ -153,3 +153,21 @@ Do not implement the workflow protocol schema until downstream runtimes have
 consumed the current P0/P1 contracts and run release gates successfully.
 
 The next step is downstream validation, not a new runtime inside Cardity.
+
+## Downstream Reference Samples
+
+PMTSoul `company_bootstrap` is a useful downstream sample for this future
+contract direction. Its current workflow envelope and manifest runner adapter
+belong to PMTSoul Runtime, not Cardity:
+
+- P0 envelope: runtime-owned workflow envelope around account-level company
+  bootstrap.
+- P1 manifest runner adapter: runtime-owned adapter that can run the envelope
+  against PMTSoul skills, storage, audit, and UI.
+- P2 gate/readback hardening: runtime-owned validation of policy gates,
+  checkpoint/readback behavior, and replay evidence.
+
+Cardity may later use this kind of real envelope shape as input when drafting
+`cardity.workflow_protocol_contract.v1`, but the sample does not change the
+current boundary: Cardity defines the protocol contract, while PMTSoul compiles,
+verifies, executes, audits, and replays the workflow.
